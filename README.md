@@ -6,6 +6,8 @@ Custom next-auth adapters maintained by the community to support any database.
 If you already have an adapter you would like to add, please create a Pull Request.
 
 In case you can also take on the maintenance of the adapter, let us know, and we can add you as a maintainer to the repository.
+## Adapters
 
+- [Prisma](./packages/prisma/README.md)
 ## License
 ISC

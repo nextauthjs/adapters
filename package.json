@@ -1,0 +1,11 @@
+{
+  "name": "adapters",
+  "version": "0.0.0",
+  "repository": "https://github.com/williamluke4/adapters.git",
+  "author": "William Luke <william@ordino.ai>",
+  "license": "ISC",
+  "private": true,
+  "devDependencies": {
+    "next-auth": "^3.1.0"
+  }
+}
