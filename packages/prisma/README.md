@@ -1,4 +1,4 @@
-# Prisma Adapter 
+# Prisma Adapter
 
 ```prisma filename="schema.prisma"
 model Account {
@@ -84,7 +84,7 @@ Changes from the original Prisma Adapter
 -  @@map(name: "accounts")
 +  @@unique([providerId, providerAccountId])
  }
- 
+
  model Session {
 -  id           Int      @default(autoincrement()) @id
 +  id           Int      @id @default(autoincrement())
@@ -103,7 +103,7 @@ Changes from the original Prisma Adapter
 -
 -  @@map(name: "sessions")
  }
- 
+
  model User {
 -  id            Int       @default(autoincrement()) @id
 +  id            Int       @id @default(autoincrement())
@@ -121,7 +121,7 @@ Changes from the original Prisma Adapter
 
 -  @@map(name: "users")
  }
- 
+
  model VerificationRequest {
 -  id         Int      @default(autoincrement()) @id
 +  id         Int      @id @default(autoincrement())
