@@ -105,7 +105,7 @@ export default function PrismaAdapter<
         return user;
       } catch (error) {
         logger.error("CREATE_USER_ERROR", error);
-        return Promise.reject(new CreateUserError(error));
+        throw new CreateUserError(error)
       }
     }
 
@@ -129,7 +129,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("GET_USER_BY_ID_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("GET_USER_BY_ID_ERROR", error));
+        throw new Error("GET_USER_BY_ID_ERROR", error);
       }
     }
 
@@ -146,7 +146,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("GET_USER_BY_EMAIL_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("GET_USER_BY_EMAIL_ERROR", error));
+        throw new Error("GET_USER_BY_EMAIL_ERROR", error);
       }
     }
 
@@ -172,10 +172,8 @@ export default function PrismaAdapter<
         return account!.user;
       } catch (error) {
         logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error);
-        return Promise.reject(
-          // @ts-ignore
-          new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error)
-        );
+        // @ts-ignore
+        throw new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error)
       }
     }
 
@@ -197,7 +195,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("UPDATE_USER_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("UPDATE_USER_ERROR", error));
+        throw new Error("UPDATE_USER_ERROR", error);
       }
     }
 
@@ -209,7 +207,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("DELETE_USER_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("DELETE_USER_ERROR", error));
+        throw new Error("DELETE_USER_ERROR", error);
       }
     }
 
@@ -247,7 +245,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("LINK_ACCOUNT_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("LINK_ACCOUNT_ERROR", error));
+        throw new Error("LINK_ACCOUNT_ERROR", error);
       }
     }
 
@@ -269,7 +267,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("UNLINK_ACCOUNT_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("UNLINK_ACCOUNT_ERROR", error));
+        throw new Error("UNLINK_ACCOUNT_ERROR", error);
       }
     }
 
@@ -303,7 +301,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("CREATE_SESSION_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("CREATE_SESSION_ERROR", error));
+        throw new Error("CREATE_SESSION_ERROR", error);
       }
     }
 
@@ -338,7 +336,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("GET_SESSION_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("GET_SESSION_ERROR", error));
+        throw new Error("GET_SESSION_ERROR", error);
       }
     }
 
@@ -391,7 +389,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("UPDATE_SESSION_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("UPDATE_SESSION_ERROR", error));
+        throw new Error("UPDATE_SESSION_ERROR", error);
       }
     }
 
@@ -405,7 +403,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("DELETE_SESSION_ERROR", error);
         // @ts-ignore
-        return Promise.reject(new Error("DELETE_SESSION_ERROR", error));
+        throw new Error("DELETE_SESSION_ERROR", error);
       }
     }
 
@@ -459,10 +457,8 @@ export default function PrismaAdapter<
         return verificationRequest;
       } catch (error) {
         logger.error("CREATE_VERIFICATION_REQUEST_ERROR", error);
-        return Promise.reject(
-          // @ts-ignore
-          new Error("CREATE_VERIFICATION_REQUEST_ERROR", error)
-        );
+        // @ts-ignore
+        throw new Error("CREATE_VERIFICATION_REQUEST_ERROR", error)
       }
     }
 
@@ -500,10 +496,8 @@ export default function PrismaAdapter<
         return verificationRequest;
       } catch (error) {
         logger.error("GET_VERIFICATION_REQUEST_ERROR", error);
-        return Promise.reject(
-          // @ts-ignore
-          new Error("GET_VERIFICATION_REQUEST_ERROR", error)
-        );
+        // @ts-ignore
+        throw new Error("GET_VERIFICATION_REQUEST_ERROR", error)
       }
     }
 
@@ -524,10 +518,9 @@ export default function PrismaAdapter<
         });
       } catch (error) {
         logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error);
-        return Promise.reject(
-          // @ts-ignore
-          new Error("DELETE_VERIFICATION_REQUEST_ERROR", error)
-        );
+        // @ts-ignore
+        throw new Error("DELETE_VERIFICATION_REQUEST_ERROR", error)
+
       }
     }
     // @ts-ignore
