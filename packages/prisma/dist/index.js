@@ -1,23 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -65,10 +46,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var Prisma = __importStar(require("@prisma/client"));
 var crypto_1 = require("crypto");
 var klona_1 = require("klona");
 var lru_cache_1 = __importDefault(require("lru-cache"));
+// !TODO Expose `errors` and `logger` in next-auth
 // @ts-ignore
 var errors_1 = require("next-auth/dist/lib/errors");
 // @ts-ignore
@@ -84,7 +65,6 @@ var userCache = new lru_cache_1.default({
 var maxAge = function (expires) {
     return expires ? new Date(expires).getTime() - Date.now() : undefined;
 };
-// type isValid<T extends Prisma.PrismaClient, U> = T[U] extends  
 function PrismaAdapter(config) {
     var prisma = config.prisma, modelMapping = config.modelMapping;
     var User = modelMapping.User, Account = modelMapping.Account, Session = modelMapping.Session, VerificationRequest = modelMapping.VerificationRequest;
@@ -146,9 +126,12 @@ function PrismaAdapter(config) {
                                     var user;
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
-                                            case 0: return [4 /*yield*/, prisma[User].findUnique({ where: { id: id }, rejectOnNotFound: true })];
+                                            case 0: return [4 /*yield*/, prisma[User].findUnique({
+                                                    where: { id: id },
+                                                    rejectOnNotFound: true,
+                                                })];
                                             case 1:
-                                                user = _a.sent();
+                                                user = (_a.sent());
                                                 userCache.set(user.id, user);
                                                 return [2 /*return*/];
                                         }
@@ -175,7 +158,10 @@ function PrismaAdapter(config) {
                             if (!email) {
                                 return [2 /*return*/, Promise.resolve(null)];
                             }
-                            return [2 /*return*/, prisma[User].findUnique({ where: { email: email }, rejectOnNotFound: true })];
+                            return [2 /*return*/, prisma[User].findUnique({
+                                    where: { email: email },
+                                    rejectOnNotFound: true,
+                                })];
                         }
                         catch (error) {
                             logger_1.default.error("GET_USER_BY_EMAIL_ERROR", error);
@@ -208,7 +194,7 @@ function PrismaAdapter(config) {
                                         include: {
                                             user: true,
                                         },
-                                        rejectOnNotFound: true
+                                        rejectOnNotFound: true,
                                     })];
                             case 2:
                                 account = _a.sent();
@@ -381,7 +367,9 @@ function PrismaAdapter(config) {
                             case 2:
                                 session = _a.sent();
                                 if (!(session && session.expires && new Date() > session.expires)) return [3 /*break*/, 4];
-                                return [4 /*yield*/, prisma[Session].delete({ where: { sessionToken: sessionToken } })];
+                                return [4 /*yield*/, prisma[Session].delete({
+                                        where: { sessionToken: sessionToken },
+                                    })];
                             case 3:
                                 _a.sent();
                                 return [2 /*return*/, null];
@@ -435,7 +423,10 @@ function PrismaAdapter(config) {
                                 }
                                 id = session.id, expires = session.expires;
                                 sessionCache.set(session.sessionToken, session, maxAge(expires));
-                                return [4 /*yield*/, prisma[Session].update({ where: { id: id }, data: { expires: expires } })];
+                                return [4 /*yield*/, prisma[Session].update({
+                                        where: { id: id },
+                                        data: { expires: expires },
+                                    })];
                             case 2:
                                 _a.sent();
                                 return [2 /*return*/];
@@ -460,7 +451,9 @@ function PrismaAdapter(config) {
                             case 1:
                                 _a.trys.push([1, 3, , 4]);
                                 sessionCache.del(sessionToken);
-                                return [4 /*yield*/, prisma[Session].delete({ where: { sessionToken: sessionToken } })];
+                                return [4 /*yield*/, prisma[Session].delete({
+                                        where: { sessionToken: sessionToken },
+                                    })];
                             case 2: return [2 /*return*/, _a.sent()];
                             case 3:
                                 error_6 = _a.sent();
@@ -485,8 +478,9 @@ function PrismaAdapter(config) {
                                 baseUrl = appOptions.baseUrl;
                                 sendVerificationRequest = provider.sendVerificationRequest, maxAge_1 = provider.maxAge;
                                 hashedToken = crypto_1.createHash("sha256")
-                                    .update("" + token + secret).digest('hex');
-                                expires = '';
+                                    .update("" + token + secret)
+                                    .digest("hex");
+                                expires = "";
                                 if (maxAge_1) {
                                     dateExpires = new Date();
                                     dateExpires.setTime(dateExpires.getTime() + maxAge_1 * 1000);
@@ -633,13 +627,3 @@ function PrismaAdapter(config) {
     };
 }
 exports.default = PrismaAdapter;
-// '<T extends User>(profile: T) => Promise<User>' is not assignable to type '(profile: Profile) => Promise<User>'.
-PrismaAdapter({
-    prisma: new Prisma.PrismaClient(),
-    modelMapping: {
-        User: "user",
-        Account: "account",
-        Session: "session",
-        VerificationRequest: "verificationRequest",
-    },
-});
