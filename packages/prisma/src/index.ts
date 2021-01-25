@@ -4,34 +4,49 @@ import { createHash, randomBytes } from "crypto";
 import { klona } from "klona";
 import LRU from "lru-cache";
 import { AppOptions } from "next-auth";
-import { Adapter, AdapterInstance, EmailSessionProvider, Profile } from "next-auth/adapters";
+import {
+  Adapter,
+  AdapterInstance,
+  EmailSessionProvider,
+  Profile,
+} from "next-auth/adapters";
+// !TODO Expose `errors` and `logger` in next-auth
 // @ts-ignore
 import { CreateUserError } from "next-auth/dist/lib/errors";
 // @ts-ignore
 import logger from "next-auth/dist/lib/logger";
+
+type IsValid<
+  T extends Prisma.PrismaClient,
+  U extends keyof T
+> = Required extends keyof T[U]
+  ? Required extends keyof T[U]
+    ? T[U][Required] extends (args?: any) => any
+      ? 1
+      : 0
+    : 0
+  : 0;
+type Required = "create" | "findUnique" | "delete" | "update";
+type Filter<T extends Prisma.PrismaClient> = {
+  [K in keyof T]-?: {
+    1: K;
+    0: never;
+  }[IsValid<T, K>];
+}[keyof T];
 
 const sessionCache = new LRU({
   maxAge: 24 * 60 * 60 * 1000,
   max: 1000,
 });
 
-const userCache = new LRU<Prisma.User['id'], Prisma.User>({
+const userCache = new LRU<Prisma.User["id"], Prisma.User>({
   maxAge: 24 * 60 * 60 * 1000,
   max: 1000,
 });
 
 const maxAge = (expires?: string | number | Date | null) =>
   expires ? new Date(expires).getTime() - Date.now() : undefined;
-type IsValid<T extends Prisma.PrismaClient, U extends keyof T> = Required extends keyof T[U] ?  Required extends keyof T[U] ? T[U][Required] extends (args?:any) => any ? 1: 0 : 0 : 0
-type Required = "create" | "findUnique" | "delete" | "update"
-type Filter<T extends Prisma.PrismaClient> = {
-  [K in keyof T]-?: {
-      1: K;
-      0: never;
-  }[IsValid<T, K>];
-}[keyof T];
 
-// type isValid<T extends Prisma.PrismaClient, U> = T[U] extends  
 export default function PrismaAdapter<
   T extends Prisma.PrismaClient,
   U extends Filter<T>,
@@ -45,15 +60,15 @@ export default function PrismaAdapter<
     Account: A;
     Session: S;
     VerificationRequest: VR;
-  }}): Adapter<User,Profile, Session, VerificationRequest> {
-  const {
-    prisma,
-    modelMapping 
-  } = config;
+  };
+}): Adapter<User, Profile, Session, VerificationRequest> {
+  const { prisma, modelMapping } = config;
 
   const { User, Account, Session, VerificationRequest } = modelMapping;
 
-  async function getAdapter(appOptions: AppOptions): Promise<AdapterInstance<User, Profile, Session, VerificationRequest>>  {
+  async function getAdapter(
+    appOptions: AppOptions
+  ): Promise<AdapterInstance<User, Profile, Session, VerificationRequest>> {
     function debug(debugCode: string, ...args: any) {
       logger.debug(`PRISMA_${debugCode}`, ...args);
     }
@@ -66,19 +81,17 @@ export default function PrismaAdapter<
     }
 
     const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000;
-    const sessionMaxAge =
-      appOptions?.session?.maxAge
-        ? appOptions.session.maxAge * 1000
-        : defaultSessionMaxAge;
-    const sessionUpdateAge =
-      appOptions?.session?.updateAge
-        ? appOptions.session.updateAge * 1000
-        : 0;
+    const sessionMaxAge = appOptions?.session?.maxAge
+      ? appOptions.session.maxAge * 1000
+      : defaultSessionMaxAge;
+    const sessionUpdateAge = appOptions?.session?.updateAge
+      ? appOptions.session.updateAge * 1000
+      : 0;
 
-    async function createUser(profile: Profile & {emailVerified?: Date}) {
+    async function createUser(profile: Profile & { emailVerified?: Date }) {
       debug("CREATE_USER", profile);
       try {
-        const user = await prisma[User as 'user'].create({
+        const user = await prisma[User as "user"].create({
           data: {
             name: profile.name,
             email: profile.email,
@@ -104,12 +117,15 @@ export default function PrismaAdapter<
           debug("GET_USER - Fetched from LRU Cache", cachedUser);
           // stale while revalidate
           (async () => {
-            const user = await prisma[User as 'user'].findUnique({ where: { id }, rejectOnNotFound: true }) as Prisma.User;
+            const user = (await prisma[User as "user"].findUnique({
+              where: { id },
+              rejectOnNotFound: true,
+            })) as Prisma.User;
             userCache.set(user.id, user);
           })();
           return cachedUser;
         }
-        return prisma[User as 'user'].findUnique({ where: { id } });
+        return prisma[User as "user"].findUnique({ where: { id } });
       } catch (error) {
         logger.error("GET_USER_BY_ID_ERROR", error);
         // @ts-ignore
@@ -123,7 +139,10 @@ export default function PrismaAdapter<
         if (!email) {
           return Promise.resolve(null);
         }
-        return prisma[User as 'user'].findUnique({ where: { email }, rejectOnNotFound: true }) as Promise<Prisma.User>;
+        return prisma[User as "user"].findUnique({
+          where: { email },
+          rejectOnNotFound: true,
+        }) as Promise<Prisma.User>;
       } catch (error) {
         logger.error("GET_USER_BY_EMAIL_ERROR", error);
         // @ts-ignore
@@ -138,7 +157,7 @@ export default function PrismaAdapter<
       debug("GET_USER_BY_PROVIDER_ACCOUNT_ID", providerId, providerAccountId);
       try {
         if (!providerId || !providerAccountId) return null;
-        const account = await prisma[Account as 'account'].findUnique({
+        const account = await prisma[Account as "account"].findUnique({
           where: {
             providerId_providerAccountId: {
               providerId: providerId,
@@ -148,9 +167,9 @@ export default function PrismaAdapter<
           include: {
             user: true,
           },
-          rejectOnNotFound: true
-        }) 
-        return account!.user 
+          rejectOnNotFound: true,
+        });
+        return account!.user;
       } catch (error) {
         logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error);
         return Promise.reject(
@@ -186,7 +205,7 @@ export default function PrismaAdapter<
       userCache.del(userId);
       debug("DELETE_USER", userId);
       try {
-        return prisma[User as 'user'].delete({ where: { id: userId } });
+        return prisma[User as "user"].delete({ where: { id: userId } });
       } catch (error) {
         logger.error("DELETE_USER_ERROR", error);
         // @ts-ignore
@@ -214,7 +233,7 @@ export default function PrismaAdapter<
         accessTokenExpires
       );
       try {
-        return await prisma[Account as 'account'].create({
+        return await prisma[Account as "account"].create({
           data: {
             accessToken,
             refreshToken,
@@ -239,7 +258,7 @@ export default function PrismaAdapter<
     ) {
       debug("UNLINK_ACCOUNT", userId, providerId, providerAccountId);
       try {
-        return prisma[Account as 'account'].delete({
+        return prisma[Account as "account"].delete({
           where: {
             providerId_providerAccountId: {
               providerAccountId: providerAccountId,
@@ -261,7 +280,7 @@ export default function PrismaAdapter<
         const dateExpires = new Date();
         dateExpires.setTime(dateExpires.getTime() + sessionMaxAge);
         expires = dateExpires.toISOString();
-        
+
         const session = {
           expires,
           sessionToken: randomBytes(32).toString("hex"),
@@ -273,7 +292,7 @@ export default function PrismaAdapter<
 
         sessionCache.set(session.sessionToken, cachedSession, maxAge(expires));
 
-        return prisma[Session as 'session'].create({
+        return prisma[Session as "session"].create({
           data: {
             expires,
             user: { connect: { id: user.id } },
@@ -296,13 +315,15 @@ export default function PrismaAdapter<
           debug("GET_SESSION - Fetched from LRU Cache", cachedSession);
           return cachedSession;
         }
-        const session = await prisma[Session as 'session'].findUnique({
+        const session = await prisma[Session as "session"].findUnique({
           where: { sessionToken: sessionToken },
         });
 
         // Check session has not expired (do not return it if it has)
         if (session && session.expires && new Date() > session.expires) {
-          await prisma[Session as 'session'].delete({ where: { sessionToken } });
+          await prisma[Session as "session"].delete({
+            where: { sessionToken },
+          });
           return null;
         }
 
@@ -362,7 +383,10 @@ export default function PrismaAdapter<
 
         const { id, expires } = session;
         sessionCache.set(session.sessionToken, session, maxAge(expires));
-        await prisma[Session as 'session'].update({ where: { id }, data: { expires } });
+        await prisma[Session as "session"].update({
+          where: { id },
+          data: { expires },
+        });
         return;
       } catch (error) {
         logger.error("UPDATE_SESSION_ERROR", error);
@@ -375,7 +399,9 @@ export default function PrismaAdapter<
       debug("DELETE_SESSION", sessionToken);
       try {
         sessionCache.del(sessionToken);
-        return await prisma[Session as 'session'].delete({ where: { sessionToken } });
+        return await prisma[Session as "session"].delete({
+          where: { sessionToken },
+        });
       } catch (error) {
         logger.error("DELETE_SESSION_ERROR", error);
         // @ts-ignore
@@ -386,8 +412,8 @@ export default function PrismaAdapter<
     async function createVerificationRequest(
       identifier: string,
       url: string,
-      token:string,
-      secret:string,
+      token: string,
+      secret: string,
       provider: EmailSessionProvider
     ) {
       debug("CREATE_VERIFICATION_REQUEST", identifier);
@@ -399,9 +425,10 @@ export default function PrismaAdapter<
         // even if the contents of the database is compromised.
         // @TODO Use bcrypt function here instead of simple salted hash
         const hashedToken = createHash("sha256")
-          .update(`${token}${secret}`).digest('hex')
+          .update(`${token}${secret}`)
+          .digest("hex");
 
-        let expires = '';
+        let expires = "";
         if (maxAge) {
           const dateExpires = new Date();
           dateExpires.setTime(dateExpires.getTime() + maxAge * 1000);
@@ -409,7 +436,9 @@ export default function PrismaAdapter<
         }
 
         // Save to database
-        const verificationRequest = await prisma[VerificationRequest as 'verificationRequest'].create({
+        const verificationRequest = await prisma[
+          VerificationRequest as "verificationRequest"
+        ].create({
           data: {
             identifier,
             token: hashedToken,
@@ -437,7 +466,12 @@ export default function PrismaAdapter<
       }
     }
 
-    async function getVerificationRequest(identifier: string, token: string, secret: string, provider: string) {
+    async function getVerificationRequest(
+      identifier: string,
+      token: string,
+      secret: string,
+      provider: string
+    ) {
       debug("GET_VERIFICATION_REQUEST", identifier, token);
       try {
         // Hash token provided with secret before trying to match it with database
@@ -446,7 +480,7 @@ export default function PrismaAdapter<
           .update(`${token}${secret}`)
           .digest("hex");
         const verificationRequest = await prisma[
-          VerificationRequest as 'verificationRequest'
+          VerificationRequest as "verificationRequest"
         ].findUnique({
           where: { token: hashedToken },
         });
@@ -457,7 +491,7 @@ export default function PrismaAdapter<
           new Date() > verificationRequest.expires
         ) {
           // Delete verification entry so it cannot be used again
-          await prisma[VerificationRequest as 'verificationRequest'].delete({
+          await prisma[VerificationRequest as "verificationRequest"].delete({
             where: { token: hashedToken },
           });
           return null;
@@ -485,7 +519,7 @@ export default function PrismaAdapter<
         const hashedToken = createHash("sha256")
           .update(`${token}${secret}`)
           .digest("hex");
-        await prisma[VerificationRequest as 'verificationRequest'].delete({
+        await prisma[VerificationRequest as "verificationRequest"].delete({
           where: { token: hashedToken },
         });
       } catch (error) {
@@ -520,16 +554,3 @@ export default function PrismaAdapter<
     getAdapter,
   };
 }
-// '<T extends User>(profile: T) => Promise<User>' is not assignable to type '(profile: Profile) => Promise<User>'.
-PrismaAdapter({
-  prisma: new Prisma.PrismaClient(),
-  modelMapping: {
-    User: "user",
-    Account: "account",
-    Session: "session",
-    VerificationRequest: "verificationRequest",
-  },
-});
-
-
-
