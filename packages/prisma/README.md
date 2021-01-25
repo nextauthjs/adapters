@@ -50,3 +50,89 @@ model VerificationRequest {
 }
 
 ```
+
+Changes from the original Prisma Adapter
+
+```
+ model Account {
+-  id                 Int       @default(autoincrement()) @id
++  id                 Int       @id @default(autoincrement())
+-  compoundId         String    @unique @map(name: "compound_id")
+-  userId             Int       @map(name: "user_id")
++  userId             Int
++  user               User      @relation(fields: [userId], references: [id])
+-  providerType       String    @map(name: "provider_type")
++  providerType       String
+-  providerId         String    @map(name: "provider_id")
++  providerId         String
+-  providerAccountId  String    @map(name: "provider_account_id")
++  providerAccountId  String
+-  refreshToken       String?   @map(name: "refresh_token")
++  refreshToken       String?
+-  accessToken        String?   @map(name: "access_token")
++  accessToken        String?
+-  accessTokenExpires DateTime? @map(name: "access_token_expires")
++  accessTokenExpires DateTime?
+-  createdAt          DateTime  @default(now()) @map(name: "created_at")
++  createdAt          DateTime  @default(now())
+-  updatedAt          DateTime  @default(now()) @map(name: "updated_at")
++  updatedAt          DateTime  @updatedAt
+
+-  @@index([providerAccountId], name: "providerAccountId")
+-  @@index([providerId], name: "providerId")
+-  @@index([userId], name: "userId")
+-  @@map(name: "accounts")
++  @@unique([providerId, providerAccountId])
+ }
+ 
+ model Session {
+-  id           Int      @default(autoincrement()) @id
++  id           Int      @id @default(autoincrement())
+-  userId       Int      @map(name: "user_id")
++  userId       Int
++  user         User     @relation(fields: [userId], references: [id])
+   expires      DateTime
+-  sessionToken String   @unique @map(name: "session_token")
++  sessionToken String   @unique
+-  accessToken  String   @unique @map(name: "access_token")
++  accessToken  String   @unique
+-  createdAt    DateTime @default(now()) @map(name: "created_at")
++  createdAt    DateTime @default(now())
+-  updatedAt    DateTime @default(now()) @map(name: "updated_at")
++  updatedAt    DateTime @updatedAt
+-
+-  @@map(name: "sessions")
+ }
+ 
+ model User {
+-  id            Int       @default(autoincrement()) @id
++  id            Int       @id @default(autoincrement())
+   name          String?
+   email         String?   @unique
+-  emailVerified DateTime? @map(name: "email_verified")
++  emailVerified DateTime?
+   image         String?
++  accounts      Account[]
++  sessions      Session[]
+-  createdAt     DateTime  @default(now()) @map(name: "created_at")
++  createdAt     DateTime  @default(now())
+-  updatedAt     DateTime  @default(now()) @map(name: "updated_at")
++  updatedAt     DateTime  @updatedAt
+
+-  @@map(name: "users")
+ }
+ 
+ model VerificationRequest {
+-  id         Int      @default(autoincrement()) @id
++  id         Int      @id @default(autoincrement())
+   identifier String
+   token      String   @unique
+   expires    DateTime
+-  createdAt  DateTime  @default(now()) @map(name: "created_at")
++  createdAt  DateTime @default(now())
+-  updatedAt  DateTime  @default(now()) @map(name: "updated_at")
++  updatedAt  DateTime @updatedAt
+
+-  @@map(name: "verification_requests")
+ }
+```
