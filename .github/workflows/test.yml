@@ -2,11 +2,8 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    
 jobs:
   # From https://github.com/marketplace/actions/workflow-run-cleanup-action
   # This action cleans up previously running instances of a workflow on the same branch.
