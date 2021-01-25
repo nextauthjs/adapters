@@ -344,7 +344,7 @@ export default function PrismaAdapter<
       }
     }
 
-    async function updateSession(session: Session, force: boolean) {
+    async function updateSession(session: Pick<Session, 'id' | 'expires' | 'sessionToken'>, force: boolean) {
       debug("UPDATE_SESSION", session);
       try {
         if (
@@ -385,11 +385,11 @@ export default function PrismaAdapter<
 
         const { id, expires } = session;
         sessionCache.set(session.sessionToken, session, maxAge(expires));
-        await prisma[Session as "session"].update({
+        const updatedSession = await prisma[Session as "session"].update({
           where: { id },
           data: { expires },
         });
-        return;
+        return updatedSession;
       } catch (error) {
         logger.error("UPDATE_SESSION_ERROR", error);
         // @ts-ignore
@@ -517,7 +517,7 @@ export default function PrismaAdapter<
         const hashedToken = createHash("sha256")
           .update(`${token}${secret}`)
           .digest("hex");
-        await prisma[VerificationRequest as "verificationRequest"].delete({
+        return await prisma[VerificationRequest as "verificationRequest"].delete({
           where: { token: hashedToken },
         });
       } catch (error) {
