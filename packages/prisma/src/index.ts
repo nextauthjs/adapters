@@ -19,14 +19,12 @@ import logger from "next-auth/dist/lib/logger";
 type IsValid<
   T extends Prisma.PrismaClient,
   U extends keyof T
-> = Required extends keyof T[U]
-  ? Required extends keyof T[U]
-    ? T[U][Required] extends (args?: any) => any
-      ? 1
-      : 0
+> = RequiredMethods extends keyof T[U]
+  ? T[U][RequiredMethods] extends (args?: any) => any
+    ? 1
     : 0
   : 0;
-type Required = "create" | "findUnique" | "delete" | "update";
+type RequiredMethods = "create" | "findUnique" | "delete" | "update";
 type Filter<T extends Prisma.PrismaClient> = {
   [K in keyof T]-?: {
     1: K;
@@ -49,26 +47,32 @@ const maxAge = (expires?: string | number | Date | null) =>
 
 export default function PrismaAdapter<
   T extends Prisma.PrismaClient,
-  U extends Filter<T>,
+  U extends Filter<T> extends string ? Filter<T> : never,
   A extends Filter<T>,
   S extends Filter<T>,
   VR extends Filter<T>
->(config: {
+>({
+  prisma,
+  modelMapping,
+}: {
   prisma: T;
-  modelMapping: {
+  modelMapping?: {
     User: U;
     Account: A;
     Session: S;
     VerificationRequest: VR;
   };
-}): Adapter<User, Profile, Session, VerificationRequest> {
-  const { prisma, modelMapping } = config;
-
-  const { User, Account, Session, VerificationRequest } = modelMapping;
+}) {
+  const { User, Account, Session, VerificationRequest } = modelMapping ?? {
+    User: "user",
+    Account: "account",
+    Session: "session",
+    VerificationRequest: "verificationRequest",
+  };
 
   async function getAdapter(
-    appOptions: AppOptions
-  ): Promise<AdapterInstance<User, Profile, Session, VerificationRequest>> {
+    appOptions?: Partial<AppOptions>
+  ) {
     function debug(debugCode: string, ...args: any) {
       logger.debug(`PRISMA_${debugCode}`, ...args);
     }
@@ -105,7 +109,7 @@ export default function PrismaAdapter<
         return user;
       } catch (error) {
         logger.error("CREATE_USER_ERROR", error);
-        throw new CreateUserError(error)
+        throw new CreateUserError(error);
       }
     }
 
@@ -173,7 +177,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error);
         // @ts-ignore
-        throw new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error)
+        throw new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error);
       }
     }
 
@@ -416,7 +420,7 @@ export default function PrismaAdapter<
     ) {
       debug("CREATE_VERIFICATION_REQUEST", identifier);
       try {
-        const { baseUrl } = appOptions;
+        const baseUrl = appOptions?.baseUrl ?? '';
         const { sendVerificationRequest, maxAge } = provider;
 
         // Store hashed token (using secret as salt) so that tokens cannot be exploited
@@ -458,7 +462,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("CREATE_VERIFICATION_REQUEST_ERROR", error);
         // @ts-ignore
-        throw new Error("CREATE_VERIFICATION_REQUEST_ERROR", error)
+        throw new Error("CREATE_VERIFICATION_REQUEST_ERROR", error);
       }
     }
 
@@ -497,7 +501,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("GET_VERIFICATION_REQUEST_ERROR", error);
         // @ts-ignore
-        throw new Error("GET_VERIFICATION_REQUEST_ERROR", error)
+        throw new Error("GET_VERIFICATION_REQUEST_ERROR", error);
       }
     }
 
@@ -519,8 +523,7 @@ export default function PrismaAdapter<
       } catch (error) {
         logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error);
         // @ts-ignore
-        throw new Error("DELETE_VERIFICATION_REQUEST_ERROR", error)
-
+        throw new Error("DELETE_VERIFICATION_REQUEST_ERROR", error);
       }
     }
     // @ts-ignore
