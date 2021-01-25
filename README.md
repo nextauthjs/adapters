@@ -13,6 +13,10 @@ In case you can also take on the maintenance of the adapter, let us know, and we
 - [Prisma](./packages/prisma/README.md)
 - [Example](./packages/example/README.md)
 
+## Publishing
+
+- [Lerna Independent Mode with Semver](https://samhogy.co.uk/2018/08/lerna-independent-mode-with-semver.html)
+
 ## License
 
 ISC
