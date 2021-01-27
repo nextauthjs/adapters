@@ -4,9 +4,13 @@
     "packages/*"
   ],
   "version": "independent",
+  "npmClient": "yarn",
+  "useWorkspaces": true,
   "command": {
     "publish": {
       "conventionalCommits": true
     }
-  }
+    
+  },
+  "ignoreChanges": ["**/__fixtures__/**", "**/tests/**", "**/*.md"]
 }
