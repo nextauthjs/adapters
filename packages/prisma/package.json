@@ -4,7 +4,8 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "setup": "prisma migrate reset --preview-feature -f", 
+    "setup": "yarn reset && yarn build", 
+    "reset": "prisma migrate reset --preview-feature -f",
     "build": "tsc",
     "test": "yarn setup && jest"
   },
