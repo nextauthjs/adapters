@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es5",                          
+    "module": "commonjs",
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "strict": true,                           
+    "esModuleInterop": true,                  
+    "skipLibCheck": true,                     
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": ["tests", "dist"]
+}

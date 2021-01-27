@@ -1,0 +1,16 @@
+{
+  "name": "adapters",
+  "version": "0.0.0",
+  "repository": "https://github.com/williamluke4/adapters.git",
+  "author": "William Luke <william@ordino.ai>",
+  "license": "ISC",
+  "private": true,
+  "scripts": {
+    "build": "lerna run build",
+    "publish": "lerna publish"
+  },
+  "devDependencies": {
+    "lerna": "^3.22.1",
+    "next-auth": "^3.1.0"
+  }
+}
