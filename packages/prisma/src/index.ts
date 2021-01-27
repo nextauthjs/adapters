@@ -77,20 +77,16 @@ export default function PrismaAdapter<
       logger.debug(`PRISMA_${debugCode}`, ...args);
     }
 
-    if (appOptions && (!appOptions.session || !appOptions.session.maxAge)) {
+    if (!appOptions?.session?.maxAge) {
       debug(
         "GET_ADAPTER",
         "Session expiry not configured (defaulting to 30 days"
       );
     }
 
-    const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000;
-    const sessionMaxAge = appOptions?.session?.maxAge
-      ? appOptions.session.maxAge * 1000
-      : defaultSessionMaxAge;
-    const sessionUpdateAge = appOptions?.session?.updateAge
-      ? appOptions.session.updateAge * 1000
-      : 0;
+    const defaultSessionMaxAge = 30 * 24 * 60 * 60
+    const sessionMaxAge = (appOptions?.session?.maxAge ?? defaultSessionMaxAge) * 1000
+    const sessionUpdateAge = (appOptions?.session?.updateAge ?? 0) * 1000
 
     async function createUser(profile: Profile & { emailVerified?: Date }) {
       debug("CREATE_USER", profile);
@@ -141,7 +137,7 @@ export default function PrismaAdapter<
       debug("GET_USER_BY_EMAIL", email);
       try {
         if (!email) {
-          return Promise.resolve(null);
+          return null
         }
         return prisma[User as "user"].findUnique({
           where: { email },
@@ -193,7 +189,7 @@ export default function PrismaAdapter<
             name,
             email,
             image,
-            emailVerified: emailVerified ? emailVerified.toISOString() : null,
+            emailVerified: emailVerified?.toISOString?.() ?? null,
           },
         });
       } catch (error) {
@@ -222,7 +218,7 @@ export default function PrismaAdapter<
       providerAccountId: string,
       refreshToken: string,
       accessToken: string,
-      accessTokenExpires: string | Date | null | undefined
+      accessTokenExpires?: string | Date | null
     ) {
       debug(
         "LINK_ACCOUNT",
@@ -235,7 +231,7 @@ export default function PrismaAdapter<
         accessTokenExpires
       );
       try {
-        return await prisma[Account as "account"].create({
+        return prisma[Account as "account"].create({
           data: {
             accessToken,
             refreshToken,
@@ -322,7 +318,7 @@ export default function PrismaAdapter<
         });
 
         // Check session has not expired (do not return it if it has)
-        if (session && session.expires && new Date() > session.expires) {
+        if (session?.expires && new Date() > session.expires) {
           await prisma[Session as "session"].delete({
             where: { sessionToken },
           });
@@ -385,11 +381,10 @@ export default function PrismaAdapter<
 
         const { id, expires } = session;
         sessionCache.set(session.sessionToken, session, maxAge(expires));
-        const updatedSession = await prisma[Session as "session"].update({
+        return prisma[Session as "session"].update({
           where: { id },
           data: { expires },
-        });
-        return updatedSession;
+        })
       } catch (error) {
         logger.error("UPDATE_SESSION_ERROR", error);
         // @ts-ignore
@@ -401,7 +396,7 @@ export default function PrismaAdapter<
       debug("DELETE_SESSION", sessionToken);
       try {
         sessionCache.del(sessionToken);
-        return await prisma[Session as "session"].delete({
+        return prisma[Session as "session"].delete({
           where: { sessionToken },
         });
       } catch (error) {
@@ -486,8 +481,7 @@ export default function PrismaAdapter<
         });
 
         if (
-          verificationRequest &&
-          verificationRequest.expires &&
+          verificationRequest?.expires &&
           new Date() > verificationRequest.expires
         ) {
           // Delete verification entry so it cannot be used again
@@ -517,7 +511,7 @@ export default function PrismaAdapter<
         const hashedToken = createHash("sha256")
           .update(`${token}${secret}`)
           .digest("hex");
-        return await prisma[VerificationRequest as "verificationRequest"].delete({
+        return prisma[VerificationRequest as "verificationRequest"].delete({
           where: { token: hashedToken },
         });
       } catch (error) {
@@ -527,7 +521,7 @@ export default function PrismaAdapter<
       }
     }
     // @ts-ignore
-    return Promise.resolve({
+    return {
       createUser,
       getUser,
       getUserByEmail,
@@ -543,7 +537,7 @@ export default function PrismaAdapter<
       createVerificationRequest,
       getVerificationRequest,
       deleteVerificationRequest,
-    });
+    }
   }
 
   return {

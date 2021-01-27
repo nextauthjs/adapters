@@ -1,4 +1,4 @@
-const Adapter = (config, options = {}) => {
+export default function Adapter (config, options = {}) {
   async function getAdapter (appOptions) {
     // Display debug output if debug option enabled
     function _debug (...args) {
@@ -82,7 +82,7 @@ const Adapter = (config, options = {}) => {
       return null
     }
 
-    return Promise.resolve({
+    return {
       createUser,
       getUser,
       getUserByEmail,
@@ -98,7 +98,7 @@ const Adapter = (config, options = {}) => {
       createVerificationRequest,
       getVerificationRequest,
       deleteVerificationRequest
-    })
+    }
   }
 
   return {
