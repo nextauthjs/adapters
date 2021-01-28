@@ -62,7 +62,7 @@ jobs:
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
       - name: Publish Stable
         if: github.event_name == 'push'
-        run: yarn stable --preid latest --dist-tag latest --yes 
+        run: yarn stable --dist-tag latest --yes 
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
