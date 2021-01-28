@@ -10,5 +10,7 @@
     "publish": {
       "conventionalCommits": true
     }
-  }
+    
+  },
+  "ignoreChanges": ["**/__fixtures__/**", "**/tests/**", "**/*.md"]
 }
