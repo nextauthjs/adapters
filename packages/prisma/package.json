@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "description": "",
   "main": "dist/index.js",
+  "private": false,
   "scripts": {
-    "setup": "yarn reset && yarn build", 
+    "setup": "yarn reset && yarn build",
     "reset": "prisma migrate reset --preview-feature -f",
     "build": "tsc",
     "test": "yarn setup && jest"
