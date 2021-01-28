@@ -54,5 +54,16 @@ jobs:
           node-version: "12"
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
-      - name: Publish to Stable
-        run: yarn publish --yes
+      - name: Publish Next
+        if: github.event_name == "pull_request"
+        run: yarn stable --preid next --dist-tag next --yes 
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+      - name: Publish Stable
+        if: github.event_name == "push"
+        run: yarn stable --preid latest --dist-tag latest --yes 
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+        

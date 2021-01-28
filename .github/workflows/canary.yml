@@ -5,6 +5,7 @@ on:
     branches:
       - canary
   pull_request:
+    types: [opened]
     branches:
       - canary
 
@@ -61,8 +62,15 @@ jobs:
           node-version: "12"
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
-      - name: Publish to Canary
-        run: yarn canary --yes
+      - name: Publish Canary
+        if: github.event_name == "push"
+        run: yarn canary --preid canary --dist-tag canary --yes
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+      - name: Publish PR
+        if: github.event_name == "pull_request"
+        run: yarn canary --preid pr --yes 
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
