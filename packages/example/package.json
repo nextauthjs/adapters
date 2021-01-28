@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "private": false,
-
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
   },
   "author": "William Luke",

@@ -4,6 +4,9 @@
   "description": "",
   "main": "dist/index.js",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "setup": "yarn reset && yarn build",
     "reset": "prisma migrate reset --preview-feature -f",
