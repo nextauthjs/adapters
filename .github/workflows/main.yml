@@ -55,4 +55,4 @@ jobs:
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
       - name: Publish to Stable
-        run: yarn publish
+        run: yarn publish --yes
