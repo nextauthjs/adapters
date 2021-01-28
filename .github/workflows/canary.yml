@@ -2,12 +2,10 @@ name: CI
 
 on:
   push:
-    branches:
-      - canary
+    branches: [canary]
   pull_request:
     types: [opened]
-    branches:
-      - canary
+    branches: [canary]
 
 jobs:
   # From https://github.com/marketplace/actions/workflow-run-cleanup-action
@@ -70,7 +68,7 @@ jobs:
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
       - name: Publish PR
         if: github.event_name == "pull_request"
-        run: yarn canary --preid pr --yes 
+        run: yarn canary --preid pr --yes
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
