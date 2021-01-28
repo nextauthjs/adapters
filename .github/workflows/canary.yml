@@ -5,8 +5,7 @@ on:
     branches:
       - canary
   pull_request:
-    branches:
-      - canary
+    types: [opened]
 
 jobs:
   # From https://github.com/marketplace/actions/workflow-run-cleanup-action
