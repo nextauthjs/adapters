@@ -3,6 +3,7 @@ import type { Client } from 'faunadb'
 import { createHash, randomBytes } from 'crypto'
 // @ts-ignore
 import logger from 'next-auth/dist/lib/logger'
+import { AppOptions } from 'next-auth'
 
 type Config = {
   faunaClient: Client
@@ -39,8 +40,8 @@ const Adapter = (config: Config, options: Options = {}) => {
     },
   } = config
 
-  async function getAdapter(appOptions: any) {
-    function _debug(debugCode: any, ...args: any) {
+  async function getAdapter(appOptions: Partial<AppOptions>) {
+    function _debug(debugCode: string, ...args: any) {
       logger.debug(`fauna_${debugCode}`, ...args)
     }
 
