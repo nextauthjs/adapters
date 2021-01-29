@@ -1,8 +1,27 @@
 import { query as q } from 'faunadb'
+import type { Client } from 'faunadb'
 import { createHash, randomBytes } from 'crypto'
 import logger from 'next-auth/dist/lib/logger'
 
-const Adapter = (config, options = {}) => {
+type Config = {
+  faunaClient: Client
+  collections?: {
+    User: string
+    Account: string
+    Session: string
+    VerificationRequest: string
+  }
+  indexes?: {
+    Account: string
+    User: string
+    Session: string
+    VerificationRequest: string
+  }
+}
+
+type Options = {}
+
+const Adapter = (config: Config, options: Options = {}) => {
   const {
     faunaClient,
     collections = {
