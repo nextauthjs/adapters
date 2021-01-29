@@ -8,7 +8,7 @@
   "scripts": {
     "build": "lerna run build",
     "publish": "lerna publish",
-    "canary": "lerna publish  --no-verify-access --canary"
+    "canary": "lerna publish --canary"
   },
   "workspaces": [
     "packages/*"
