@@ -75,7 +75,7 @@ jobs:
 
       - name: Publish Stable
         if: github.event_name == 'push'
-        run: yarn lerna publish --dist-tag latest --yes 
+        run: yarn lerna publish --dist-tag latest --yes --no-verify-access
         env:
           GITHUB_TOKEN: "${{ secrets.GH_PAT }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
