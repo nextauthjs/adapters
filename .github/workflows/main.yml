@@ -43,21 +43,17 @@ jobs:
       - name: test ${{ matrix.adapter }}
         run: yarn test
   publish:
+    if: github.event_name == 'push'
     needs: test-adapters
     runs-on: ubuntu-latest
     env:
       CI: 1
     steps:
       - uses: actions/checkout@v2
-        if: github.event_name == 'pull_request'
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.ref }}
 
-      - uses: actions/checkout@v2
-        if: github.event_name == 'push'
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
@@ -71,12 +67,10 @@ jobs:
             npm whoami
         env:
             NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Publish Next
-        if: github.event_name == 'pull_request'
-        run: yarn lerna publish --preid next --dist-tag next --yes 
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+      - name: Configure CI Git User
+        run: |
+          git config --global user.email octobot@github.com
+          git config --global user.name GitHub Actions
       - name: Publish Stable
         if: github.event_name == 'push'
         run: yarn lerna publish --dist-tag latest --yes 
