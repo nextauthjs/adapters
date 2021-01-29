@@ -1,7 +1,7 @@
 {
   "name": "@next-auth/example-adapter",
   "repository": "https://github.com/nextauthjs/adapters",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "{{example}} adapter for next-auth.",
   "keywords": [
     "next-auth",
