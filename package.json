@@ -1,8 +1,11 @@
 {
   "name": "adapters",
   "version": "0.0.0",
-  "repository": "https://github.com/williamluke4/adapters.git",
+  "repository": "https://github.com/nextauthjs/adapters.git",
   "author": "William Luke <william@ordino.ai>",
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
   "license": "ISC",
   "private": true,
   "scripts": {
