@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'crypto'
 // @ts-ignore
 import logger from 'next-auth/dist/lib/logger'
 import { AppOptions } from 'next-auth'
+import { EmailSessionProvider, Profile } from 'next-auth/adapters'
 
 type Config = {
   faunaClient: Client
@@ -23,7 +24,14 @@ type Config = {
 
 type Options = {}
 
-const Adapter = (config: Config, options: Options = {}) => {
+type User = Profile &
+  Partial<{
+    emailVerified: Date
+    createdAt: Date
+    updatedAt: Date
+  }>
+
+export default function FaunaAdapter(config: Config, options: Options = {}) {
   const {
     faunaClient,
     collections = {
@@ -50,7 +58,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       (appOptions?.session?.maxAge ?? defaultSessionMaxAge) * 1000
     const sessionUpdateAge = (appOptions?.session?.updateAge ?? 0) * 1000
 
-    async function createUser(profile: any) {
+    async function createUser(profile: User) {
       _debug('createUser', profile)
 
       const FQL = q.Create(q.Collection(collections.User), {
@@ -77,7 +85,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getUser(id: any) {
+    async function getUser(id: string) {
       _debug('getUser', id)
 
       const FQL = q.Get(q.Ref(q.Collection(collections.User), id))
@@ -93,7 +101,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getUserByEmail(email: any) {
+    async function getUserByEmail(email?: string) {
       _debug('getUserByEmail', email)
 
       if (!email) {
@@ -123,8 +131,8 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function getUserByProviderAccountId(
-      providerId: any,
-      providerAccountId: any
+      providerId: string,
+      providerAccountId: string
     ) {
       _debug('getUserByProviderAccountId', providerId, providerAccountId)
 
@@ -163,7 +171,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function updateUser(user: any) {
+    async function updateUser(user: User) {
       _debug('updateUser', user)
 
       const FQL = q.Update(q.Ref(q.Collection(collections.User), user.id), {
@@ -189,7 +197,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function deleteUser(userId: any) {
+    async function deleteUser(userId: string) {
       _debug('deleteUser', userId)
 
       const FQL = q.Delete(q.Ref(q.Collection(collections.User), userId))
@@ -203,13 +211,14 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function linkAccount(
-      userId: any,
-      providerId: any,
-      providerType: any,
-      providerAccountId: any,
-      refreshToken: any,
-      accessToken: any,
-      accessTokenExpires: any
+      userId: string,
+      providerId: string,
+      providerType: string,
+      providerAccountId: string,
+      refreshToken: string,
+      accessToken: string,
+      // TODO: What is type of accessTokenExpires?
+      accessTokenExpires: string | Date | null
     ) {
       _debug(
         'linkAccount',
@@ -232,6 +241,7 @@ const Adapter = (config: Config, options: Options = {}) => {
               providerAccountId: providerAccountId,
               refreshToken: refreshToken,
               accessToken: accessToken,
+              // TODO: Should this be q.Time(accessTokenExpires) ?
               accessTokenExpires: accessTokenExpires,
               createdAt: q.Now(),
               updatedAt: q.Now(),
@@ -247,9 +257,9 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function unlinkAccount(
-      userId: any,
-      providerId: any,
-      providerAccountId: any
+      userId: string,
+      providerId: string,
+      providerAccountId: string
     ) {
       _debug('unlinkAccount', userId, providerId, providerAccountId)
 
@@ -270,7 +280,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function createSession(user: any) {
+    async function createSession(user: User) {
       _debug('createSession', user)
 
       let expires: any = null
@@ -303,7 +313,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getSession(sessionToken: any) {
+    async function getSession(sessionToken: string) {
       _debug('getSession', sessionToken)
 
       try {
@@ -332,7 +342,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function updateSession(session: any, force: any) {
+    async function updateSession(session: any, force: boolean) {
       _debug('updateSession', session)
 
       try {
@@ -386,7 +396,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function _deleteSession(sessionToken: any) {
+    async function _deleteSession(sessionToken: string) {
       const FQL = q.Delete(
         q.Select('ref', q.Get(q.Match(q.Index(indexes.Session), sessionToken)))
       )
@@ -394,7 +404,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       return faunaClient.query(FQL)
     }
 
-    async function deleteSession(sessionToken: any) {
+    async function deleteSession(sessionToken: string) {
       _debug('deleteSession', sessionToken)
 
       try {
@@ -406,11 +416,11 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function createVerificationRequest(
-      identifier: any,
-      url: any,
-      token: any,
-      secret: any,
-      provider: any
+      identifier: string,
+      url: string,
+      token: string,
+      secret: string,
+      provider: EmailSessionProvider
     ) {
       _debug('createVerificationRequest', identifier)
 
@@ -463,10 +473,10 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function getVerificationRequest(
-      identifier: any,
-      token: any,
-      secret: any,
-      provider: any
+      identifier: string,
+      token: string,
+      secret: string,
+      provider: string
     ) {
       _debug('getVerificationRequest', identifier, token)
 
@@ -513,10 +523,10 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function deleteVerificationRequest(
-      identifier: any,
-      token: any,
-      secret: any,
-      provider: any
+      identifier: string,
+      token: string,
+      secret: string,
+      provider: string
     ) {
       _debug('deleteVerification', identifier, token)
 
@@ -560,8 +570,4 @@ const Adapter = (config: Config, options: Options = {}) => {
   return {
     getAdapter,
   }
-}
-
-export default {
-  Adapter,
 }
