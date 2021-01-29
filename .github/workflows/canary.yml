@@ -72,7 +72,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish PR
         if: github.event_name == 'pull_request'
-        run: yarn lerna publish --canary --preid pr --yes --no-verify-access
+        run: yarn lerna publish --canary --preid pr.${{github.event.number}} --yes --no-verify-access
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
