@@ -1,7 +1,12 @@
 {
   "name": "@next-auth/prisma-adapter",
   "version": "0.0.0",
-  "description": "",
+  "description": "Prisma adapter for next-auth.",
+  "keywords": ["next-auth", "next.js", "oauth", "prisma"],
+  "homepage": "https://next-auth.js.org",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
   "main": "dist/index.js",
   "private": false,
   "publishConfig": {
