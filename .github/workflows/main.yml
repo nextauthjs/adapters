@@ -51,6 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
       - run: git fetch --tags
       - uses: actions/setup-node@v2
