@@ -1,6 +1,7 @@
 import { query as q } from 'faunadb'
 import type { Client } from 'faunadb'
 import { createHash, randomBytes } from 'crypto'
+// @ts-ignore
 import logger from 'next-auth/dist/lib/logger'
 
 type Config = {
@@ -38,8 +39,8 @@ const Adapter = (config: Config, options: Options = {}) => {
     },
   } = config
 
-  async function getAdapter(appOptions) {
-    function _debug(debugCode, ...args) {
+  async function getAdapter(appOptions: any) {
+    function _debug(debugCode: any, ...args: any) {
       logger.debug(`fauna_${debugCode}`, ...args)
     }
 
@@ -53,7 +54,7 @@ const Adapter = (config: Config, options: Options = {}) => {
         ? appOptions.session.updateAge * 1000
         : 0
 
-    async function createUser(profile) {
+    async function createUser(profile: any) {
       _debug('createUser', profile)
 
       const FQL = q.Create(q.Collection(collections.User), {
@@ -70,7 +71,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       })
 
       try {
-        const newUser = await faunaClient.query(FQL)
+        const newUser: any = await faunaClient.query(FQL)
         newUser.data.id = newUser.ref.id
 
         return newUser.data
@@ -80,13 +81,13 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getUser(id) {
+    async function getUser(id: any) {
       _debug('getUser', id)
 
       const FQL = q.Get(q.Ref(q.Collection(collections.User), id))
 
       try {
-        const user = await faunaClient.query(FQL)
+        const user: any = await faunaClient.query(FQL)
         user.data.id = user.ref.id
 
         return user.data
@@ -96,7 +97,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getUserByEmail(email) {
+    async function getUserByEmail(email: any) {
       _debug('getUserByEmail', email)
 
       if (!email) {
@@ -111,7 +112,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       )
 
       try {
-        const user = await faunaClient.query(FQL)
+        const user: any = await faunaClient.query(FQL)
 
         if (user == null) {
           return null
@@ -125,7 +126,10 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getUserByProviderAccountId(providerId, providerAccountId) {
+    async function getUserByProviderAccountId(
+      providerId: any,
+      providerAccountId: any
+    ) {
       _debug('getUserByProviderAccountId', providerId, providerAccountId)
 
       const FQL = q.Let(
@@ -148,7 +152,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       )
 
       try {
-        const user = await faunaClient.query(FQL)
+        const user: any = await faunaClient.query(FQL)
 
         if (user == null) {
           return null
@@ -163,7 +167,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function updateUser(user) {
+    async function updateUser(user: any) {
       _debug('updateUser', user)
 
       const FQL = q.Update(q.Ref(q.Collection(collections.User), user.id), {
@@ -179,7 +183,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       })
 
       try {
-        const user = await faunaClient.query(FQL)
+        const user: any = await faunaClient.query(FQL)
         user.data.id = user.ref.id
 
         return user.data
@@ -189,7 +193,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function deleteUser(userId) {
+    async function deleteUser(userId: any) {
       _debug('deleteUser', userId)
 
       const FQL = q.Delete(q.Ref(q.Collection(collections.User), userId))
@@ -203,13 +207,13 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function linkAccount(
-      userId,
-      providerId,
-      providerType,
-      providerAccountId,
-      refreshToken,
-      accessToken,
-      accessTokenExpires
+      userId: any,
+      providerId: any,
+      providerType: any,
+      providerAccountId: any,
+      refreshToken: any,
+      accessToken: any,
+      accessTokenExpires: any
     ) {
       _debug(
         'linkAccount',
@@ -223,7 +227,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       )
 
       try {
-        const account = await faunaClient.query(
+        const account: any = await faunaClient.query(
           q.Create(q.Collection(collections.Account), {
             data: {
               userId: userId,
@@ -246,7 +250,11 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function unlinkAccount(userId, providerId, providerAccountId) {
+    async function unlinkAccount(
+      userId: any,
+      providerId: any,
+      providerAccountId: any
+    ) {
       _debug('unlinkAccount', userId, providerId, providerAccountId)
 
       const FQL = q.Delete(
@@ -266,10 +274,10 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function createSession(user) {
+    async function createSession(user: any) {
       _debug('createSession', user)
 
-      let expires = null
+      let expires: any = null
       if (sessionMaxAge) {
         const dateExpires = new Date()
         dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
@@ -288,7 +296,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       })
 
       try {
-        const session = await faunaClient.query(FQL)
+        const session: any = await faunaClient.query(FQL)
 
         session.data.id = session.ref.id
 
@@ -299,13 +307,13 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getSession(sessionToken) {
+    async function getSession(sessionToken: any) {
       _debug('getSession', sessionToken)
 
       try {
         var sessionFQL = q.Get(q.Match(q.Index(indexes.Session), sessionToken))
 
-        const session = await faunaClient.query({
+        const session: any = await faunaClient.query({
           id: q.Select(['ref', 'id'], sessionFQL),
           userId: q.Select(['data', 'userId'], sessionFQL),
           expires: q.ToMillis(q.Select(['data', 'expires'], sessionFQL)),
@@ -328,7 +336,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function updateSession(session, force) {
+    async function updateSession(session: any, force: any) {
       _debug('updateSession', session)
 
       try {
@@ -364,7 +372,7 @@ const Adapter = (config: Config, options: Options = {}) => {
         const newExpiryDate = new Date()
         newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
 
-        const updatedSession = await faunaClient.query(
+        const updatedSession: any = await faunaClient.query(
           q.Update(q.Ref(q.Collection(collections.Session), session.id), {
             data: {
               expires: q.Time(newExpiryDate.toISOString()),
@@ -382,7 +390,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function _deleteSession(sessionToken) {
+    async function _deleteSession(sessionToken: any) {
       const FQL = q.Delete(
         q.Select('ref', q.Get(q.Match(q.Index(indexes.Session), sessionToken)))
       )
@@ -390,7 +398,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       return faunaClient.query(FQL)
     }
 
-    async function deleteSession(sessionToken) {
+    async function deleteSession(sessionToken: any) {
       _debug('deleteSession', sessionToken)
 
       try {
@@ -402,11 +410,11 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function createVerificationRequest(
-      identifier,
-      url,
-      token,
-      secret,
-      provider
+      identifier: any,
+      url: any,
+      token: any,
+      secret: any,
+      provider: any
     ) {
       _debug('createVerificationRequest', identifier)
 
@@ -439,7 +447,7 @@ const Adapter = (config: Config, options: Options = {}) => {
       })
 
       try {
-        const verificationRequest = await faunaClient.query(FQL)
+        const verificationRequest: any = await faunaClient.query(FQL)
 
         // With the verificationCallback on a provider, you can send an email, or queue
         // an email to be sent, or perform some other action (e.g. send a text message)
@@ -458,7 +466,12 @@ const Adapter = (config: Config, options: Options = {}) => {
       }
     }
 
-    async function getVerificationRequest(identifier, token, secret, provider) {
+    async function getVerificationRequest(
+      identifier: any,
+      token: any,
+      secret: any,
+      provider: any
+    ) {
       _debug('getVerificationRequest', identifier, token)
 
       const hashedToken = createHash('sha256')
@@ -479,9 +492,10 @@ const Adapter = (config: Config, options: Options = {}) => {
       )
 
       try {
-        const { ref, request: verificationRequest } = await faunaClient.query(
-          FQL
-        )
+        const {
+          ref,
+          request: verificationRequest,
+        }: any = await faunaClient.query(FQL)
         const nowDate = Date.now()
 
         if (
@@ -503,10 +517,10 @@ const Adapter = (config: Config, options: Options = {}) => {
     }
 
     async function deleteVerificationRequest(
-      identifier,
-      token,
-      secret,
-      provider
+      identifier: any,
+      token: any,
+      secret: any,
+      provider: any
     ) {
       _debug('deleteVerification', identifier, token)
 
