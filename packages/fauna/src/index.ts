@@ -45,15 +45,10 @@ const Adapter = (config: Config, options: Options = {}) => {
       logger.debug(`fauna_${debugCode}`, ...args)
     }
 
-    const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000
+    const defaultSessionMaxAge = 30 * 24 * 60 * 60
     const sessionMaxAge =
-      appOptions && appOptions.session && appOptions.session.maxAge
-        ? appOptions.session.maxAge * 1000
-        : defaultSessionMaxAge
-    const sessionUpdateAge =
-      appOptions && appOptions.session && appOptions.session.updateAge
-        ? appOptions.session.updateAge * 1000
-        : 0
+      (appOptions?.session?.maxAge ?? defaultSessionMaxAge) * 1000
+    const sessionUpdateAge = (appOptions?.session?.updateAge ?? 0) * 1000
 
     async function createUser(profile: any) {
       _debug('createUser', profile)
