@@ -1,5 +1,6 @@
 {
   "name": "@next-auth/prisma-adapter",
+  "repository": "https://github.com/nextauthjs/adapters",
   "version": "0.0.0",
   "description": "",
   "main": "dist/index.js",
