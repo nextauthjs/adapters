@@ -54,15 +54,23 @@ jobs:
           node-version: "12"
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
+      - name: Authenticate with Registry
+        run: |
+            yarn logout
+            echo "registry=http://registry.npmjs.org/" >> .npmrc
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+            npm whoami
+        env:
+            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish Next
         if: github.event_name == 'pull_request'
-        run: yarn stable --preid next --dist-tag next --yes 
+        run: yarn lerna publish --preid next --dist-tag next --yes 
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
       - name: Publish Stable
         if: github.event_name == 'push'
-        run: yarn stable --dist-tag latest --yes 
+        run: yarn lerna publish --dist-tag latest --yes 
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"

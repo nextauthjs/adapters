@@ -51,12 +51,6 @@ jobs:
         with:
           # pulls all commits (needed for lerna / semantic release to correctly version)
           fetch-depth: "0"
-
-      # # pulls all tags (needed for lerna / semantic release to correctly version)
-
-      # - name: Fetch all tags
-      #   run: git fetch --depth 1 origin +refs/tags/*:refs/tags/*
-
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
@@ -75,12 +69,10 @@ jobs:
         run: yarn lerna publish --canary --preid canary --dist-tag canary --yes --no-verify-access
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish PR
         if: github.event_name == 'pull_request'
         run: yarn lerna publish --canary --preid pr --yes --no-verify-access
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
