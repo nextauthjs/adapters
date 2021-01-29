@@ -53,7 +53,7 @@ model VerificationRequest {
 
 Changes from the original Prisma Adapter
 
-```
+```diff
  model Account {
 -  id                 Int       @default(autoincrement()) @id
 +  id                 Int       @id @default(autoincrement())
