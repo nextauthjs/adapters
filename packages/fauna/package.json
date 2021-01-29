@@ -9,13 +9,13 @@
   "author": "Bhanu Teja P",
   "license": "ISC",
   "peerDependencies": {
-    "next-auth": "^3.1.0",
-    "faunadb": "^4.0.2"
+    "faunadb": "^4.0.2",
+    "next-auth": "^3.1.0"
   },
-  "dependencies": {
-    "crypto": "^1.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "faunadb": "^4.0.2"
+    "@types/next-auth": "^3.1.23",
+    "faunadb": "^4.0.2",
+    "next-auth": "^3.1.0"
   }
 }

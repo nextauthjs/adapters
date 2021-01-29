@@ -1,5 +1,6 @@
 import { query as q } from 'faunadb'
 import { createHash, randomBytes } from 'crypto'
+import logger from 'next-auth/dist/lib/logger'
 
 const Adapter = (config, options = {}) => {
   const {
@@ -20,7 +21,7 @@ const Adapter = (config, options = {}) => {
 
   async function getAdapter(appOptions) {
     function _debug(debugCode, ...args) {
-      console.log(`fauna_${debugCode}`, ...args)
+      logger.debug(`fauna_${debugCode}`, ...args)
     }
 
     const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000
