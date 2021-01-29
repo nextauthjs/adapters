@@ -46,9 +46,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: 1
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -76,6 +73,14 @@ jobs:
       - name: Publish Canary
         if: github.event_name == 'push'
         run: yarn lerna publish --canary --preid canary --dist-tag canary --yes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish PR
         if: github.event_name == 'pull_request'
         run: yarn lerna publish --canary --preid pr --yes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
