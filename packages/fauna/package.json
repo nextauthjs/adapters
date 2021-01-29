@@ -1,20 +1,21 @@
 {
-  "name": "@next-auth/example-adapter",
+  "name": "@next-auth/fauna-adapter",
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "William Luke",
+  "author": "Bhanu Teja P",
   "license": "ISC",
   "peerDependencies": {
-    "next-auth": "^3.1.0"
+    "next-auth": "^3.1.0",
+    "faunadb": "^4.0.2"
   },
   "dependencies": {
-    
+    "crypto": "^1.0.1"
   },
   "devDependencies": {
-    
+    "faunadb": "^4.0.2"
   }
 }
