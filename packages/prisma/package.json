@@ -1,10 +1,20 @@
 {
   "name": "@next-auth/prisma-adapter",
+  "repository": "https://github.com/nextauthjs/adapters",
   "version": "0.0.0",
-  "description": "",
+  "description": "Prisma adapter for next-auth.",
+  "keywords": ["next-auth", "next.js", "oauth", "prisma"],
+  "homepage": "https://next-auth.js.org",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
   "main": "dist/index.js",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "setup": "yarn reset && yarn build", 
+    "setup": "yarn reset && yarn build",
     "reset": "prisma migrate reset --preview-feature -f",
     "build": "tsc",
     "test": "yarn setup && jest"

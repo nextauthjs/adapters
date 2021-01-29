@@ -1,14 +1,20 @@
 {
   "name": "adapters",
   "version": "0.0.0",
-  "repository": "https://github.com/williamluke4/adapters.git",
+  "repository": "https://github.com/nextauthjs/adapters.git",
   "author": "William Luke <william@ordino.ai>",
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
   "license": "ISC",
   "private": true,
   "scripts": {
     "build": "lerna run build",
-    "publish": "lerna publish"
+    "canary": "lerna publish --canary"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "lerna": "^3.22.1",
     "next-auth": "^3.1.0"
