@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # From https://github.com/marketplace/actions/workflow-run-cleanup-action
+  # This action cleans up previously running instances of a workflow on the same branch.
+  # This accomplishes the task of automatically cancelling CI runs on pushes to the same branch,
+  # which is a common feature in most CI systems but currently not possible with GitHub actions.
+  cleanup-runs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rokroskar/workflow-run-cleanup-action@master
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
+
+  test-adapters:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter:
+          - prisma
+    defaults:
+      run:
+        working-directory: ./packages/${{ matrix.adapter }}
+    env:
+      CI: 1
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "12"
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+      - name: test ${{ matrix.adapter }}
+        run: yarn test
+  publish:
+    needs: test-adapters
+    runs-on: ubuntu-latest
+    env:
+      CI: 1
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # pulls all commits (needed for lerna / semantic release to correctly version)
+          fetch-depth: "0"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "12"
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+      - name: Authenticate with Registry
+        run: |
+            yarn logout
+            echo "registry=http://registry.npmjs.org/" >> .npmrc
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+            npm whoami
+        env:
+            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish Next
+        if: github.event_name == 'pull_request'
+        run: yarn lerna publish --preid next --dist-tag next --yes 
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+      - name: Publish Stable
+        if: github.event_name == 'push'
+        run: yarn lerna publish --dist-tag latest --yes 
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+        

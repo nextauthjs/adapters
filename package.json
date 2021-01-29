@@ -7,8 +7,11 @@
   "private": true,
   "scripts": {
     "build": "lerna run build",
-    "publish": "lerna publish"
+    "canary": "lerna publish --canary"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "lerna": "^3.22.1",
     "next-auth": "^3.1.0"
