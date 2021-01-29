@@ -46,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: 1
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -64,14 +66,8 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Publish Canary
         if: github.event_name == 'push'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn canary --preid canary --dist-tag canary --yes
       - name: Publish PR
         if: github.event_name == 'pull_request'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn canary --preid pr --yes
         
