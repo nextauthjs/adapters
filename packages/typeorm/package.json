@@ -1,0 +1,47 @@
+{
+  "name": "@next-auth/typeorm-adapter",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "version": "0.0.0",
+  "description": "TypeORM adapter for next-auth.",
+  "author": "Iain Collins",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "typeorm"
+  ],
+  "homepage": "https://next-auth.js.org",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "main": "dist/index.js",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "crypto-js": "^4.0.0",
+    "require_optional": "^1.0.1",
+    "typeorm": "^0.2.30"
+  },
+  "devDependencies": {
+    "standard": "^16.0.3"
+  },
+  "peerOptionalDependencies": {
+    "mongodb": "^3.5.9",
+    "mysql": "^2.18.1",
+    "mssql": "^6.2.1",
+    "pg": "^8.2.1"
+  },
+  "standard": {
+    "ignore": [
+      "test/",
+      "pages/",
+      "components/"
+    ]
+  }
+}
