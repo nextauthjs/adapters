@@ -71,11 +71,13 @@ jobs:
         run: |
           git config --global user.email octobot@github.com
           git config --global user.name "@$GITHUB_ACTOR"
+          git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
+
       - name: Publish Stable
         if: github.event_name == 'push'
         run: yarn lerna publish --dist-tag latest --yes 
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GH_PAT }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         
