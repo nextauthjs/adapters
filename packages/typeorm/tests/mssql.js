@@ -3,7 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const mssql = require('mssql');
-const Adapters = require('../adapters');
+const TypeORMAdapter = require('typeorm-adapter').default  
+const Adapters = require('./adapters');
 
 const SCHEMA_FILE = path.join(__dirname, '/fixtures/schemas/mssql.json');
 const expectedSchema = JSON.parse(fs.readFileSync(SCHEMA_FILE));
@@ -19,7 +20,15 @@ function printSchema() {
     try {
       connection = await mssql.connect(databaseUrl);           
       // Invoke adapter to sync schema
-      await (Adapters.Default(databaseUrl)).getAdapter();
+      // await (Adapter(databaseUrl)).getAdapter();
+      await TypeORMAdapter.newAdapter({
+        type: "mssql",
+        host: "127.0.0.1",
+        port: 27017,
+        username: "nextauth",
+        password: "password",
+        database: "nextauth"
+      })
       // query schema
       const { recordset } = await connection.query(
         `use [nextauth]; ` +

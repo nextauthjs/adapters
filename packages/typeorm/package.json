@@ -27,7 +27,7 @@
     "test:db:postgres": "node tests/postgres.js",
     "test:db:mongodb": "node tests/mongodb.js",
     "test:db:mssql": "node tests/mssql.js",
-    "db:start": "docker-compose -f tests/docker/databases.yml up -d",
+    "db:start": "docker-compose --verbose -f tests/docker/databases.yml up -d",
     "db:stop": "docker-compose -f tests/docker/databases.yml down",
     "lint": "standard",
     "lint:fix": "standard --fix"
@@ -43,8 +43,13 @@
     "@types/next-auth": "^3.1.23",
     "assert": "^2.0.0",
     "jest": "^26.6.3",
+    "mongodb": "^3.6.3",
+    "mssql": "^6.3.1",
+    "mysql": "^2.18.1",
     "next-auth": "^3.1.0",
-    "standard": "^16.0.3"
+    "pg": "^8.5.1",
+    "standard": "^16.0.3",
+    "typeorm-adapter": "^1.2.0"
   },
   "peerOptionalDependencies": {
     "next-auth": "^3.1.0",
