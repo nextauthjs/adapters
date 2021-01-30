@@ -2,14 +2,13 @@
 // Placeholder for schema test (will use test framework, this is temporary)
 const fs = require('fs');
 const path = require('path');
-const mssql = require('mssql');
-const TypeORMAdapter = require('typeorm-adapter').default  
-const Adapters = require('./adapters');
+const mssql = require('mssql')
+// const TypeORMAdapter = require('typeorm-adapter').default  
 
 const SCHEMA_FILE = path.join(__dirname, '/fixtures/schemas/mssql.json');
 const expectedSchema = JSON.parse(fs.readFileSync(SCHEMA_FILE));
 const TABLES = Object.keys(expectedSchema);
-const databaseUrl = `mssql://nextauth:password@127.0.0.1:1433/nextauth?synchronize=true`;
+// const databaseUrl = `mssql://nextauth:password@127.0.0.1:1433/nextauth`;
 
 function printSchema() {
   return new Promise(async (resolve) => {
@@ -18,17 +17,27 @@ function printSchema() {
      */
     let connection;
     try {
-      connection = await mssql.connect(databaseUrl);           
+      connection = await mssql.connect({
+        type: "mssql",
+        server: "localhost",
+        port: 1433,
+        user: "nextauth",
+        password: "password",
+        database: "nextauth",
+        options: { enableArithAbort: true }
+      })
+        // databaseUrl);
       // Invoke adapter to sync schema
       // await (Adapter(databaseUrl)).getAdapter();
-      await TypeORMAdapter.newAdapter({
-        type: "mssql",
-        host: "127.0.0.1",
-        port: 27017,
-        username: "nextauth",
-        password: "password",
-        database: "nextauth"
-      })
+      // await TypeORMAdapter.newAdapter({
+      //   type: "mssql",
+      //   host: "127.0.0.1",
+      //   port: 1433,
+      //   username: "nextauth",
+      //   password: "password",
+      //   database: "nextauth"
+      // })
+
       // query schema
       const { recordset } = await connection.query(
         `use [nextauth]; ` +

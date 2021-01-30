@@ -1,4 +1,4 @@
-version: '2'
+version: '3.6'
 
 services:
 
@@ -11,3 +11,5 @@ services:
       MYSQL_PASSWORD: password
       MYSQL_DATABASE: nextauth
       MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+    volumes: 
+      - ./init/mysql:/docker-entrypoint-initdb.d

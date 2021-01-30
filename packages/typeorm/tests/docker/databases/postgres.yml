@@ -1,4 +1,4 @@
-version: '2'
+version: '3.6'
 
 services:
 
@@ -9,3 +9,5 @@ services:
       POSTGRES_USER: nextauth
       POSTGRES_PASSWORD: password
       POSTGRES_DB: nextauth
+    volumes: 
+      - ./init/postgres:/docker-entrypoint-initdb.d

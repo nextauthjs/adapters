@@ -3,10 +3,9 @@
 const fs = require('fs')
 const path = require('path')
 const mysql = require('mysql')
-const TypeORMAdapter = require('typeorm-adapter').default  
+// const TypeORMAdapter = require('typeorm-adapter').default  
 
 const { compareSchemas } = require('./lib/db')
-const Adapters = require('./adapters')
 
 const TABLES = ['users', 'accounts', 'sessions', 'verification_requests']
 const SCHEMA_FILE = path.join(__dirname, '/fixtures/schemas/mysql.json')
@@ -14,15 +13,14 @@ const SCHEMA_FILE = path.join(__dirname, '/fixtures/schemas/mysql.json')
 function printSchema () {
   return new Promise(async (resolve) => {
     // Invoke adapter to sync schema
-    // const adapter = await TypeORMAdapter.newAdapter('mysql://nextauth:password@127.0.0.1:3306/nextauth?synchronize=true')
-    const adapter = await TypeORMAdapter.newAdapter({
-        type: "mysql",
-        host: "127.0.0.1",
-        port: 3306,
-        username: "nextauth",
-        password: "password",
-        database: "nextauth"
-      })
+    // const adapter = await TypeORMAdapter.newAdapter({
+    //     type: "mysql",
+    //     host: "127.0.0.1",
+    //     port: 3306,
+    //     username: "nextauth",
+    //     password: "password",
+    //     database: "nextauth"
+    //   })
     // await adapter.getAdapter()
 
     const connection = mysql.createConnection({

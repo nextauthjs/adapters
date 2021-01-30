@@ -3,10 +3,9 @@
 const fs = require('fs')
 const path = require('path')
 const { Client } = require('pg')
-const TypeORMAdapter = require('typeorm-adapter').default  
+// const TypeORMAdapter = require('typeorm-adapter').default  
 
 const { compareSchemas } = require('./lib/db')
-const Adapters = require('./adapters')
 
 const TABLES = ['users', 'accounts', 'sessions', 'verification_requests']
 const SCHEMA_FILE = path.join(__dirname, '/fixtures/schemas/postgres.json')
@@ -14,15 +13,14 @@ const SCHEMA_FILE = path.join(__dirname, '/fixtures/schemas/postgres.json')
 function printSchema () {
   return new Promise(async (resolve) => {
     // Invoke adapter to sync schema
-    // const adapter = await TypeORMAdapter.newAdapter('postgres://nextauth:password@127.0.0.1:5432/nextauth?synchronize=true')
-    const adapter = await TypeORMAdapter.newAdapter({
-        type: "postgres",
-        host: "127.0.0.1",
-        port: 5432,
-        username: "nextauth",
-        password: "password",
-        database: "nextauth"
-      })
+    // const adapter = await TypeORMAdapter.newAdapter({
+    //     type: "postgres",
+    //     host: "127.0.0.1",
+    //     port: 5432,
+    //     username: "nextauth",
+    //     password: "password",
+    //     database: "nextauth"
+    //   })
     // await adapter.getAdapter()
 
     const connection = new Client({

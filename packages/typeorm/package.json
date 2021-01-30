@@ -27,7 +27,7 @@
     "test:db:postgres": "node tests/postgres.js",
     "test:db:mongodb": "node tests/mongodb.js",
     "test:db:mssql": "node tests/mssql.js",
-    "db:start": "docker-compose --verbose -f tests/docker/databases.yml up -d",
+    "db:start": "docker-compose -f tests/docker/databases.yml up",
     "db:stop": "docker-compose -f tests/docker/databases.yml down",
     "lint": "standard",
     "lint:fix": "standard --fix"
