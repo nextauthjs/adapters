@@ -25,6 +25,7 @@ jobs:
       matrix:
         adapter:
           - prisma
+          - typeorm
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
@@ -58,7 +59,6 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Authenticate with Registry
         run: |
-            npm whoami
             yarn logout
             echo "registry=http://registry.npmjs.org/" >> .npmrc
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
