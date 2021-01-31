@@ -10,7 +10,7 @@
   ],
   "homepage": "https://next-auth.js.org",
   "bugs": {
-    "url": "https://github.com/nextauthjs/next-auth/issues"
+    "url": "https://github.com/nextauthjs/adapters/issues"
   },
   "main": "dist/index.js",
   "private": false,
@@ -18,7 +18,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "yarn build && jest"
   },
   "author": "Ron Houben",
   "contributors": [

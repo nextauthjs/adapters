@@ -1,7 +1,6 @@
 import admin from "firebase-admin";
 import { createHash, randomBytes } from "crypto";
 import { AppOptions } from "next-auth";
-
 interface IAdapterConfig {
   firestoreAdmin: admin.firestore.Firestore;
   usersCollection: "users" | string;
