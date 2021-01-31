@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+
+  fauna:
+    image: fauna/faunadb
+    restart: always 
+  ports:
+    - 8443:8443

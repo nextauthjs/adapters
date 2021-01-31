@@ -1,0 +1,26 @@
+{
+  "name": "@next-auth/faunadb-adapter",
+  "version": "0.0.0",
+  "description": "FaunaDB adapter for next-auth.",
+  "keywords": ["next-auth", "next.js", "oauth", "faunadb"],
+  "homepage": "https://next-auth.js.org",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/adapters/issues"
+  },
+  "main": "index.js",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node tests/index.test.js"
+  },
+  "author": "William Luke",
+  "license": "ISC",
+  "dependencies": {
+    "faunadb": "^4.0.2"
+  },
+  "devDependencies": {
+    "assert": "^2.0.0"
+  }
+}
