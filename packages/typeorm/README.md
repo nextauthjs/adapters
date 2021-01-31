@@ -27,7 +27,7 @@ This is the TypeORM Adapter for [`next-auth`](https://next-auth.js.org). This pa
 npm install --save-prod next-auth @next-auth/typeorm-adapter
 ```
 
-2. Add this adapter to your `/src/pages/api/[...nextauth].js` next-auth configuration object.
+2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
 ```js
 import NextAuth from "next-auth"
