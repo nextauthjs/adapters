@@ -48,8 +48,10 @@
     "standard": "^16.0.3",
     "typeorm-adapter": "^1.2.0"
   },
+  "peerDependencies": {
+    "next-auth": "^3.1.0"
+  },
   "peerOptionalDependencies": {
-    "next-auth": "^3.1.0",
     "mongodb": "^3.5.9",
     "mysql": "^2.18.1",
     "mssql": "^6.2.1",
