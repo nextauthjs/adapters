@@ -13,7 +13,7 @@
   ],
   "homepage": "https://next-auth.js.org",
   "bugs": {
-    "url": "https://github.com/nextauthjs/next-auth/issues"
+    "url": "https://github.com/nextauthjs/adapters/issues"
   },
   "main": "index.js",
   "private": false,
