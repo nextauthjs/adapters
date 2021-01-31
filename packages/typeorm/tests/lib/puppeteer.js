@@ -26,8 +26,7 @@ const puppeteerOptions = {
 // not the x86 build that Puppeteer uses by default. Supporting this allows us
 // to test easily from remote locations that are outside cloud networks like
 // AWS, GPC, Azure, etc. and avoids tests being thwarted by IP blocklists.
-if (CI)
-  {puppeteerOptions.executablePath = 'chromium-browser'}
+if (CI) { puppeteerOptions.executablePath = 'chromium-browser' }
 
 module.exports = {
   puppeteer: puppeteerExtra,

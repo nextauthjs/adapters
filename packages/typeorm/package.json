@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
-  "main": "dist/index.js",
+  "main": "index.js",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -23,12 +23,12 @@
   "scripts": {
     "test": "yarn run db:start && yarn run test:db && yarn run db:stop",
     "test:db": "yarn run test:db:mysql && yarn run test:db:postgres && yarn run test:db:mongodb && yarn run test:db:mssql",
-    "test:db:mysql": "node tests/mysql.js",
-    "test:db:postgres": "node tests/postgres.js",
+    "test:db:mysql": "./tests/mysql.sh",
+    "test:db:postgres": "./tests/postgres.sh",
     "test:db:mongodb": "node tests/mongodb.js",
     "test:db:mssql": "node tests/mssql.js",
-    "db:start": "docker-compose -f tests/docker/databases.yml up",
-    "db:stop": "docker-compose -f tests/docker/databases.yml down",
+    "db:start": "docker-compose -f tests/docker/databases.yml up -d",
+    "db:stop": "docker-compose -f tests/docker/databases.yml down --remove",
     "lint": "standard",
     "lint:fix": "standard --fix"
   },
@@ -38,9 +38,6 @@
     "typeorm": "^0.2.30"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.20",
-    "@types/lru-cache": "^5.1.0",
-    "@types/next-auth": "^3.1.23",
     "assert": "^2.0.0",
     "jest": "^26.6.3",
     "mongodb": "^3.6.3",
