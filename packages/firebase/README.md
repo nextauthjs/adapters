@@ -1,17 +1,13 @@
 <p align="center">
    <br/>
    <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
-   <h3 align="center">NextAuth.js - <b>Firebase Adapter</b></h3>
-   <p align="center">Authentication for Next.js</p>
+   <h3 align="center"><b>Firebase Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/workflows/Build%20Test/badge.svg" alt="Build Test" />
-      <img src="https://github.com/nextauthjs/adapters/workflows/Integration%20Test/badge.svg" alt="Integration Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/firebase-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/dm/@next-auth/firebase-adapter" alt="Downloads" />
-      <img src="https://img.shields.io/github/stars/nextauthjs/adapters" alt="Github Stars" />
       <img src="https://img.shields.io/github/v/release/nextauthjs/adapters?include_prereleases" alt="Github Release" />
    </p>
 </p>
@@ -32,7 +28,7 @@ npm install next-auth @next-auth/firebase-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import FirebaseAdapter from "@next-auth/firebase-adapter"
+import Adapter from "@next-auth/firebase-adapter"
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -44,7 +40,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapter: FirebaseAdapter.Adapter({
+  adapter: Adapter({
     firestoreAdmin: firebaseAdmin().firestore,
     usersCollection: "users",
     accountsCollection: "accounts",
