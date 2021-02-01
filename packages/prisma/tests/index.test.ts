@@ -18,8 +18,10 @@ const prismaAdapter = Adapter({
 let session: Session | null = null;
 let user: User | null = null;
 let verificationRequest: VerificationRequest | null = null;
+
 const SECRET = "secret";
 const TOKEN = "secret";
+
 describe("adapter functions", () => {
   afterAll(async () => {
     prisma.$disconnect();
@@ -33,7 +35,8 @@ describe("adapter functions", () => {
       name: "test",
       image: "https://",
     } as any);
-    expect(user.id).toMatchInlineSnapshot(`1`);
+
+    expect(typeof user.id === "string").toBeTruthy();
     expect(user.email).toMatchInlineSnapshot(`"test@next-auth.com"`);
     expect(user.name).toMatchInlineSnapshot(`"test"`);
     expect(user.image).toMatchInlineSnapshot(`"https://"`);
@@ -51,13 +54,14 @@ describe("adapter functions", () => {
   // Sessions
   test("createSession", async () => {
     let adapter = await prismaAdapter.getAdapter();
+    if (!user) throw new Error("No User Available");
     session = await adapter.createSession({
-      id: 1,
+      id: user.id,
     } as any);
 
     expect(session.sessionToken.length).toMatchInlineSnapshot(`64`);
     expect(session.accessToken.length).toMatchInlineSnapshot(`64`);
-    expect(session.userId).toMatchInlineSnapshot(`1`);
+    expect(typeof session.userId === "string").toBeTruthy();
   });
 
   test("getSession", async () => {
@@ -68,7 +72,7 @@ describe("adapter functions", () => {
 
     expect(result.sessionToken).toEqual(session.sessionToken);
     expect(result.accessToken).toEqual(session.accessToken);
-    expect(result.userId).toMatchInlineSnapshot(`1`);
+    expect(typeof result.userId === "string").toBeTruthy();
   });
   test("updateSession", async () => {
     let adapter = await prismaAdapter.getAdapter();
@@ -102,12 +106,10 @@ describe("adapter functions", () => {
       SECRET,
       {
         maxAge: 90,
-        sendVerificationRequest: async (request: any) => {
-          
-        },
+        sendVerificationRequest: async (request: any) => {},
       } as any
     );
-    expect(verificationRequest.id).toEqual(1);
+    expect(typeof verificationRequest.id === "string").toBeTruthy();
     expect(verificationRequest.identifier).toEqual("any");
   });
   test("getVerificationRequest", async () => {
@@ -133,7 +135,7 @@ describe("adapter functions", () => {
       SECRET,
       "provider"
     );
-    expect(result.id).toEqual(verificationRequest.id)
+    expect(result.id).toEqual(verificationRequest.id);
   });
 
   // test('linkAccount', async () => {
