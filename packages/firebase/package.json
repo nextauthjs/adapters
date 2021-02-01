@@ -21,7 +21,7 @@
     "build": "tsc",
     "test": "yarn build && jest"
   },
-  "author": "Ron Houben",
+  "author": "Ron Houben <ron.houben85@gmail.com>",
   "contributors": [
     "Nico Domino <yo@ndo.dev>"
   ],
