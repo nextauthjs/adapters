@@ -2,8 +2,8 @@
 
 ```prisma filename="schema.prisma"
 model Account {
-  id                 String   @id @default(uuid())
-  userId             String
+  id                 Int       @id @default(autoincrement())
+  userId             Int
   providerType       String
   providerId         String
   providerAccountId  String
@@ -18,8 +18,8 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  userId       String
+  id           Int      @id @default(autoincrement())
+  userId       Int
   expires      DateTime
   sessionToken String   @unique
   accessToken  String   @unique
@@ -29,7 +29,7 @@ model Session {
 }
 
 model User {
-  id            String   @id @default(uuid())
+  id            Int       @id @default(autoincrement())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
@@ -41,7 +41,7 @@ model User {
 }
 
 model VerificationRequest {
-  id         String   @id @default(uuid())
+  id         Int      @id @default(autoincrement())
   identifier String
   token      String   @unique
   expires    DateTime
@@ -56,10 +56,10 @@ Changes from the original Prisma Adapter
 ```diff
  model Account {
 -  id                 Int       @default(autoincrement()) @id
-+  id                 String    @id @default(uuid())
++  id                 Int       @id @default(autoincrement())
 -  compoundId         String    @unique @map(name: "compound_id")
 -  userId             Int       @map(name: "user_id")
-+  userId             String
++  userId             Int
 +  user               User      @relation(fields: [userId], references: [id])
 -  providerType       String    @map(name: "provider_type")
 +  providerType       String
@@ -87,9 +87,9 @@ Changes from the original Prisma Adapter
 
  model Session {
 -  id           Int      @default(autoincrement()) @id
-+  id           String   @id @default(uuid())
++  id           Int      @id @default(autoincrement())
 -  userId       Int      @map(name: "user_id")
-+  userId       String
++  userId       Int
 +  user         User     @relation(fields: [userId], references: [id])
    expires      DateTime
 -  sessionToken String   @unique @map(name: "session_token")
@@ -106,7 +106,7 @@ Changes from the original Prisma Adapter
 
  model User {
 -  id            Int       @default(autoincrement()) @id
-+  id            String    @id @default(uuid())
++  id            Int       @id @default(autoincrement())
    name          String?
    email         String?   @unique
 -  emailVerified DateTime? @map(name: "email_verified")
@@ -124,7 +124,7 @@ Changes from the original Prisma Adapter
 
  model VerificationRequest {
 -  id         Int      @default(autoincrement()) @id
-+  id         String      @id @default(uuid())
++  id         Int      @id @default(autoincrement())
    identifier String
    token      String   @unique
    expires    DateTime

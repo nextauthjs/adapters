@@ -70,7 +70,7 @@ jobs:
       - name: Configure CI Git User
         run: |
           git config --global user.email octobot@github.com
-          git config --global user.name "@$GITHUB_ACTOR"
+          git config --global user.name "@williamluke4"
           git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
 
       - name: Publish Stable
