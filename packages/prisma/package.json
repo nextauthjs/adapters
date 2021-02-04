@@ -1,7 +1,7 @@
 {
   "name": "@next-auth/prisma-adapter",
   "repository": "https://github.com/nextauthjs/adapters",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Prisma adapter for next-auth.",
   "author": "William Luke",
   "license": "ISC",
