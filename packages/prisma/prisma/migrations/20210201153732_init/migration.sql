@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "Account" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "userId" TEXT NOT NULL,
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER NOT NULL,
     "providerType" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
     "providerAccountId" TEXT NOT NULL,
@@ -15,8 +15,8 @@ CREATE TABLE "Account" (
 
 -- CreateTable
 CREATE TABLE "Session" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "userId" TEXT NOT NULL,
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER NOT NULL,
     "expires" DATETIME NOT NULL,
     "sessionToken" TEXT NOT NULL,
     "accessToken" TEXT NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE "Session" (
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT,
     "email" TEXT,
     "emailVerified" DATETIME,
@@ -38,25 +38,20 @@ CREATE TABLE "User" (
 
 -- CreateTable
 CREATE TABLE "VerificationRequest" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires" DATETIME NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
-
 -- CreateIndex
 CREATE UNIQUE INDEX "Account.providerId_providerAccountId_unique" ON "Account"("providerId", "providerAccountId");
-
 -- CreateIndex
 CREATE UNIQUE INDEX "Session.sessionToken_unique" ON "Session"("sessionToken");
-
 -- CreateIndex
 CREATE UNIQUE INDEX "Session.accessToken_unique" ON "Session"("accessToken");
-
 -- CreateIndex
 CREATE UNIQUE INDEX "User.email_unique" ON "User"("email");
-
 -- CreateIndex
 CREATE UNIQUE INDEX "VerificationRequest.token_unique" ON "VerificationRequest"("token");

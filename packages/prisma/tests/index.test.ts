@@ -36,7 +36,7 @@ describe("adapter functions", () => {
       image: "https://",
     } as any);
 
-    expect(typeof user.id === "string").toBeTruthy();
+    expect(user.id).toEqual(1);
     expect(user.email).toMatchInlineSnapshot(`"test@next-auth.com"`);
     expect(user.name).toMatchInlineSnapshot(`"test"`);
     expect(user.image).toMatchInlineSnapshot(`"https://"`);
@@ -61,7 +61,7 @@ describe("adapter functions", () => {
 
     expect(session.sessionToken.length).toMatchInlineSnapshot(`64`);
     expect(session.accessToken.length).toMatchInlineSnapshot(`64`);
-    expect(typeof session.userId === "string").toBeTruthy();
+    expect(session.userId).toEqual(1);
   });
 
   test("getSession", async () => {
@@ -72,7 +72,7 @@ describe("adapter functions", () => {
 
     expect(result.sessionToken).toEqual(session.sessionToken);
     expect(result.accessToken).toEqual(session.accessToken);
-    expect(typeof result.userId === "string").toBeTruthy();
+    expect(result.userId).toEqual(1);
   });
   test("updateSession", async () => {
     let adapter = await prismaAdapter.getAdapter();
@@ -109,7 +109,7 @@ describe("adapter functions", () => {
         sendVerificationRequest: async (request: any) => {},
       } as any
     );
-    expect(typeof verificationRequest.id === "string").toBeTruthy();
+    expect(verificationRequest.id).toEqual(1);
     expect(verificationRequest.identifier).toEqual("any");
   });
   test("getVerificationRequest", async () => {
