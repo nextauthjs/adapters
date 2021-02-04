@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.2](https://github.com/nextauthjs/adapters/compare/@next-auth/prisma-adapter@0.4.1...@next-auth/prisma-adapter@0.4.2) (2021-02-04)
+
+
+### Bug Fixes
+
+* **prisma:** remove reject not found ([780e481](https://github.com/nextauthjs/adapters/commit/780e481a466449efc1e407babbc7a925e0a8b27e))
+* **prisma:** revert uuid ([eb81f72](https://github.com/nextauthjs/adapters/commit/eb81f72aa9730b2575200fd7604177b660a4b44d))
+
+
+
+
+
 ## [0.4.1](https://github.com/nextauthjs/adapters/compare/@next-auth/prisma-adapter@0.4.0...@next-auth/prisma-adapter@0.4.1) (2021-02-04)
 
 
