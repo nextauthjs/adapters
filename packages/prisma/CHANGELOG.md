@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/nextauthjs/adapters/compare/@next-auth/prisma-adapter@0.3.0...@next-auth/prisma-adapter@0.4.0) (2021-02-04)
+
+
+### Bug Fixes
+
+* build packages before publish ([#21](https://github.com/nextauthjs/adapters/issues/21)) ([3b6db4c](https://github.com/nextauthjs/adapters/commit/3b6db4cdeb031f5c7a8e637172e048d7de2e036c))
+
+
+### Features
+
+* **prisma:** switch to uuid ([#20](https://github.com/nextauthjs/adapters/issues/20)) ([3efb47a](https://github.com/nextauthjs/adapters/commit/3efb47a710abc85e5f7267c5e9d9f083b6675a55))
+
+
+
+
+
 # 0.3.0 (2021-01-29)
 
 

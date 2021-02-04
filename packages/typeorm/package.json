@@ -1,7 +1,7 @@
 {
   "name": "@next-auth/typeorm-adapter",
   "repository": "https://github.com/nextauthjs/adapters",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "TypeORM adapter for next-auth.",
   "author": "Iain Collins",
   "license": "ISC",
