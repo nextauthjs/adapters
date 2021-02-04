@@ -113,7 +113,6 @@ export default function PrismaAdapter<
           (async () => {
             const user = (await prisma[User as "user"].findUnique({
               where: { id },
-              rejectOnNotFound: true,
             })) as Prisma.User;
             userCache.set(user.id, user);
           })();
@@ -135,7 +134,6 @@ export default function PrismaAdapter<
         }
         return prisma[User as "user"].findUnique({
           where: { email },
-          rejectOnNotFound: true,
         }) as Promise<Prisma.User>;
       } catch (error) {
         logger.error("GET_USER_BY_EMAIL_ERROR", error);
@@ -161,7 +159,6 @@ export default function PrismaAdapter<
           include: {
             user: true,
           },
-          rejectOnNotFound: true,
         });
         return account!.user;
       } catch (error) {
