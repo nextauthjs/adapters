@@ -103,7 +103,7 @@ export default function PrismaAdapter<
       }
     }
 
-    async function getUser(id: string) {
+    async function getUser(id: number) {
       debug("GET_USER", id);
       try {
         const cachedUser = userCache.get(id);
@@ -193,7 +193,7 @@ export default function PrismaAdapter<
       }
     }
 
-    async function deleteUser(userId: string) {
+    async function deleteUser(userId: number) {
       userCache.del(userId);
       debug("DELETE_USER", userId);
       try {
@@ -206,7 +206,7 @@ export default function PrismaAdapter<
     }
 
     async function linkAccount(
-      userId: string,
+      userId: number,
       providerId: string,
       providerType: string,
       providerAccountId: string,
