@@ -27,6 +27,7 @@ jobs:
       matrix:
         adapter:
           - prisma
+          - typeorm
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
