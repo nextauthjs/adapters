@@ -3,6 +3,8 @@
   "repository": "https://github.com/nextauthjs/adapters",
   "version": "0.3.0",
   "description": "Prisma adapter for next-auth.",
+  "author": "William Luke",
+  "license": "ISC",
   "keywords": [
     "next-auth",
     "next.js",
@@ -24,8 +26,10 @@
     "build": "tsc",
     "test": "yarn setup && jest"
   },
-  "author": "William Luke",
-  "license": "ISC",
+  "files": [
+    "README.md",
+    "dist"
+  ],
   "peerDependencies": {
     "@prisma/client": "^2.15.0",
     "next-auth": "^3.1.0"

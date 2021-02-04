@@ -25,6 +25,7 @@ jobs:
       matrix:
         adapter:
           - prisma
+          - typeorm
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
@@ -56,6 +57,8 @@ jobs:
           node-version: "12"
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
+      - name: Build
+        run: yarn build
       - name: Authenticate with Registry
         run: |
             yarn logout

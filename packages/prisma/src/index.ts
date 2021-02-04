@@ -109,7 +109,7 @@ export default function PrismaAdapter<
       }
     }
 
-    async function getUser(id: number) {
+    async function getUser(id: string) {
       debug("GET_USER", id);
       try {
         const cachedUser = userCache.get(id);
@@ -199,7 +199,7 @@ export default function PrismaAdapter<
       }
     }
 
-    async function deleteUser(userId: number) {
+    async function deleteUser(userId: string) {
       userCache.del(userId);
       debug("DELETE_USER", userId);
       try {
@@ -212,7 +212,7 @@ export default function PrismaAdapter<
     }
 
     async function linkAccount(
-      userId: number,
+      userId: string,
       providerId: string,
       providerType: string,
       providerAccountId: string,
@@ -520,7 +520,6 @@ export default function PrismaAdapter<
         throw new Error("DELETE_VERIFICATION_REQUEST_ERROR", error);
       }
     }
-    // @ts-ignore
     return {
       createUser,
       getUser,
