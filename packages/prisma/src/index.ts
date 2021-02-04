@@ -160,7 +160,7 @@ export default function PrismaAdapter<
             user: true,
           },
         });
-        return account!.user;
+        return account?.user ?? null;
       } catch (error) {
         logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error);
         // @ts-ignore
