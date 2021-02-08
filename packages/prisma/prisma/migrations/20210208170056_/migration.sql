@@ -45,13 +45,18 @@ CREATE TABLE "VerificationRequest" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Account.providerId_providerAccountId_unique" ON "Account"("providerId", "providerAccountId");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Session.sessionToken_unique" ON "Session"("sessionToken");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Session.accessToken_unique" ON "Session"("accessToken");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User.email_unique" ON "User"("email");
+
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationRequest.token_unique" ON "VerificationRequest"("token");
+CREATE UNIQUE INDEX "VerificationRequest.identifier_token_unique" ON "VerificationRequest"("identifier", "token");
