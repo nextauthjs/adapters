@@ -471,7 +471,12 @@ export default function PrismaAdapter<
         const verificationRequest = await prisma[
           VerificationRequest as "verificationRequest"
         ].findUnique({
-          where: { token: hashedToken },
+          where: { 
+            identifier_token: {
+              identifier: identifier,
+              token: hashedToken
+            },
+          },
         });
 
         if (
@@ -480,7 +485,12 @@ export default function PrismaAdapter<
         ) {
           // Delete verification entry so it cannot be used again
           await prisma[VerificationRequest as "verificationRequest"].delete({
-            where: { token: hashedToken },
+            where: { 
+              identifier_token: {
+                identifier: identifier,
+                token: hashedToken
+              },
+            },
           });
           return null;
         }
@@ -506,7 +516,12 @@ export default function PrismaAdapter<
           .update(`${token}${secret}`)
           .digest("hex");
         return prisma[VerificationRequest as "verificationRequest"].delete({
-          where: { token: hashedToken },
+          where: { 
+            identifier_token: {
+              identifier: identifier,
+              token: hashedToken
+            },
+          },
         });
       } catch (error) {
         logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error);
