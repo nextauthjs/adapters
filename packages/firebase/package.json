@@ -23,7 +23,8 @@
   },
   "author": "Ron Houben <ron.houben85@gmail.com>",
   "contributors": [
-    "Nico Domino <yo@ndo.dev>"
+    "Nico Domino <yo@ndo.dev>",
+    "Alex Meuer <github@alexmeuer.com>"
   ],
   "license": "MIT",
   "peerDependencies": {

@@ -1,4 +1,4 @@
-import admin from "firebase-admin";
+import * as admin from "firebase-admin";
 import { createHash, randomBytes } from "crypto";
 import { AppOptions } from "next-auth";
 interface IAdapterConfig {
@@ -44,7 +44,7 @@ export interface ISession {
   updatedAt: admin.firestore.FieldValue;
 }
 
-interface IVerificationRequest {
+export interface IVerificationRequest {
   id: string;
   identifier: string;
   token: string;
@@ -54,10 +54,10 @@ interface IVerificationRequest {
 }
 
 const Adapter = (config: IAdapterConfig, _options = {}) => {
-  async function getAdapter(appOptions: AppOptions) {
+  async function getAdapter(appOptions?: Partial<AppOptions>) {
     // Display debug output if debug option enabled
     function _debug(...args: any[]) {
-      if (appOptions.debug) {
+      if (appOptions && appOptions.debug) {
         console.log("[next-auth][firebase][debug]", ...args);
       }
     }
@@ -479,7 +479,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     ): Promise<IVerificationRequest> {
       _debug("createVerificationRequest", identifier);
       const { firestoreAdmin, verificationRequestsCollection } = config;
-      const { baseUrl } = appOptions;
+      const baseUrl = appOptions?.baseUrl ?? '';
       const { sendVerificationRequest, maxAge } = provider;
 
       // Store hashed token (using secret as salt) so that tokens cannot be exploited
@@ -633,9 +633,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
   };
 };
 
-export default {
-  Adapter,
-};
+export default Adapter;
 
 // helpers
 function removeUndefinedValues(obj: any) {
