@@ -1,37 +1,7 @@
 import { query as q } from 'faunadb'
-import type { Client } from 'faunadb'
 import { createHash, randomBytes } from 'crypto'
-// @ts-ignore
-import logger from 'next-auth/dist/lib/logger'
-import { AppOptions } from 'next-auth'
-import { EmailSessionProvider, Profile } from 'next-auth/adapters'
 
-type Config = {
-  faunaClient: Client
-  collections?: {
-    User: string
-    Account: string
-    Session: string
-    VerificationRequest: string
-  }
-  indexes?: {
-    Account: string
-    User: string
-    Session: string
-    VerificationRequest: string
-  }
-}
-
-type Options = {}
-
-type User = Profile &
-  Partial<{
-    emailVerified: Date
-    createdAt: Date
-    updatedAt: Date
-  }>
-
-export default function FaunaAdapter(config: Config, options: Options = {}) {
+const Adapter = (config, options = {}) => {
   const {
     faunaClient,
     collections = {
@@ -48,34 +18,40 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
     },
   } = config
 
-  async function getAdapter(appOptions: Partial<AppOptions>) {
-    function _debug(debugCode: string, ...args: any) {
-      logger.debug(`fauna_${debugCode}`, ...args)
+  async function getAdapter(appOptions) {
+    function _debug(debugCode, ...args) {
+      // console.info(`fauna_${debugCode}`, ...args)
     }
 
-    const defaultSessionMaxAge = 30 * 24 * 60 * 60
+    const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000
     const sessionMaxAge =
-      (appOptions?.session?.maxAge ?? defaultSessionMaxAge) * 1000
-    const sessionUpdateAge = (appOptions?.session?.updateAge ?? 0) * 1000
+      appOptions && appOptions.session && appOptions.session.maxAge
+        ? appOptions.session.maxAge * 1000
+        : defaultSessionMaxAge
+    const sessionUpdateAge =
+      appOptions && appOptions.session && appOptions.session.updateAge
+        ? appOptions.session.updateAge * 1000
+        : 0
 
-    async function createUser(profile: User) {
+    async function createUser(profile) {
       _debug('createUser', profile)
 
       const FQL = q.Create(q.Collection(collections.User), {
         data: {
-          name: profile.name ?? '',
-          email: profile.email ?? '',
-          image: profile.image ?? '',
+          name: profile.name,
+          email: profile.email,
+          image: profile.image,
           emailVerified: profile.emailVerified
             ? q.Time(profile.emailVerified.toISOString())
             : null,
+          username: profile.username,
           createdAt: q.Now(),
           updatedAt: q.Now(),
         },
       })
 
       try {
-        const newUser: any = await faunaClient.query(FQL)
+        const newUser = await faunaClient.query(FQL)
         newUser.data.id = newUser.ref.id
 
         return newUser.data
@@ -85,13 +61,13 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function getUser(id: string) {
+    async function getUser(id) {
       _debug('getUser', id)
 
       const FQL = q.Get(q.Ref(q.Collection(collections.User), id))
 
       try {
-        const user: any = await faunaClient.query(FQL)
+        const user = await faunaClient.query(FQL)
         user.data.id = user.ref.id
 
         return user.data
@@ -101,7 +77,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function getUserByEmail(email?: string) {
+    async function getUserByEmail(email) {
       _debug('getUserByEmail', email)
 
       if (!email) {
@@ -116,7 +92,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       )
 
       try {
-        const user: any = await faunaClient.query(FQL)
+        const user = await faunaClient.query(FQL)
 
         if (user == null) {
           return null
@@ -130,10 +106,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function getUserByProviderAccountId(
-      providerId: string,
-      providerAccountId: string
-    ) {
+    async function getUserByProviderAccountId(providerId, providerAccountId) {
       _debug('getUserByProviderAccountId', providerId, providerAccountId)
 
       const FQL = q.Let(
@@ -156,7 +129,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       )
 
       try {
-        const user: any = await faunaClient.query(FQL)
+        const user = await faunaClient.query(FQL)
 
         if (user == null) {
           return null
@@ -171,23 +144,24 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function updateUser(user: User) {
+    async function updateUser(user) {
       _debug('updateUser', user)
 
       const FQL = q.Update(q.Ref(q.Collection(collections.User), user.id), {
         data: {
-          name: user.name ?? '',
-          email: user.email ?? '',
-          image: user.image ?? '',
+          name: user.name,
+          email: user.email,
+          image: user.image,
           emailVerified: user.emailVerified
             ? q.Time(user.emailVerified.toISOString())
             : null,
+          username: user.username,
           updatedAt: q.Now(),
         },
       })
 
       try {
-        const user: any = await faunaClient.query(FQL)
+        const user = await faunaClient.query(FQL)
         user.data.id = user.ref.id
 
         return user.data
@@ -197,7 +171,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function deleteUser(userId: string) {
+    async function deleteUser(userId) {
       _debug('deleteUser', userId)
 
       const FQL = q.Delete(q.Ref(q.Collection(collections.User), userId))
@@ -211,14 +185,13 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
     }
 
     async function linkAccount(
-      userId: string,
-      providerId: string,
-      providerType: string,
-      providerAccountId: string,
-      refreshToken: string,
-      accessToken: string,
-      // TODO: What is type of accessTokenExpires?
-      accessTokenExpires: string | Date | null
+      userId,
+      providerId,
+      providerType,
+      providerAccountId,
+      refreshToken,
+      accessToken,
+      accessTokenExpires
     ) {
       _debug(
         'linkAccount',
@@ -232,7 +205,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       )
 
       try {
-        const account: any = await faunaClient.query(
+        const account = await faunaClient.query(
           q.Create(q.Collection(collections.Account), {
             data: {
               userId: userId,
@@ -241,7 +214,6 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
               providerAccountId: providerAccountId,
               refreshToken: refreshToken,
               accessToken: accessToken,
-              // TODO: Should this be q.Time(accessTokenExpires) ?
               accessTokenExpires: accessTokenExpires,
               createdAt: q.Now(),
               updatedAt: q.Now(),
@@ -256,11 +228,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function unlinkAccount(
-      userId: string,
-      providerId: string,
-      providerAccountId: string
-    ) {
+    async function unlinkAccount(userId, providerId, providerAccountId) {
       _debug('unlinkAccount', userId, providerId, providerAccountId)
 
       const FQL = q.Delete(
@@ -280,10 +248,10 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function createSession(user: User) {
+    async function createSession(user) {
       _debug('createSession', user)
 
-      let expires: any = null
+      let expires = null
       if (sessionMaxAge) {
         const dateExpires = new Date()
         dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
@@ -302,7 +270,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       })
 
       try {
-        const session: any = await faunaClient.query(FQL)
+        const session = await faunaClient.query(FQL)
 
         session.data.id = session.ref.id
 
@@ -313,13 +281,13 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function getSession(sessionToken: string) {
+    async function getSession(sessionToken) {
       _debug('getSession', sessionToken)
 
       try {
         var sessionFQL = q.Get(q.Match(q.Index(indexes.Session), sessionToken))
 
-        const session: any = await faunaClient.query({
+        const session = await faunaClient.query({
           id: q.Select(['ref', 'id'], sessionFQL),
           userId: q.Select(['data', 'userId'], sessionFQL),
           expires: q.ToMillis(q.Select(['data', 'expires'], sessionFQL)),
@@ -342,7 +310,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function updateSession(session: any, force: boolean) {
+    async function updateSession(session, force) {
       _debug('updateSession', session)
 
       try {
@@ -378,7 +346,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
         const newExpiryDate = new Date()
         newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
 
-        const updatedSession: any = await faunaClient.query(
+        const updatedSession = await faunaClient.query(
           q.Update(q.Ref(q.Collection(collections.Session), session.id), {
             data: {
               expires: q.Time(newExpiryDate.toISOString()),
@@ -396,7 +364,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function _deleteSession(sessionToken: string) {
+    async function _deleteSession(sessionToken) {
       const FQL = q.Delete(
         q.Select('ref', q.Get(q.Match(q.Index(indexes.Session), sessionToken)))
       )
@@ -404,7 +372,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       return faunaClient.query(FQL)
     }
 
-    async function deleteSession(sessionToken: string) {
+    async function deleteSession(sessionToken) {
       _debug('deleteSession', sessionToken)
 
       try {
@@ -416,11 +384,11 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
     }
 
     async function createVerificationRequest(
-      identifier: string,
-      url: string,
-      token: string,
-      secret: string,
-      provider: EmailSessionProvider
+      identifier,
+      url,
+      token,
+      secret,
+      provider
     ) {
       _debug('createVerificationRequest', identifier)
 
@@ -453,7 +421,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       })
 
       try {
-        const verificationRequest: any = await faunaClient.query(FQL)
+        const verificationRequest = await faunaClient.query(FQL)
 
         // With the verificationCallback on a provider, you can send an email, or queue
         // an email to be sent, or perform some other action (e.g. send a text message)
@@ -472,12 +440,7 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       }
     }
 
-    async function getVerificationRequest(
-      identifier: string,
-      token: string,
-      secret: string,
-      provider: string
-    ) {
+    async function getVerificationRequest(identifier, token, secret, provider) {
       _debug('getVerificationRequest', identifier, token)
 
       const hashedToken = createHash('sha256')
@@ -498,10 +461,9 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
       )
 
       try {
-        const {
-          ref,
-          request: verificationRequest,
-        }: any = await faunaClient.query(FQL)
+        const { ref, request: verificationRequest } = await faunaClient.query(
+          FQL
+        )
         const nowDate = Date.now()
 
         if (
@@ -523,10 +485,10 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
     }
 
     async function deleteVerificationRequest(
-      identifier: string,
-      token: string,
-      secret: string,
-      provider: string
+      identifier,
+      token,
+      secret,
+      provider
     ) {
       _debug('deleteVerification', identifier, token)
 
@@ -570,4 +532,8 @@ export default function FaunaAdapter(config: Config, options: Options = {}) {
   return {
     getAdapter,
   }
+}
+
+export default {
+  Adapter,
 }
