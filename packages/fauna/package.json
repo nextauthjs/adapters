@@ -2,7 +2,7 @@
   "name": "@next-auth/fauna-adapter",
   "version": "0.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "private": false,
   "publishConfig": {
     "access": "public"
