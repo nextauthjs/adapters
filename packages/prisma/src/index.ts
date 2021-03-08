@@ -1,15 +1,10 @@
 import * as Prisma from "@prisma/client";
-import { Session, User, VerificationRequest } from "@prisma/client";
+import { Session, User } from "@prisma/client";
 import { createHash, randomBytes } from "crypto";
 import { klona } from "klona";
 import LRU from "lru-cache";
 import { AppOptions } from "next-auth";
-import {
-  Adapter,
-  AdapterInstance,
-  EmailSessionProvider,
-  Profile,
-} from "next-auth/adapters";
+import { EmailSessionProvider, Profile } from "next-auth/adapters";
 // !TODO Expose `errors` and `logger` in next-auth
 // @ts-ignore
 import { CreateUserError } from "next-auth/dist/lib/errors";
@@ -70,9 +65,7 @@ export default function PrismaAdapter<
     VerificationRequest: "verificationRequest",
   };
 
-  async function getAdapter(
-    appOptions?: Partial<AppOptions>
-  ) {
+  async function getAdapter(appOptions?: Partial<AppOptions>) {
     function debug(debugCode: string, ...args: any) {
       logger.debug(`PRISMA_${debugCode}`, ...args);
     }
@@ -84,9 +77,10 @@ export default function PrismaAdapter<
       );
     }
 
-    const defaultSessionMaxAge = 30 * 24 * 60 * 60
-    const sessionMaxAge = (appOptions?.session?.maxAge ?? defaultSessionMaxAge) * 1000
-    const sessionUpdateAge = (appOptions?.session?.updateAge ?? 0) * 1000
+    const defaultSessionMaxAge = 30 * 24 * 60 * 60;
+    const sessionMaxAge =
+      (appOptions?.session?.maxAge ?? defaultSessionMaxAge) * 1000;
+    const sessionUpdateAge = (appOptions?.session?.updateAge ?? 0) * 1000;
 
     async function createUser(profile: Profile & { emailVerified?: Date }) {
       debug("CREATE_USER", profile);
@@ -119,7 +113,6 @@ export default function PrismaAdapter<
           (async () => {
             const user = (await prisma[User as "user"].findUnique({
               where: { id },
-              rejectOnNotFound: true,
             })) as Prisma.User;
             userCache.set(user.id, user);
           })();
@@ -137,11 +130,10 @@ export default function PrismaAdapter<
       debug("GET_USER_BY_EMAIL", email);
       try {
         if (!email) {
-          return null
+          return null;
         }
         return prisma[User as "user"].findUnique({
           where: { email },
-          rejectOnNotFound: true,
         }) as Promise<Prisma.User>;
       } catch (error) {
         logger.error("GET_USER_BY_EMAIL_ERROR", error);
@@ -161,15 +153,14 @@ export default function PrismaAdapter<
           where: {
             providerId_providerAccountId: {
               providerId: providerId,
-              providerAccountId: providerAccountId,
+              providerAccountId: String(providerAccountId),
             },
           },
           include: {
             user: true,
           },
-          rejectOnNotFound: true,
         });
-        return account!.user;
+        return account?.user ?? null;
       } catch (error) {
         logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error);
         // @ts-ignore
@@ -259,7 +250,7 @@ export default function PrismaAdapter<
         return prisma[Account as "account"].delete({
           where: {
             providerId_providerAccountId: {
-              providerAccountId: providerAccountId,
+              providerAccountId: String(providerAccountId),
               providerId: providerId,
             },
           },
@@ -340,7 +331,10 @@ export default function PrismaAdapter<
       }
     }
 
-    async function updateSession(session: Pick<Session, 'id' | 'expires' | 'sessionToken'>, force: boolean) {
+    async function updateSession(
+      session: Pick<Session, "id" | "expires" | "sessionToken">,
+      force: boolean
+    ) {
       debug("UPDATE_SESSION", session);
       try {
         if (
@@ -384,7 +378,7 @@ export default function PrismaAdapter<
         return prisma[Session as "session"].update({
           where: { id },
           data: { expires },
-        })
+        });
       } catch (error) {
         logger.error("UPDATE_SESSION_ERROR", error);
         // @ts-ignore
@@ -415,7 +409,7 @@ export default function PrismaAdapter<
     ) {
       debug("CREATE_VERIFICATION_REQUEST", identifier);
       try {
-        const baseUrl = appOptions?.baseUrl ?? '';
+        const baseUrl = appOptions?.baseUrl ?? "";
         const { sendVerificationRequest, maxAge } = provider;
 
         // Store hashed token (using secret as salt) so that tokens cannot be exploited
@@ -477,7 +471,12 @@ export default function PrismaAdapter<
         const verificationRequest = await prisma[
           VerificationRequest as "verificationRequest"
         ].findUnique({
-          where: { token: hashedToken },
+          where: { 
+            identifier_token: {
+              identifier: identifier,
+              token: hashedToken
+            },
+          },
         });
 
         if (
@@ -486,7 +485,12 @@ export default function PrismaAdapter<
         ) {
           // Delete verification entry so it cannot be used again
           await prisma[VerificationRequest as "verificationRequest"].delete({
-            where: { token: hashedToken },
+            where: { 
+              identifier_token: {
+                identifier: identifier,
+                token: hashedToken
+              },
+            },
           });
           return null;
         }
@@ -512,7 +516,12 @@ export default function PrismaAdapter<
           .update(`${token}${secret}`)
           .digest("hex");
         return prisma[VerificationRequest as "verificationRequest"].delete({
-          where: { token: hashedToken },
+          where: { 
+            identifier_token: {
+              identifier: identifier,
+              token: hashedToken
+            },
+          },
         });
       } catch (error) {
         logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error);
@@ -520,7 +529,6 @@ export default function PrismaAdapter<
         throw new Error("DELETE_VERIFICATION_REQUEST_ERROR", error);
       }
     }
-    // @ts-ignore
     return {
       createUser,
       getUser,
@@ -537,7 +545,7 @@ export default function PrismaAdapter<
       createVerificationRequest,
       getVerificationRequest,
       deleteVerificationRequest,
-    }
+    };
   }
 
   return {

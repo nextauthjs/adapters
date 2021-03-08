@@ -4,10 +4,7 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-
+  
 jobs:
   # From https://github.com/marketplace/actions/workflow-run-cleanup-action
   # This action cleans up previously running instances of a workflow on the same branch.
@@ -22,12 +19,14 @@ jobs:
     if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
 
   test-adapters:
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'skip-ci')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         adapter:
           - prisma
+          - typeorm
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
@@ -43,26 +42,24 @@ jobs:
       - name: test ${{ matrix.adapter }}
         run: yarn test
   publish:
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'skip-ci')
     needs: test-adapters
     runs-on: ubuntu-latest
     env:
       CI: 1
     steps:
       - uses: actions/checkout@v2
-        if: github.event_name == 'pull_request'
         with:
+          token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-
-      - uses: actions/checkout@v2
-        if: github.event_name == 'push'
-        with:
-          fetch-depth: 0
+      - run: git fetch --tags
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
+      - name: Build
+        run: yarn build
       - name: Authenticate with Registry
         run: |
             yarn logout
@@ -71,16 +68,17 @@ jobs:
             npm whoami
         env:
             NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Publish Next
-        if: github.event_name == 'pull_request'
-        run: yarn lerna publish --preid next --dist-tag next --yes 
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+      - name: Configure CI Git User
+        run: |
+          git config --global user.email william@atto-byte.com
+          git config --global user.name "William Luke"
+          git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
+
       - name: Publish Stable
         if: github.event_name == 'push'
-        run: yarn lerna publish --dist-tag latest --yes 
+        run: yarn lerna publish --dist-tag latest --yes --no-verify-access -m "publish [skip-ci]"
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GH_PAT }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         
