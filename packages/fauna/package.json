@@ -10,12 +10,7 @@
   "author": "Bhanu Teja P",
   "license": "ISC",
   "peerDependencies": {
-    "faunadb": "^4.0.2",
-    "next-auth": "^3.1.0"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "faunadb": "^4.0.2",
-    "next-auth": "^3.1.0"
+    "faunadb": "^4.1.1",
+    "next-auth": "^3.11.2"
   }
 }
