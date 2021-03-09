@@ -1,0 +1,16 @@
+{
+  "name": "@next-auth/fauna-adapter",
+  "version": "0.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Bhanu Teja P",
+  "license": "ISC",
+  "peerDependencies": {
+    "faunadb": "^4.1.1",
+    "next-auth": "^3.11.2"
+  }
+}
