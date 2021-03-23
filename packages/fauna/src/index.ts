@@ -1,9 +1,99 @@
-import { query as q } from 'faunadb'
+import { AppOptions } from 'next-auth'
+import { query as q, Client as FaunaClient } from 'faunadb'
 import { createHash, randomBytes } from 'crypto'
+import { AdapterInstance, EmailSessionProvider } from 'next-auth/adapters'
+import { SessionProvider } from 'next-auth/client'
 
-const Adapter = (config, options = {}) => {
+export interface IFaunaAdapterConfig {
+  faunaClient: FaunaClient
+  errorLogger?: (...args: any[]) => void
+  collections?: {
+    User: string
+    Account: string
+    Session: string
+    VerificationRequest: string
+  }
+  indexes?: {
+    Account: string
+    User: string
+    Session: string
+    VerificationRequest: string
+  }
+}
+
+interface Profile {
+  name: string
+  email: string
+  image: string
+  emailVerified: Date
+  username: string
+}
+
+interface UserData {
+  name: string
+  email: string
+  image: string
+  emailVerified: Date
+  username: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+interface User extends UserData {
+  id: string
+}
+
+interface UserQueryResult {
+  data: UserData
+  ref: {
+    id: string
+  }
+}
+
+interface AccountData {
+  userId: string
+  providerId: string
+  providerType: string
+  providerAccountId: string
+  refreshToken?: string
+  accessToken: string
+  accessTokenExpires: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+interface SessionData {
+  userId: string
+  expires: Date
+  sessionToken: string
+  accessToken: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface Session extends SessionData {
+  id: string
+}
+
+interface VerificationRequestData {
+  identifier: string
+  token: string
+  expires: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+function FaunaAdapter(
+  config: IFaunaAdapterConfig,
+  options = {}
+): {
+  getAdapter: (
+    appOptions: Partial<AppOptions>
+  ) => Promise<AdapterInstance<User, Profile, Session, VerificationRequestData>>
+} {
   const {
     faunaClient,
+    errorLogger = console.error,
     collections = {
       User: 'users',
       Account: 'accounts',
@@ -18,9 +108,12 @@ const Adapter = (config, options = {}) => {
     },
   } = config
 
-  async function getAdapter(appOptions) {
-    function _debug(debugCode, ...args) {
-      // console.info(`fauna_${debugCode}`, ...args)
+  async function getAdapter(
+    appOptions: Partial<AppOptions>
+  ): Promise<AdapterInstance<User, Profile, Session, VerificationRequestData>> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function _debug(_debugCode: any, ..._args: any[]) {
+      // console.info(`fauna_${_debugCode}`, ..._args)
     }
 
     const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000
@@ -33,7 +126,7 @@ const Adapter = (config, options = {}) => {
         ? appOptions.session.updateAge * 1000
         : 0
 
-    async function createUser(profile) {
+    async function createUser(profile: Profile): Promise<User> {
       _debug('createUser', profile)
 
       const FQL = q.Create(q.Collection(collections.User), {
@@ -51,33 +144,35 @@ const Adapter = (config, options = {}) => {
       })
 
       try {
-        const newUser = await faunaClient.query(FQL)
-        newUser.data.id = newUser.ref.id
+        const newUser = await faunaClient.query<UserQueryResult>(FQL)
+        const user = { ...newUser.data, id: newUser.ref.id }
 
-        return newUser.data
+        return user
       } catch (error) {
-        console.error('CREATE_USER', error)
+        errorLogger('CREATE_USER', error)
         return Promise.reject(new Error('CREATE_USER'))
       }
     }
 
-    async function getUser(id) {
+    async function getUser(id: string): Promise<User> {
       _debug('getUser', id)
 
       const FQL = q.Get(q.Ref(q.Collection(collections.User), id))
 
       try {
-        const user = await faunaClient.query(FQL)
-        user.data.id = user.ref.id
+        const {
+          data: userData,
+          ref,
+        } = await faunaClient.query<UserQueryResult>(FQL)
 
-        return user.data
+        return { ...userData, id: ref.id }
       } catch (error) {
-        console.error('GET_USER', error)
+        errorLogger('GET_USER', error)
         return Promise.reject(new Error('GET_USER'))
       }
     }
 
-    async function getUserByEmail(email) {
+    async function getUserByEmail(email: string): Promise<User | null> {
       _debug('getUserByEmail', email)
 
       if (!email) {
@@ -92,21 +187,24 @@ const Adapter = (config, options = {}) => {
       )
 
       try {
-        const user = await faunaClient.query(FQL)
+        const user = await faunaClient.query<UserQueryResult>(FQL)
 
         if (user == null) {
           return null
         }
 
-        user.data.id = user.ref.id
-        return user.data
+        const { data: userData, ref } = user
+        return { ...userData, id: ref.id }
       } catch (error) {
-        console.error('GET_USER_BY_EMAIL', error)
+        errorLogger('GET_USER_BY_EMAIL', error)
         return Promise.reject(new Error('GET_USER_BY_EMAIL'))
       }
     }
 
-    async function getUserByProviderAccountId(providerId, providerAccountId) {
+    async function getUserByProviderAccountId(
+      providerId: string,
+      providerAccountId: string
+    ): Promise<User | null> {
       _debug('getUserByProviderAccountId', providerId, providerAccountId)
 
       const FQL = q.Let(
@@ -129,22 +227,21 @@ const Adapter = (config, options = {}) => {
       )
 
       try {
-        const user = await faunaClient.query(FQL)
+        const user = await faunaClient.query<UserQueryResult>(FQL)
 
         if (user == null) {
           return null
         }
 
-        user.data.id = user.ref.id
-
-        return user.data
+        const { data: userData, ref } = user
+        return { ...userData, id: ref.id }
       } catch (error) {
-        console.error('GET_USER_BY_PROVIDER_ACCOUNT_ID', error)
+        errorLogger('GET_USER_BY_PROVIDER_ACCOUNT_ID', error)
         return Promise.reject(new Error('GET_USER_BY_PROVIDER_ACCOUNT_ID'))
       }
     }
 
-    async function updateUser(user) {
+    async function updateUser(user: User): Promise<User> {
       _debug('updateUser', user)
 
       const FQL = q.Update(q.Ref(q.Collection(collections.User), user.id), {
@@ -161,17 +258,16 @@ const Adapter = (config, options = {}) => {
       })
 
       try {
-        const user = await faunaClient.query(FQL)
-        user.data.id = user.ref.id
-
-        return user.data
+        const user = await faunaClient.query<UserQueryResult>(FQL)
+        const { data: userData, ref } = user
+        return { ...userData, id: ref.id }
       } catch (error) {
-        console.error('UPDATE_USER_ERROR', error)
+        errorLogger('UPDATE_USER_ERROR', error)
         return Promise.reject(new Error('UPDATE_USER_ERROR'))
       }
     }
 
-    async function deleteUser(userId) {
+    async function deleteUser(userId: string) {
       _debug('deleteUser', userId)
 
       const FQL = q.Delete(q.Ref(q.Collection(collections.User), userId))
@@ -179,20 +275,20 @@ const Adapter = (config, options = {}) => {
       try {
         await faunaClient.query(FQL)
       } catch (error) {
-        console.error('DELETE_USER_ERROR', error)
+        errorLogger('DELETE_USER_ERROR', error)
         return Promise.reject(new Error('DELETE_USER_ERROR'))
       }
     }
 
     async function linkAccount(
-      userId,
-      providerId,
-      providerType,
-      providerAccountId,
-      refreshToken,
-      accessToken,
-      accessTokenExpires
-    ) {
+      userId: string,
+      providerId: string,
+      providerType: string,
+      providerAccountId: string,
+      refreshToken: string,
+      accessToken: string,
+      accessTokenExpires: number
+    ): Promise<void> {
       _debug(
         'linkAccount',
         userId,
@@ -205,7 +301,10 @@ const Adapter = (config, options = {}) => {
       )
 
       try {
-        const account = await faunaClient.query(
+        await faunaClient.query<{
+          data: AccountData
+          ref: { id: string }
+        }>(
           q.Create(q.Collection(collections.Account), {
             data: {
               userId: userId,
@@ -221,14 +320,18 @@ const Adapter = (config, options = {}) => {
           })
         )
 
-        return account.data
+        return
       } catch (error) {
-        console.error('LINK_ACCOUNT_ERROR', error)
+        errorLogger('LINK_ACCOUNT_ERROR', error)
         return Promise.reject(new Error('LINK_ACCOUNT_ERROR'))
       }
     }
 
-    async function unlinkAccount(userId, providerId, providerAccountId) {
+    async function unlinkAccount(
+      userId: string,
+      providerId: string,
+      providerAccountId: string
+    ) {
       _debug('unlinkAccount', userId, providerId, providerAccountId)
 
       const FQL = q.Delete(
@@ -243,20 +346,17 @@ const Adapter = (config, options = {}) => {
       try {
         await faunaClient.query(FQL)
       } catch (error) {
-        console.error('UNLINK_ACCOUNT_ERROR', error)
+        errorLogger('UNLINK_ACCOUNT_ERROR', error)
         return Promise.reject(new Error('UNLINK_ACCOUNT_ERROR'))
       }
     }
 
-    async function createSession(user) {
+    async function createSession(user: User): Promise<Session> {
       _debug('createSession', user)
 
-      let expires = null
-      if (sessionMaxAge) {
-        const dateExpires = new Date()
-        dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
-        expires = dateExpires.toISOString()
-      }
+      const dateExpires = new Date()
+      dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
+      const expires = dateExpires.toISOString()
 
       const FQL = q.Create(q.Collection(collections.Session), {
         data: {
@@ -270,24 +370,27 @@ const Adapter = (config, options = {}) => {
       })
 
       try {
-        const session = await faunaClient.query(FQL)
+        const session = await faunaClient.query<{
+          data: SessionData
+          ref: { id: string }
+        }>(FQL)
 
-        session.data.id = session.ref.id
-
-        return session.data
+        return { ...session.data, id: session.ref.id }
       } catch (error) {
-        console.error('CREATE_SESSION_ERROR', error)
+        errorLogger('CREATE_SESSION_ERROR', error)
         return Promise.reject(new Error('CREATE_SESSION_ERROR'))
       }
     }
 
-    async function getSession(sessionToken) {
+    async function getSession(sessionToken: string) {
       _debug('getSession', sessionToken)
 
       try {
-        var sessionFQL = q.Get(q.Match(q.Index(indexes.Session), sessionToken))
+        const sessionFQL = q.Get(
+          q.Match(q.Index(indexes.Session), sessionToken)
+        )
 
-        const session = await faunaClient.query({
+        const session = await faunaClient.query<Session>({
           id: q.Select(['ref', 'id'], sessionFQL),
           userId: q.Select(['data', 'userId'], sessionFQL),
           expires: q.ToMillis(q.Select(['data', 'expires'], sessionFQL)),
@@ -305,12 +408,15 @@ const Adapter = (config, options = {}) => {
 
         return session
       } catch (error) {
-        console.error('GET_SESSION_ERROR', error)
+        errorLogger('GET_SESSION_ERROR', error)
         return Promise.reject(new Error('GET_SESSION_ERROR'))
       }
     }
 
-    async function updateSession(session, force) {
+    async function updateSession(
+      session: Session,
+      force: boolean
+    ): Promise<Session | null> {
       _debug('updateSession', session)
 
       try {
@@ -346,7 +452,10 @@ const Adapter = (config, options = {}) => {
         const newExpiryDate = new Date()
         newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
 
-        const updatedSession = await faunaClient.query(
+        const updatedSession = await faunaClient.query<{
+          data: SessionData
+          ref: { id: string }
+        }>(
           q.Update(q.Ref(q.Collection(collections.Session), session.id), {
             data: {
               expires: q.Time(newExpiryDate.toISOString()),
@@ -355,40 +464,38 @@ const Adapter = (config, options = {}) => {
           })
         )
 
-        updatedSession.data.id = updatedSession.ref.id
-
-        return updatedSession.data
+        return { ...updatedSession.data, id: updatedSession.ref.id }
       } catch (error) {
-        console.error('UPDATE_SESSION_ERROR', error)
+        errorLogger('UPDATE_SESSION_ERROR', error)
         return Promise.reject(new Error('UPDATE_SESSION_ERROR'))
       }
     }
 
-    async function _deleteSession(sessionToken) {
+    async function _deleteSession(sessionToken: string) {
       const FQL = q.Delete(
         q.Select('ref', q.Get(q.Match(q.Index(indexes.Session), sessionToken)))
       )
 
-      return faunaClient.query(FQL)
+      await faunaClient.query<{ data: SessionData; ref: { id: string } }>(FQL)
     }
 
-    async function deleteSession(sessionToken) {
+    async function deleteSession(sessionToken: string): Promise<void> {
       _debug('deleteSession', sessionToken)
 
       try {
         return await _deleteSession(sessionToken)
       } catch (error) {
-        console.error('DELETE_SESSION_ERROR', error)
+        errorLogger('DELETE_SESSION_ERROR', error)
         return Promise.reject(new Error('DELETE_SESSION_ERROR'))
       }
     }
 
     async function createVerificationRequest(
-      identifier,
-      url,
-      token,
-      secret,
-      provider
+      identifier: string,
+      url: string,
+      token: string,
+      secret: string,
+      provider: EmailSessionProvider
     ) {
       _debug('createVerificationRequest', identifier)
 
@@ -421,7 +528,10 @@ const Adapter = (config, options = {}) => {
       })
 
       try {
-        const verificationRequest = await faunaClient.query(FQL)
+        const verificationRequest = await faunaClient.query<{
+          data: VerificationRequestData
+          ref: { id: string }
+        }>(FQL)
 
         // With the verificationCallback on a provider, you can send an email, or queue
         // an email to be sent, or perform some other action (e.g. send a text message)
@@ -429,18 +539,23 @@ const Adapter = (config, options = {}) => {
           identifier,
           url,
           token,
-          baseUrl,
+          baseUrl: baseUrl || '',
           provider,
         })
 
         return verificationRequest.data
       } catch (error) {
-        console.error('CREATE_VERIFICATION_REQUEST_ERROR', error)
+        errorLogger('CREATE_VERIFICATION_REQUEST_ERROR', error)
         return Promise.reject(new Error('CREATE_VERIFICATION_REQUEST_ERROR'))
       }
     }
 
-    async function getVerificationRequest(identifier, token, secret, provider) {
+    async function getVerificationRequest(
+      identifier: string,
+      token: string,
+      secret: string,
+      provider: SessionProvider
+    ) {
       _debug('getVerificationRequest', identifier, token)
 
       const hashedToken = createHash('sha256')
@@ -461,10 +576,11 @@ const Adapter = (config, options = {}) => {
       )
 
       try {
-        const { ref, request: verificationRequest } = await faunaClient.query(
-          FQL
-        )
-        const nowDate = Date.now()
+        const { ref, request: verificationRequest } = await faunaClient.query<{
+          ref: { id: string }
+          request: VerificationRequestData
+        }>(FQL)
+        const nowDate = new Date()
 
         if (
           verificationRequest &&
@@ -479,16 +595,16 @@ const Adapter = (config, options = {}) => {
 
         return verificationRequest
       } catch (error) {
-        console.error('GET_VERIFICATION_REQUEST_ERROR', error)
+        errorLogger('GET_VERIFICATION_REQUEST_ERROR', error)
         return Promise.reject(new Error('GET_VERIFICATION_REQUEST_ERROR'))
       }
     }
 
     async function deleteVerificationRequest(
-      identifier,
-      token,
-      secret,
-      provider
+      identifier: string,
+      token: string,
+      secret: string,
+      provider: unknown
     ) {
       _debug('deleteVerification', identifier, token)
 
@@ -505,12 +621,12 @@ const Adapter = (config, options = {}) => {
       try {
         await faunaClient.query(FQL)
       } catch (error) {
-        console.error('DELETE_VERIFICATION_REQUEST_ERROR', error)
+        errorLogger('DELETE_VERIFICATION_REQUEST_ERROR', error)
         return Promise.reject(new Error('DELETE_VERIFICATION_REQUEST_ERROR'))
       }
     }
 
-    return Promise.resolve({
+    return {
       createUser,
       getUser,
       getUserByEmail,
@@ -526,7 +642,7 @@ const Adapter = (config, options = {}) => {
       createVerificationRequest,
       getVerificationRequest,
       deleteVerificationRequest,
-    })
+    } as AdapterInstance<User, Profile, Session, VerificationRequestData>
   }
 
   return {
@@ -534,6 +650,4 @@ const Adapter = (config, options = {}) => {
   }
 }
 
-export default {
-  Adapter,
-}
+export default FaunaAdapter
