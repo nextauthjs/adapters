@@ -1,6 +1,8 @@
 # Fauna Adapter
 
-### Initial Setup
+## Initial Setup
+
+Run these FQL queries in your Fauna dashboard _one after another_.
 
 ```javascript
 CreateCollection({ name: 'accounts' })
@@ -34,4 +36,33 @@ CreateIndex({
   unique: true,
   terms: [{ field: ['data', 'token'] }],
 })
+```
+
+## Usage
+
+Your `pages/api/auth/[...nextauth].ts` file may look like this
+
+```ts
+import { Client } from 'faunadb'
+import { NextApiHandler } from 'next'
+import NextAuth, { InitOptions } from 'next-auth'
+import FaunaAdapter from '@next-auth/fauna-adapter'
+
+const faunaSecret = process.env.FAUNA_SECRET
+
+if (!faunaSecret) throw new Error(`Env variable FAUNA_SECRET must be set`)
+
+const faunaAdapter = FaunaAdapter({
+  faunaClient: new Client({
+    secret: faunaSecret,
+  }),
+})
+
+const options: InitOptions = {
+  adapter: faunaAdapter,
+}
+
+const authHandler: NextApiHandler = (req, res) => NextAuth(req, res, options)
+
+export default authHandler
 ```
