@@ -1,0 +1,27 @@
+{
+  "name": "@next-auth/example-adapter",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "version": "0.3.0",
+  "description": "AWS DynamoDB adapter for next-auth.",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "dynamodb"
+  ],
+  "homepage": "https://next-auth.js.org",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "main": "index.js",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {},
+  "author": "Pol Marnette",
+  "license": "ISC",
+  "peerDependencies": {
+    "next-auth": "^3.1.0"
+  }
+}
