@@ -1,5 +1,9 @@
 # AWS DynamoDB Adapter
 
+<p align="center">
+    <img src="https://i.imgur.com/cRg0uvm.png" alt="AWS Dynamodb + NextAuth.js">
+</p>
+
 ## Initial Setup
 
 You need a table with as partition key `pk` and as sort key `sk`. Your table also need a global secondary index names `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
@@ -44,7 +48,7 @@ export default NextAuth({
 
 ```
 
-(_AWS secrets start with `NEXT_AUTH_` in order to not conflict with [Vercel's reserved environment variables](https://vercel.com/docs/environment-variables#reserved-environment-variables)._)
+(AWS secrets start with `NEXT_AUTH_` in order to not conflict with [Vercel's reserved environment variables](https://vercel.com/docs/environment-variables#reserved-environment-variables).)
 
 ## Table structure
 
