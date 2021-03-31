@@ -47,7 +47,7 @@ export default function Adapter(config, options = {}) {
         type: "USER",
         name: profile.name,
         email: profile.email,
-        iamge: profile.image,
+        image: profile.image,
         username: profile.username,
         emailVerified: profile.emailVerified
           ? profile.emailVerified.toISOString()
