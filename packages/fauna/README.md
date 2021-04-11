@@ -32,6 +32,9 @@ CreateIndex({
   name: 'verification_request_by_token',
   source: Collection('verification_requests'),
   unique: true,
-  terms: [{ field: ['data', 'token'] }],
+  terms: [
+    { field: ['data', 'token'] }, 
+    { field: ['data', 'identifier'] }
+  ],
 })
 ```
