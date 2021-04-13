@@ -103,22 +103,23 @@ export default function PrismaAdapter<
       }
     }
 
-    async function getUser(id: number) {
-      debug("GET_USER", id);
+    async function getUser(userId: number | string) {
+      const _userId = Number(userId);
+      debug("GET_USER", _userId);
       try {
-        const cachedUser = userCache.get(id);
+        const cachedUser = userCache.get(_userId);
         if (cachedUser) {
           debug("GET_USER - Fetched from LRU Cache", cachedUser);
           // stale while revalidate
           (async () => {
             const user = (await prisma[User as "user"].findUnique({
-              where: { id },
+              where: { id: _userId },
             })) as Prisma.User;
             userCache.set(user.id, user);
           })();
           return cachedUser;
         }
-        return prisma[User as "user"].findUnique({ where: { id } });
+        return prisma[User as "user"].findUnique({ where: { id: _userId } });
       } catch (error) {
         logger.error("GET_USER_BY_ID_ERROR", error);
         // @ts-ignore
@@ -190,11 +191,12 @@ export default function PrismaAdapter<
       }
     }
 
-    async function deleteUser(userId: number) {
-      userCache.del(userId);
-      debug("DELETE_USER", userId);
+    async function deleteUser(userId: number | string) {
+      const _userId = Number(userId);
+      userCache.del(_userId);
+      debug("DELETE_USER", _userId);
       try {
-        return prisma[User as "user"].delete({ where: { id: userId } });
+        return prisma[User as "user"].delete({ where: { id: _userId } });
       } catch (error) {
         logger.error("DELETE_USER_ERROR", error);
         // @ts-ignore
@@ -203,7 +205,7 @@ export default function PrismaAdapter<
     }
 
     async function linkAccount(
-      userId: number,
+      userId: number | string,
       providerId: string,
       providerType: string,
       providerAccountId: string,
@@ -211,9 +213,10 @@ export default function PrismaAdapter<
       accessToken: string,
       accessTokenExpires?: string | Date | null
     ) {
+      const _userId = Number(userId);
       debug(
         "LINK_ACCOUNT",
-        userId,
+        _userId,
         providerId,
         providerType,
         providerAccountId,
@@ -230,7 +233,7 @@ export default function PrismaAdapter<
             providerId,
             providerType,
             accessTokenExpires,
-            user: { connect: { id: userId } },
+            user: { connect: { id: _userId } },
           },
         });
       } catch (error) {
@@ -241,11 +244,12 @@ export default function PrismaAdapter<
     }
 
     async function unlinkAccount(
-      userId: string,
+      userId: number | string,
       providerId: string,
       providerAccountId: string
     ) {
-      debug("UNLINK_ACCOUNT", userId, providerId, providerAccountId);
+      const _userId = Number(userId);
+      debug("UNLINK_ACCOUNT", _userId, providerId, providerAccountId);
       try {
         return prisma[Account as "account"].delete({
           where: {
