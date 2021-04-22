@@ -3,13 +3,12 @@ import { Session, User } from "@prisma/client";
 import { createHash, randomBytes } from "crypto";
 import { klona } from "klona";
 import LRU from "lru-cache";
-import { AppOptions } from "next-auth";
+import { LoggerInstance } from "next-auth";
 import { EmailAppProvider, Profile } from "next-auth/adapters";
+import { AppOptions } from "next-auth/internals"
 // !TODO Expose `errors` and `logger` in next-auth
 // @ts-ignore
 import { CreateUserError } from "next-auth/dist/lib/errors";
-// @ts-ignore
-import logger from "next-auth/dist/lib/logger";
 
 type IsValid<
   T extends Prisma.PrismaClient,
@@ -65,7 +64,9 @@ export default function PrismaAdapter<
     VerificationRequest: "verificationRequest",
   };
 
-  async function getAdapter(appOptions?: Partial<AppOptions>) {
+  async function getAdapter(appOptions: AppOptions) {
+    const { logger } = appOptions
+
     function debug(debugCode: string, ...args: any) {
       logger.debug(`PRISMA_${debugCode}`, ...args);
     }
