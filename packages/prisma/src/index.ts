@@ -1,9 +1,7 @@
 import * as Prisma from "@prisma/client";
 import { Session, User } from "@prisma/client";
 import { createHash, randomBytes } from "crypto";
-import { klona } from "klona";
 import LRU from "lru-cache";
-import { LoggerInstance } from "next-auth";
 import { EmailAppProvider, Profile } from "next-auth/adapters";
 import { AppOptions } from "next-auth/internals"
 import { CreateUserError } from "next-auth/errors";
@@ -270,24 +268,14 @@ export default function PrismaAdapter<
         expires = dateExpires.toISOString();
 
         const session = {
+          userId: user.id,
           expires,
           sessionToken: randomBytes(32).toString("hex"),
           accessToken: randomBytes(32).toString("hex"),
-          user,
         };
 
-        const cachedSession = klona(session);
-
-        sessionCache.set(session.sessionToken, cachedSession, maxAge(expires));
-
-        return prisma[Session as "session"].create({
-          data: {
-            expires,
-            user: { connect: { id: user.id } },
-            sessionToken: randomBytes(32).toString("hex"),
-            accessToken: randomBytes(32).toString("hex"),
-          },
-        });
+        sessionCache.set(session.sessionToken, session, maxAge(expires));
+        return prisma[Session as "session"].create({ data: session });
       } catch (error) {
         logger.error("CREATE_SESSION_ERROR", error);
         // @ts-ignore

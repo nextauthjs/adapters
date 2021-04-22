@@ -36,7 +36,6 @@
   },
   "dependencies": {
     "crypto": "^1.0.1",
-    "klona": "^2.0.4",
     "lru-cache": "^6.0.0"
   },
   "devDependencies": {
