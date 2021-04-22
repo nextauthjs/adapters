@@ -2,9 +2,10 @@ import * as Prisma from "@prisma/client";
 import { Session, User } from "@prisma/client";
 import { createHash, randomBytes } from "crypto";
 import LRU from "lru-cache";
-import { EmailAppProvider, Profile } from "next-auth/adapters";
+import { Profile } from "next-auth/adapters";
 import { AppOptions } from "next-auth/internals"
 import { CreateUserError } from "next-auth/errors";
+import { EmailConfig } from "next-auth/providers";
 
 type IsValid<
   T extends Prisma.PrismaClient,
@@ -392,7 +393,7 @@ export default function PrismaAdapter<
       url: string,
       token: string,
       secret: string,
-      provider: EmailAppProvider
+      provider: EmailConfig
     ) {
       debug("CREATE_VERIFICATION_REQUEST", identifier);
       try {
