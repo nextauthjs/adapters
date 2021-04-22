@@ -28,6 +28,7 @@ jobs:
         adapter:
           - prisma
           - typeorm
+          - fauna
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
@@ -61,12 +62,12 @@ jobs:
         run: yarn build
       - name: Authenticate with Registry
         run: |
-            yarn logout
-            echo "registry=http://registry.npmjs.org/" >> .npmrc
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-            npm whoami
+          yarn logout
+          echo "registry=http://registry.npmjs.org/" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+          npm whoami
         env:
-            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish Canary
         if: github.event_name == 'push'
         run: yarn lerna publish --canary --preid canary --dist-tag canary --yes --no-verify-access
