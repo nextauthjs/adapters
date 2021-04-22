@@ -65,7 +65,7 @@ export default function PrismaAdapter<
   };
 
   async function getAdapter(appOptions: AppOptions) {
-    const { logger } = appOptions.logger
+    const { logger } = appOptions
 
     function debug(debugCode: string, ...args: any) {
       logger.debug(`PRISMA_${debugCode}`, ...args);
