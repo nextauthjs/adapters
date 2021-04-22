@@ -61,8 +61,8 @@ export default function PrismaAdapter<
     VerificationRequest: "verificationRequest",
   };
 
-  async function getAdapter(appOptions: AppOptions) {
-    const { logger } = appOptions
+  async function getAdapter(appOptions?: AppOptions) {
+    const logger = appOptions?.logger || console
 
     function debug(debugCode: string, ...args: any) {
       logger.debug(`PRISMA_${debugCode}`, ...args);
