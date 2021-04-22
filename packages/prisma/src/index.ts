@@ -6,9 +6,7 @@ import LRU from "lru-cache";
 import { LoggerInstance } from "next-auth";
 import { EmailAppProvider, Profile } from "next-auth/adapters";
 import { AppOptions } from "next-auth/internals"
-// !TODO Expose `errors` and `logger` in next-auth
-// @ts-ignore
-import { CreateUserError } from "next-auth/dist/lib/errors";
+import { CreateUserError } from "next-auth/errors";
 
 type IsValid<
   T extends Prisma.PrismaClient,
