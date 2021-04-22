@@ -270,22 +270,14 @@ export default function PrismaAdapter<
         expires = dateExpires.toISOString();
 
         const session = {
+          userId: user.id,
           expires,
           sessionToken: randomBytes(32).toString("hex"),
           accessToken: randomBytes(32).toString("hex"),
-          userId: user.id,
         };
 
         sessionCache.set(session.sessionToken, session, maxAge(expires));
-
-        return prisma[Session as "session"].create({
-          data: {
-            expires,
-            user: { connect: { id: user.id } },
-            sessionToken: randomBytes(32).toString("hex"),
-            accessToken: randomBytes(32).toString("hex"),
-          },
-        });
+        return prisma[Session as "session"].create({ data: session });
       } catch (error) {
         logger.error("CREATE_SESSION_ERROR", error);
         // @ts-ignore
