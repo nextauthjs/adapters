@@ -4,7 +4,7 @@ import { createHash, randomBytes } from "crypto";
 import { klona } from "klona";
 import LRU from "lru-cache";
 import { AppOptions } from "next-auth";
-import { EmailSessionProvider, Profile } from "next-auth/adapters";
+import { EmailAppProvider, Profile } from "next-auth/adapters";
 // !TODO Expose `errors` and `logger` in next-auth
 // @ts-ignore
 import { CreateUserError } from "next-auth/dist/lib/errors";
@@ -405,7 +405,7 @@ export default function PrismaAdapter<
       url: string,
       token: string,
       secret: string,
-      provider: EmailSessionProvider
+      provider: EmailAppProvider
     ) {
       debug("CREATE_VERIFICATION_REQUEST", identifier);
       try {
