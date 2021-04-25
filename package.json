@@ -4,13 +4,17 @@
   "repository": "https://github.com/nextauthjs/adapters.git",
   "author": "William Luke <william@ordino.ai>",
   "contributors": [
-    "Balázs Orbán <info@balazsorban.com>"
+    "Balázs Orbán <info@balazsorban.com>",
+    "Nico Domino <yo@ndo.dev>"
   ],
   "license": "ISC",
   "private": true,
   "scripts": {
     "build": "lerna run build",
-    "canary": "lerna publish --canary"
+    "canary": "lerna publish --canary",
+    "prepare": "husky install",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix && prettier --write"
   },
   "workspaces": [
     "packages/*"
@@ -24,7 +28,9 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.3.1",
+    "husky": ">=6",
     "lerna": "^3.22.1",
+    "lint-staged": ">=10",
     "next-auth": "latest",
     "prettier": "^2.2.1"
   },
@@ -58,5 +64,12 @@
       "location": "readonly",
       "fetch": "readonly"
     }
+  },
+  "lint-staged": {
+    "*.{js,ts}": [
+      "eslint --cache --fix",
+      "prettier --write"
+    ],
+    "*.{css,md,json}": "prettier --write"
   }
 }
