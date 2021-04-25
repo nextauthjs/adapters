@@ -33,12 +33,12 @@ const appOptions: AppOptions = {
   events: {},
   jwt: {},
   theme: "auto",
-  logger: undefined,
+  logger: console,
   pages: {},
   providers: [],
   secret: "",
   session: {},
-  adapter: undefined,
+  adapter: prismaAdapter as any,
 }
 
 describe("adapter functions", () => {
