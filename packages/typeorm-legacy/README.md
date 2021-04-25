@@ -1,13 +1,13 @@
 <p align="center">
    <br/>
    <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
-   <h3 align="center"><b>TypeORM Adapter</b> - NextAuth.js</h3>
+   <h3 align="center"><b>TypeORM (Legacy) Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/workflows/Build%20Test/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/typeorm-adapter" alt="Bundle Size"/>
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/typeorm-legacy-adapter" alt="Bundle Size"/>
       <img src="https://img.shields.io/github/v/release/nextauthjs/adapters?include_prereleases" alt="Github Release" />
    </p>
 </p>
@@ -18,10 +18,10 @@ This is the TypeORM Adapter for [`next-auth`](https://next-auth.js.org). This pa
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/typeorm-adapter`
+1. Install `next-auth` and `@next-auth/typeorm-legacy-adapter`
 
 ```js
-npm install next-auth @next-auth/typeorm-adapter
+npm install next-auth @next-auth/typeorm-legacy-adapter
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
@@ -29,7 +29,7 @@ npm install next-auth @next-auth/typeorm-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import Adapter from "@next-auth/typeorm-adapter"
+import Adapter from "@next-auth/typeorm-legacy-adapter"
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
