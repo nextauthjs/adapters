@@ -1,9 +1,14 @@
 {
   "name": "@next-auth/typeorm-adapter",
-  "repository": "https://github.com/nextauthjs/adapters",
   "version": "0.0.1",
   "description": "TypeORM adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/adapters/issues"
+  },
   "author": "Iain Collins",
+  "main": "index.js",
   "license": "ISC",
   "keywords": [
     "next-auth",
@@ -11,11 +16,6 @@
     "oauth",
     "typeorm"
   ],
-  "homepage": "https://next-auth.js.org",
-  "bugs": {
-    "url": "https://github.com/nextauthjs/adapters/issues"
-  },
-  "main": "index.js",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -29,8 +29,8 @@
     "test:db:mssql": "node tests/mssql.js",
     "db:start": "docker-compose -f tests/docker/databases.yml up -d",
     "db:stop": "docker-compose -f tests/docker/databases.yml down --remove",
-    "lint": "standard",
-    "lint:fix": "standard --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "crypto-js": "^4.0.0",
@@ -45,23 +45,27 @@
     "mysql": "^2.18.1",
     "next-auth": "^3.1.0",
     "pg": "^8.5.1",
-    "standard": "^16.0.3",
     "typeorm-adapter": "^1.2.0"
   },
   "peerDependencies": {
-    "next-auth": "^3.1.0"
-  },
-  "peerOptionalDependencies": {
     "mongodb": "^3.5.9",
-    "mysql": "^2.18.1",
     "mssql": "^6.2.1",
+    "mysql": "^2.18.1",
+    "next-auth": "^3.1.0",
     "pg": "^8.2.1"
   },
-  "standard": {
-    "ignore": [
-      "test/",
-      "pages/",
-      "components/"
-    ]
+  "peerDependenciesMeta": {
+    "mongodb": {
+      "optional": true
+    },
+    "mysql": {
+      "optional": true
+    },
+    "mssql": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    }
   }
 }

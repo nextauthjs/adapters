@@ -1,9 +1,14 @@
 {
   "name": "@next-auth/prisma-adapter",
-  "repository": "https://github.com/nextauthjs/adapters",
   "version": "0.4.4",
   "description": "Prisma adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
   "author": "William Luke",
+  "main": "dist/index.js",
   "license": "ISC",
   "keywords": [
     "next-auth",
@@ -11,11 +16,6 @@
     "oauth",
     "prisma"
   ],
-  "homepage": "https://next-auth.js.org",
-  "bugs": {
-    "url": "https://github.com/nextauthjs/next-auth/issues"
-  },
-  "main": "dist/index.js",
   "private": false,
   "publishConfig": {
     "access": "public"
