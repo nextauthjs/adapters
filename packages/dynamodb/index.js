@@ -1,46 +1,60 @@
-import { createHash, randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto"
 
-export default function Adapter(config, options = {}) {
-  if (!config.AWS) {
-    console.error("CONFIG_ADAPTER", "AWS is not defined in adapter config");
-    return Promise.reject(new Error("CONFIG_ADAPTER"));
-  }
+import {
+  CreateSessionError,
+  CreateUserError,
+  CreateVerificationRequestError,
+  DeleteSessionError,
+  DeleteUserError,
+  DeleteVerificationRequestError,
+  GetSessionError,
+  GetUserByEmailError,
+  GetUserByIdError,
+  GetUserByProviderAccountIdError,
+  GetVerificationRequestError,
+  LinkAccountError,
+  UnlinkAccountError,
+  UpdateSessionError,
+  UpdateUserError,
+} from "next-auth/errors"
 
-  if (!config.tableName) {
-    console.error(
-      "CONFIG_ADAPTER",
-      "tableName is not defined in adapter config"
-    );
-    return Promise.reject(new Error("CONFIG_ADAPTER"));
-  }
+export default function DynamoDBAdapter(config) {
+  const TableName = config.tableName
+  const DynamoClient = new config.AWS.DynamoDB.DocumentClient()
 
-  const TableName = config.tableName;
-  const DynamoClient = new config.AWS.DynamoDB.DocumentClient();
-
+  /** @param {import("next-auth/internals").AppOptions} appOptions */
   async function getAdapter(appOptions) {
-    // Display debug output if debug option enabled
-    function _debug(...args) {
-      if (appOptions.debug) {
-        console.log("[next-auth][debug]", ...args);
-      }
+    const logger = appOptions.logger
+    if (!config.AWS) {
+      logger.error("CONFIG_ADAPTER", "AWS is not defined in adapter config")
+      throw new Error("CONFIG_ADAPTER")
     }
 
-    const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000;
-    const sessionMaxAge =
-      appOptions && appOptions.session && appOptions.session.maxAge
-        ? appOptions.session.maxAge * 1000
-        : defaultSessionMaxAge;
-    const sessionUpdateAge =
-      appOptions && appOptions.session && appOptions.session.updateAge
-        ? appOptions.session.updateAge * 1000
-        : 0;
+    if (!config.tableName) {
+      logger.error(
+        "CONFIG_ADAPTER",
+        "tableName is not defined in adapter config"
+      )
+      throw new Error("CONFIG_ADAPTER")
+    }
+    function debug(debugCode, ...args) {
+      logger.debug(`DYNAMODB_${debugCode}`, ...args)
+    }
+
+    const defaultSessionMaxAge = 30 * 24 * 60 * 60 * 1000
+    const sessionMaxAge = appOptions?.session?.maxAge
+      ? appOptions.session.maxAge * 1000
+      : defaultSessionMaxAge
+    const sessionUpdateAge = appOptions?.session?.updateAge
+      ? appOptions.session.updateAge * 1000
+      : 0
 
     async function createUser(profile) {
-      _debug("createUser", profile);
+      debug("createUser", profile)
 
-      const userId = randomBytes(16).toString("hex");
-      const now = new Date();
-      let item = {
+      const userId = randomBytes(16).toString("hex")
+      const now = new Date()
+      const item = {
         pk: `USER#${userId}`,
         sk: `USER#${userId}`,
         id: userId,
@@ -54,28 +68,24 @@ export default function Adapter(config, options = {}) {
           : null,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-      };
+      }
 
       if (profile.email) {
-        item.GSI1SK = `USER#${profile.email}`;
-        item.GSI1PK = `USER#${profile.email}`;
+        item.GSI1SK = `USER#${profile.email}`
+        item.GSI1PK = `USER#${profile.email}`
       }
 
       try {
-        const data = await DynamoClient.put({
-          TableName,
-          Item: item,
-        }).promise();
-
-        return item;
+        await DynamoClient.put({ TableName, Item: item }).promise()
+        return item
       } catch (error) {
-        console.error("CREATE_USER", error);
-        return Promise.reject(new Error("CREATE_USER"));
+        logger.error("CREATE_USER", error)
+        throw new CreateUserError(error)
       }
     }
 
     async function getUser(id) {
-      _debug("getUser", id);
+      debug("getUser", id)
 
       try {
         const data = await DynamoClient.get({
@@ -84,17 +94,17 @@ export default function Adapter(config, options = {}) {
             pk: `USER#${id}`,
             sk: `USER#${id}`,
           },
-        }).promise();
+        }).promise()
 
-        return data.Item || null;
+        return data.Item || null
       } catch (error) {
-        console.error("GET_USER", error);
-        return Promise.reject(new Error("GET_USER"));
+        logger.error("GET_USER", error)
+        throw new GetUserByIdError(error)
       }
     }
 
     async function getUserByEmail(email) {
-      _debug("getUserByEmail", email);
+      debug("getUserByEmail", email)
 
       try {
         const data = await DynamoClient.query({
@@ -109,17 +119,17 @@ export default function Adapter(config, options = {}) {
             ":gsi1pk": `USER#${email}`,
             ":gsi1sk": `USER#${email}`,
           },
-        }).promise();
+        }).promise()
 
-        return data.Items[0] || null;
+        return data.Items[0] || null
       } catch (error) {
-        console.error("GET_USER_BY_EMAIL", error);
-        return Promise.reject(new Error("GET_USER_BY_EMAIL"));
+        logger.error("GET_USER_BY_EMAIL", error)
+        throw new GetUserByEmailError(error)
       }
     }
 
     async function getUserByProviderAccountId(providerId, providerAccountId) {
-      _debug("getUserByProviderAccountId", providerId, providerAccountId);
+      debug("getUserByProviderAccountId", providerId, providerAccountId)
 
       try {
         const data = await DynamoClient.query({
@@ -134,10 +144,10 @@ export default function Adapter(config, options = {}) {
             ":gsi1pk": `ACCOUNT#${providerAccountId}`,
             ":gsi1sk": `ACCOUNT#${providerId}`,
           },
-        }).promise();
+        }).promise()
 
-        if (!data) return null;
-        if (!data.Items.length > 0) return null;
+        if (!data) return null
+        if (!data.Items.length > 0) return null
 
         const user = await DynamoClient.get({
           TableName,
@@ -145,20 +155,20 @@ export default function Adapter(config, options = {}) {
             pk: `USER#${data.Items[0].userId}`,
             sk: `USER#${data.Items[0].userId}`,
           },
-        }).promise();
+        }).promise()
 
-        return user.Item || null;
+        return user.Item || null
       } catch (error) {
-        console.error("GET_USER_BY_PROVIDER_ACCOUNT_ID", error);
-        return Promise.reject(new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID"));
+        logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID", error)
+        throw new GetUserByProviderAccountIdError(error)
       }
     }
 
     async function updateUser(user) {
-      _debug("updateUser", user);
+      debug("updateUser", user)
 
       try {
-        const now = new Date();
+        const now = new Date()
         const data = await DynamoClient.update({
           TableName,
           Key: {
@@ -183,24 +193,22 @@ export default function Adapter(config, options = {}) {
             ":gsi1pk": `USER#${user.email}`,
             ":gsi1sk": `USER#${user.email}`,
             ":image": user.image || null,
-            ":emailVerified": user.emailVerified
-              ? user.emailVerified.toISOString()
-              : null,
+            ":emailVerified": user.emailVerified?.toISOString() ?? null,
             ":username": user.username || null,
             ":updatedAt": now.toISOString(),
           },
           ReturnValues: "UPDATED_NEW",
-        }).promise();
+        }).promise()
 
-        return { ...user, ...data.Attributes };
+        return { ...user, ...data.Attributes }
       } catch (error) {
-        console.error("UPDATE_USER_ERROR", error);
-        return Promise.reject(new Error("UPDATE_USER_ERROR"));
+        logger.error("UPDATE_USER_ERROR", error)
+        throw new UpdateUserError(error)
       }
     }
 
     async function deleteUser(userId) {
-      _debug("deleteUser", userId);
+      debug("deleteUser", userId)
 
       try {
         const deleted = await DynamoClient.delete({
@@ -209,12 +217,12 @@ export default function Adapter(config, options = {}) {
             pk: `USER#${userId}`,
             sk: `USER#${userId}`,
           },
-        }).promise();
+        }).promise()
 
-        return deleted;
+        return deleted
       } catch (error) {
-        console.error("DELETE_USER_ERROR", error);
-        return Promise.reject(new Error("DELETE_USER_ERROR"));
+        logger.error("DELETE_USER_ERROR", error)
+        throw new DeleteUserError(error)
       }
     }
 
@@ -227,7 +235,7 @@ export default function Adapter(config, options = {}) {
       accessToken,
       accessTokenExpires
     ) {
-      _debug(
+      debug(
         "linkAccount",
         userId,
         providerId,
@@ -236,11 +244,11 @@ export default function Adapter(config, options = {}) {
         refreshToken,
         accessToken,
         accessTokenExpires
-      );
+      )
 
-      const now = new Date();
+      const now = new Date()
 
-      let item = {
+      const item = {
         pk: `USER#${userId}`,
         sk: `ACCOUNT#${providerId}#${providerAccountId}`,
         GSI1SK: `ACCOUNT#${providerId}`,
@@ -255,23 +263,19 @@ export default function Adapter(config, options = {}) {
         userId,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-      };
+      }
 
       try {
-        const data = await DynamoClient.put({
-          TableName,
-          Item: item,
-        }).promise();
-
-        return item;
+        await DynamoClient.put({ TableName, Item: item }).promise()
+        return item
       } catch (error) {
-        console.error("LINK_ACCOUNT_ERROR", error);
-        return Promise.reject(new Error("LINK_ACCOUNT_ERROR"));
+        logger.error("LINK_ACCOUNT_ERROR", error)
+        throw new LinkAccountError(error)
       }
     }
 
     async function unlinkAccount(userId, providerId, providerAccountId) {
-      _debug("unlinkAccount", userId, providerId, providerAccountId);
+      debug("unlinkAccount", userId, providerId, providerAccountId)
 
       try {
         const deleted = await DynamoClient.delete({
@@ -280,31 +284,31 @@ export default function Adapter(config, options = {}) {
             pk: `USER#${userId}`,
             sk: `ACCOUNT#${providerId}#${providerAccountId}`,
           },
-        }).promise();
+        }).promise()
 
-        return deleted;
+        return deleted
       } catch (error) {
-        console.error("UNLINK_ACCOUNT_ERROR", error);
-        return Promise.reject(new Error("UNLINK_ACCOUNT_ERROR"));
+        logger.error("UNLINK_ACCOUNT_ERROR", error)
+        throw new UnlinkAccountError(error)
       }
     }
 
     async function createSession(user) {
-      _debug("createSession", user);
+      debug("createSession", user)
 
-      let expires = null;
+      let expires = null
       if (sessionMaxAge) {
-        const dateExpires = new Date();
-        dateExpires.setTime(dateExpires.getTime() + sessionMaxAge);
-        expires = dateExpires.toISOString();
+        const dateExpires = new Date()
+        dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
+        expires = dateExpires.toISOString()
       }
 
-      const sessionToken = randomBytes(32).toString("hex");
-      const accessToken = randomBytes(32).toString("hex");
+      const sessionToken = randomBytes(32).toString("hex")
+      const accessToken = randomBytes(32).toString("hex")
 
-      const now = new Date();
+      const now = new Date()
 
-      let item = {
+      const item = {
         pk: `USER#${user.id}`,
         sk: `SESSION#${sessionToken}`,
         GSI1SK: `SESSION#${sessionToken}`,
@@ -316,23 +320,19 @@ export default function Adapter(config, options = {}) {
         expires,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-      };
+      }
 
       try {
-        const data = await DynamoClient.put({
-          TableName,
-          Item: item,
-        }).promise();
-
-        return item;
+        await DynamoClient.put({ TableName, Item: item }).promise()
+        return item
       } catch (error) {
-        console.error("CREATE_SESSION_ERROR", error);
-        return Promise.reject(new Error("CREATE_SESSION_ERROR"));
+        logger.error("CREATE_SESSION_ERROR", error)
+        throw new CreateSessionError(error)
       }
     }
 
     async function getSession(sessionToken) {
-      _debug("getSession", sessionToken);
+      debug("getSession", sessionToken)
 
       try {
         const data = await DynamoClient.query({
@@ -347,32 +347,32 @@ export default function Adapter(config, options = {}) {
             ":gsi1pk": `SESSION#${sessionToken}`,
             ":gsi1sk": `SESSION#${sessionToken}`,
           },
-        }).promise();
+        }).promise()
 
-        const session = data.Items[0] || null;
+        const session = data.Items[0] || null
 
         if (session && session.expires && new Date() > session.expires) {
-          await deleteSession(sessionToken);
-          return null;
+          await deleteSession(sessionToken)
+          return null
         }
 
-        return session;
+        return session
       } catch (error) {
-        console.error("GET_SESSION_ERROR", error);
-        return Promise.reject(new Error("GET_SESSION_ERROR"));
+        logger.error("GET_SESSION_ERROR", error)
+        throw new GetSessionError(error)
       }
     }
 
     async function updateSession(session, force) {
-      _debug("updateSession", session);
+      debug("updateSession", session)
 
       try {
         const shouldUpdate =
           sessionMaxAge &&
           (sessionUpdateAge || sessionUpdateAge === 0) &&
-          session.expires;
+          session.expires
         if (!shouldUpdate && !force) {
-          return null;
+          return null
         }
 
         // Calculate last updated date, to throttle write updates to database
@@ -381,23 +381,23 @@ export default function Adapter(config, options = {}) {
         //
         // Default for sessionMaxAge is 30 days.
         // Default for sessionUpdateAge is 1 hour.
-        const dateSessionIsDueToBeUpdated = new Date(session.expires);
+        const dateSessionIsDueToBeUpdated = new Date(session.expires)
         dateSessionIsDueToBeUpdated.setTime(
           dateSessionIsDueToBeUpdated.getTime() - sessionMaxAge
-        );
+        )
         dateSessionIsDueToBeUpdated.setTime(
           dateSessionIsDueToBeUpdated.getTime() + sessionUpdateAge
-        );
+        )
 
         // Trigger update of session expiry date and write to database, only
         // if the session was last updated more than {sessionUpdateAge} ago
-        const currentDate = new Date();
+        const currentDate = new Date()
         if (currentDate < dateSessionIsDueToBeUpdated && !force) {
-          return null;
+          return null
         }
 
-        const newExpiryDate = new Date();
-        newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge);
+        const newExpiryDate = new Date()
+        newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
 
         const data = await DynamoClient.update({
           TableName,
@@ -415,21 +415,21 @@ export default function Adapter(config, options = {}) {
             ":updatedAt": new Date().toISOString(),
           },
           ReturnValues: "UPDATED_NEW",
-        }).promise();
+        }).promise()
 
         return {
           ...session,
           expires: data.Attributes.expires,
           updatedAt: data.Attributes.updatedAt,
-        };
+        }
       } catch (error) {
-        console.error("UPDATE_SESSION_ERROR", error);
-        return Promise.reject(new Error("UPDATE_SESSION_ERROR"));
+        logger.error("UPDATE_SESSION_ERROR", error)
+        throw new UpdateSessionError(error)
       }
     }
 
     async function deleteSession(sessionToken) {
-      _debug("deleteSession", sessionToken);
+      debug("deleteSession", sessionToken)
 
       try {
         const data = await DynamoClient.query({
@@ -444,11 +444,11 @@ export default function Adapter(config, options = {}) {
             ":gsi1pk": `SESSION#${sessionToken}`,
             ":gsi1sk": `SESSION#${sessionToken}`,
           },
-        }).promise();
+        }).promise()
 
-        if (data?.Items?.length <= 0) return null;
+        if (data?.Items?.length <= 0) return null
 
-        const infoToDelete = data.Items[0];
+        const infoToDelete = data.Items[0]
 
         const deleted = await DynamoClient.delete({
           TableName,
@@ -456,12 +456,12 @@ export default function Adapter(config, options = {}) {
             pk: infoToDelete.pk,
             sk: infoToDelete.sk,
           },
-        }).promise();
+        }).promise()
 
-        return deleted;
+        return deleted
       } catch (error) {
-        console.error("DELETE_SESSION_ERROR", error);
-        return Promise.reject(new Error("DELETE_SESSION_ERROR"));
+        logger.error("DELETE_SESSION_ERROR", error)
+        throw new DeleteSessionError(error)
       }
     }
 
@@ -472,33 +472,33 @@ export default function Adapter(config, options = {}) {
       secret,
       provider
     ) {
-      _debug(
+      debug(
         "createVerificationRequest",
         identifier,
         url,
         token,
         secret,
         provider
-      );
+      )
 
-      const { baseUrl } = appOptions;
-      const { sendVerificationRequest, maxAge } = provider;
+      const { baseUrl } = appOptions
+      const { sendVerificationRequest, maxAge } = provider
 
       const hashedToken = createHash("sha256")
         .update(`${token}${secret}`)
-        .digest("hex");
+        .digest("hex")
 
-      let expires = null;
+      let expires = null
       if (maxAge) {
-        const dateExpires = new Date();
-        dateExpires.setTime(dateExpires.getTime() + maxAge * 1000);
+        const dateExpires = new Date()
+        dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
 
-        expires = dateExpires.toISOString();
+        expires = dateExpires.toISOString()
       }
 
-      const now = new Date();
+      const now = new Date()
 
-      let item = {
+      const item = {
         pk: `VR#${identifier}`,
         sk: `VR#${hashedToken}`,
         token: hashedToken,
@@ -507,13 +507,10 @@ export default function Adapter(config, options = {}) {
         expires: expires === null ? null : expires,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-      };
+      }
 
       try {
-        const data = await DynamoClient.put({
-          TableName,
-          Item: item,
-        }).promise();
+        await DynamoClient.put({ TableName, Item: item }).promise()
 
         await sendVerificationRequest({
           identifier,
@@ -521,21 +518,21 @@ export default function Adapter(config, options = {}) {
           token,
           baseUrl,
           provider,
-        });
+        })
 
-        return item;
+        return item
       } catch (error) {
-        console.error("CREATE_VERIFICATION_REQUEST_ERROR", error);
-        return Promise.reject(new Error("CREATE_VERIFICATION_REQUEST_ERROR"));
+        logger.error("CREATE_VERIFICATION_REQUEST_ERROR", error)
+        throw new CreateVerificationRequestError(error)
       }
     }
 
     async function getVerificationRequest(identifier, token, secret, provider) {
-      _debug("getVerificationRequest", identifier, token, secret);
+      debug("getVerificationRequest", identifier, token, secret)
 
       const hashedToken = createHash("sha256")
         .update(`${token}${secret}`)
-        .digest("hex");
+        .digest("hex")
 
       try {
         const data = await DynamoClient.get({
@@ -544,9 +541,9 @@ export default function Adapter(config, options = {}) {
             pk: `VR#${identifier}`,
             sk: `VR#${hashedToken}`,
           },
-        }).promise();
+        }).promise()
 
-        const nowDate = Date.now();
+        const nowDate = Date.now()
         if (data.Item && data.Item.expires && data.Item.expires < nowDate) {
           // Delete the expired request so it cannot be used
           await DynamoClient.delete({
@@ -555,15 +552,15 @@ export default function Adapter(config, options = {}) {
               pk: `VR#${identifier}`,
               sk: `VR#${hashedToken}`,
             },
-          }).promise();
+          }).promise()
 
-          return null;
+          return null
         }
 
-        return data.Item || null;
+        return data.Item || null
       } catch (error) {
-        console.error("GET_VERIFICATION_REQUEST_ERROR", error);
-        return Promise.reject(new Error("GET_VERIFICATION_REQUEST_ERROR"));
+        logger.error("GET_VERIFICATION_REQUEST_ERROR", error)
+        throw new GetVerificationRequestError(error)
       }
     }
 
@@ -573,11 +570,11 @@ export default function Adapter(config, options = {}) {
       secret,
       provider
     ) {
-      _debug("deleteVerification", identifier, token, secret);
+      debug("deleteVerification", identifier, token, secret)
 
       const hashedToken = createHash("sha256")
         .update(`${token}${secret}`)
-        .digest("hex");
+        .digest("hex")
 
       try {
         const data = await DynamoClient.delete({
@@ -586,12 +583,12 @@ export default function Adapter(config, options = {}) {
             pk: `VR#${identifier}`,
             sk: `VR#${hashedToken}`,
           },
-        }).promise();
+        }).promise()
 
-        return data;
+        return data
       } catch (error) {
-        console.error("DELETE_VERIFICATION_REQUEST_ERROR", error);
-        return Promise.reject(new Error("DELETE_VERIFICATION_REQUEST_ERROR"));
+        logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error)
+        throw new DeleteVerificationRequestError(error)
       }
     }
 
@@ -611,10 +608,10 @@ export default function Adapter(config, options = {}) {
       createVerificationRequest,
       getVerificationRequest,
       deleteVerificationRequest,
-    };
+    }
   }
 
   return {
     getAdapter,
-  };
+  }
 }
