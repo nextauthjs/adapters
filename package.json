@@ -16,7 +16,34 @@
     "packages/*"
   ],
   "devDependencies": {
+    "eslint": "^7.25.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-config-standard": "^16.0.2",
     "lerna": "^3.22.1",
-    "next-auth": "^3.1.0"
+    "next-auth": "^3.1.0",
+    "prettier": "^2.2.1"
+  },
+  "prettier": {
+    "semi": false
+  },
+  "eslintConfig": {
+    "extends": [
+      "standard",
+      "prettier"
+    ],
+    "ignorePatterns": [
+      "node_modules",
+      "test",
+      "next-env.d.ts",
+      "types",
+      "www",
+      ".next",
+      "dist"
+    ],
+    "globals": {
+      "localStorage": "readonly",
+      "location": "readonly",
+      "fetch": "readonly"
+    }
   }
 }

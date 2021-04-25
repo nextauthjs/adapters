@@ -1,18 +1,23 @@
 {
   "name": "@next-auth/firebase-adapter",
-  "repository": "https://github.com/nextauthjs/adapters",
   "version": "0.0.0",
   "description": "Firebase adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "author": "Ron Houben",
+  "contributors": [
+    "Nico Domino <yo@ndo.dev>"
+  ],
+  "main": "dist/index.js",
+  "license": "MIT",
   "keywords": [
     "next-auth",
     "next.js",
     "firebase"
   ],
-  "homepage": "https://next-auth.js.org",
-  "bugs": {
-    "url": "https://github.com/nextauthjs/next-auth/issues"
-  },
-  "main": "dist/index.js",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -20,11 +25,6 @@
   "scripts": {
     "build": "tsc"
   },
-  "author": "Ron Houben",
-  "contributors": [
-    "Nico Domino <yo@ndo.dev>"
-  ],
-  "license": "MIT",
   "peerDependencies": {
     "next-auth": "^3.1.0"
   },
