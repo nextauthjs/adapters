@@ -18,7 +18,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {},
+  "scripts": {
+    "test": "echo \"TODO: Add tests...\"; exit 0"
+  },
   "author": "Pol Marnette",
   "license": "ISC",
   "peerDependencies": {
