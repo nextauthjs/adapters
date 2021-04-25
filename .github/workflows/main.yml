@@ -27,6 +27,7 @@ jobs:
           - prisma
           - typeorm
           - fauna
+          - dynamodb
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
