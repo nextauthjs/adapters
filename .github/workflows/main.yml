@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  
+
 jobs:
   # From https://github.com/marketplace/actions/workflow-run-cleanup-action
   # This action cleans up previously running instances of a workflow on the same branch.
@@ -26,6 +26,7 @@ jobs:
         adapter:
           - prisma
           - typeorm
+          - fauna
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
@@ -60,12 +61,12 @@ jobs:
         run: yarn build
       - name: Authenticate with Registry
         run: |
-            yarn logout
-            echo "registry=http://registry.npmjs.org/" >> .npmrc
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-            npm whoami
+          yarn logout
+          echo "registry=http://registry.npmjs.org/" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+          npm whoami
         env:
-            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Configure CI Git User
         run: |
           git config --global user.email william@atto-byte.com
@@ -79,4 +80,3 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GH_PAT }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
           GH_TOKEN: ${{ secrets.GH_PAT }}
-        

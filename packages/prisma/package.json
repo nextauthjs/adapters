@@ -32,11 +32,10 @@
   ],
   "peerDependencies": {
     "@prisma/client": ">=2.16.0",
-    "next-auth": ">=3.15.0"
+    "next-auth": ">=3.15.13"
   },
   "dependencies": {
     "crypto": "^1.0.1",
-    "klona": "^2.0.4",
     "lru-cache": "^6.0.0"
   },
   "devDependencies": {
