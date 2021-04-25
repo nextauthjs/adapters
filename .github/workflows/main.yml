@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  
+
 jobs:
   # From https://github.com/marketplace/actions/workflow-run-cleanup-action
   # This action cleans up previously running instances of a workflow on the same branch.
@@ -25,6 +25,8 @@ jobs:
       matrix:
         adapter:
           - prisma
+          - typeorm
+          - fauna
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
@@ -40,7 +42,6 @@ jobs:
       - name: test ${{ matrix.adapter }}
         run: yarn test
   publish:
-    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'skip-ci')
     needs: test-adapters
     runs-on: ubuntu-latest
     env:
@@ -56,25 +57,26 @@ jobs:
           node-version: "12"
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
+      - name: Build
+        run: yarn build
       - name: Authenticate with Registry
         run: |
-            yarn logout
-            echo "registry=http://registry.npmjs.org/" >> .npmrc
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-            npm whoami
+          yarn logout
+          echo "registry=http://registry.npmjs.org/" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+          npm whoami
         env:
-            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Configure CI Git User
         run: |
-          git config --global user.email octobot@github.com
-          git config --global user.name "@$GITHUB_ACTOR"
+          git config --global user.email william@atto-byte.com
+          git config --global user.name "William Luke"
           git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
 
       - name: Publish Stable
         if: github.event_name == 'push'
-        run: yarn lerna publish --dist-tag latest --yes --no-verify-access -m "publish [skip-ci]"
+        run: yarn lerna publish --dist-tag latest --yes --no-verify-access -m "publish [skip ci]"
         env:
           GITHUB_TOKEN: "${{ secrets.GH_PAT }}"
           NPM_TOKEN: "${{ secrets.NPM_TOKEN}}"
           GH_TOKEN: ${{ secrets.GH_PAT }}
-        

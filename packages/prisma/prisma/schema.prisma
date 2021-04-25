@@ -17,7 +17,6 @@ model Account {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   user               User      @relation(fields: [userId], references: [id])
-
   @@unique([providerId, providerAccountId])
 }
 
@@ -51,5 +50,5 @@ model VerificationRequest {
   expires    DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  @@unique([identifier, token])
 }
-

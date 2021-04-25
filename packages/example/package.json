@@ -1,9 +1,14 @@
 {
   "name": "@next-auth/example-adapter",
   "repository": "https://github.com/nextauthjs/adapters",
-  "version": "0.0.0",
+  "version": "0.3.0",
   "description": "{{example}} adapter for next-auth.",
-  "keywords": ["next-auth", "next.js", "oauth", "example"],
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "example"
+  ],
   "homepage": "https://next-auth.js.org",
   "bugs": {
     "url": "https://github.com/nextauthjs/next-auth/issues"
@@ -13,17 +18,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {
-  },
+  "scripts": {},
   "author": "William Luke",
   "license": "ISC",
   "peerDependencies": {
     "next-auth": "^3.1.0"
-  },
-  "dependencies": {
-    
-  },
-  "devDependencies": {
-    
   }
 }
