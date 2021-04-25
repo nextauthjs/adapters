@@ -21,7 +21,6 @@ jobs:
     if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
 
   test-adapters:
-    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'skip-ci')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,6 +28,7 @@ jobs:
         adapter:
           - prisma
           - typeorm
+          - fauna
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
@@ -44,7 +44,6 @@ jobs:
       - name: test ${{ matrix.adapter }}
         run: yarn test
   publish:
-    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'skip-ci')
     needs: test-adapters
     runs-on: ubuntu-latest
     env:
@@ -63,12 +62,12 @@ jobs:
         run: yarn build
       - name: Authenticate with Registry
         run: |
-            yarn logout
-            echo "registry=http://registry.npmjs.org/" >> .npmrc
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-            npm whoami
+          yarn logout
+          echo "registry=http://registry.npmjs.org/" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+          npm whoami
         env:
-            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish Canary
         if: github.event_name == 'push'
         run: yarn lerna publish --canary --preid canary --dist-tag canary --yes --no-verify-access

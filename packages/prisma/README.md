@@ -47,6 +47,8 @@ model VerificationRequest {
   expires    DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, token])
 }
 
 ```
@@ -134,5 +136,6 @@ Changes from the original Prisma Adapter
 +  updatedAt  DateTime @updatedAt
 
 -  @@map(name: "verification_requests")
++  @@unique([identifier, token])
  }
 ```

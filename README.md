@@ -11,6 +11,7 @@ In case you can also take on the maintenance of the adapter, let us know, and we
 ## Adapters
 
 - [Prisma](./packages/prisma/README.md)
+- [Fauna](./packages/fauna/README.md)
 - [DynamoDB](./packages/dynamodb/README.md)
 - [Example](./packages/example/README.md)
 
