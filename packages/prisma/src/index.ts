@@ -140,7 +140,11 @@ export default function PrismaAdapter<
               })()
               return cachedUser
             }
-            return await prisma[User as "user"].findUnique({ where: { id } })
+            const user = (await prisma[User as "user"].findUnique({
+              where: { id },
+            }))
+            userCache.set(user.id, user)
+            return user
           } catch (error) {
             logger.error("GET_USER_BY_ID_ERROR", error)
             throw new GetUserByIdError(error)
