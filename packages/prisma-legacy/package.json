@@ -13,13 +13,17 @@
   "bugs": {
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
   "private": false,
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "test": "echo \"TODO: Add tests...\"; exit 0"
+    "test": "echo \"TODO: Add tests...\"; exit 0",
+    "build": "babel src --out-dir dist"
   },
   "contributors": [
     "Balázs Orbán <info@balazsorban.com>"
@@ -27,7 +31,11 @@
   "author": "Fredrik Pettersen <pettersen@hey.com>",
   "license": "ISC",
   "peerDependencies": {
-    "next-auth": "^3.17.2",
-    "@prisma/client": "^2.16.1"
+    "@prisma/client": "^2.16.1",
+    "next-auth": "^3.17.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.13.16",
+    "@babel/preset-env": "^7.13.15"
   }
 }
