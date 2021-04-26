@@ -2,11 +2,10 @@ import { createConnection, getConnection } from "typeorm"
 import { createHash } from "crypto"
 import require_optional from "require_optional" // eslint-disable-line camelcase
 
-import { CreateUserError } from "../../lib/errors"
+import { CreateUserError } from "next-auth/errors"
 import adapterConfig from "./lib/config"
 import adapterTransform from "./lib/transform"
 import Models from "./models"
-import logger from "../../lib/logger"
 import { updateConnectionEntities } from "./lib/utils"
 
 const Adapter = (typeOrmConfig, options = {}) => {
@@ -47,6 +46,8 @@ const Adapter = (typeOrmConfig, options = {}) => {
   let connection = null
 
   async function getAdapter(appOptions) {
+    const logger = appOptions.logger ?? console
+
     // Helper function to reuse / restablish connections
     // (useful if they drop when after being idle)
     async function _connect() {
