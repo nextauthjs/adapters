@@ -143,7 +143,6 @@ const PrismaAdapter: Adapter<
           }
         },
 
-        /* TODO: Remove type annotations */
         async deleteUser(userId) {
           debug("DELETE_USER", userId)
           try {
