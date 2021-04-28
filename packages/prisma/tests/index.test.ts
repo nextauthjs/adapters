@@ -21,7 +21,11 @@ const appOptions: AppOptions = {
   events: {},
   jwt: {},
   theme: "auto",
-  logger: console,
+  logger: {
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  } as const,
   pages: {},
   providers: [],
   secret: "",
@@ -29,7 +33,13 @@ const appOptions: AppOptions = {
   adapter: prismaAdapter as any,
 }
 
-const emailProvider = { ...Providers.Email({}), maxAge: 40, from: "test" }
+const sendVerificationRequestMock = jest.fn()
+
+const emailProvider = {
+  ...Providers.Email({
+    sendVerificationRequest: sendVerificationRequestMock,
+  }),
+} as any
 
 describe("adapter functions", () => {
   afterAll(async () => {
@@ -45,7 +55,6 @@ describe("adapter functions", () => {
       image: "https://",
     } as any)
 
-    expect(user.id).toEqual(1)
     expect(user.email).toMatchInlineSnapshot(`"test@next-auth.com"`)
     expect(user.name).toMatchInlineSnapshot(`"test"`)
     expect(user.image).toMatchInlineSnapshot(`"https://"`)
@@ -70,7 +79,6 @@ describe("adapter functions", () => {
 
     expect(session.sessionToken.length).toMatchInlineSnapshot(`64`)
     expect(session.accessToken.length).toMatchInlineSnapshot(`64`)
-    expect(session.userId).toEqual(1)
   })
 
   test("getSession", async () => {
@@ -81,7 +89,6 @@ describe("adapter functions", () => {
 
     expect(result?.sessionToken).toEqual(session.sessionToken)
     expect(result?.accessToken).toEqual(session.accessToken)
-    expect(result?.userId).toEqual(1)
   })
   test("updateSession", async () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
@@ -94,13 +101,20 @@ describe("adapter functions", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         userId: "userId",
-        expires: expires,
+        expires,
         id: session.id,
         sessionToken: session.sessionToken,
       },
       true
     )
-    expect(session?.expires).toEqual(expires)
+    if (!session) throw new Error("No Session Updated")
+
+    // Using default maxAge, which is 30 days
+    const thirtyDaysFromNow = new Date()
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+    expect(
+      Math.abs(session.expires.getTime() - thirtyDaysFromNow.getTime())
+    ).toBeLessThan(1000)
   })
 
   test("deleteSession", async () => {
@@ -128,6 +142,7 @@ describe("adapter functions", () => {
     })
     verificationRequest = result?.[0]
     expect(verificationRequest.identifier).toEqual(identifier)
+    expect(sendVerificationRequestMock).toBeCalledTimes(1)
   })
   test("getVerificationRequest", async () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
