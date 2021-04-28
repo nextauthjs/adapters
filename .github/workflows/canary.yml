@@ -30,6 +30,7 @@ jobs:
           - prisma
           - fauna
           - dynamodb
+          - pouchdb
           - typeorm-legacy
           - prisma-legacy
     defaults:
