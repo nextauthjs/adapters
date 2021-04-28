@@ -7,7 +7,7 @@ generator client {
 }
 model Account {
   id                 Int       @id @default(autoincrement())
-  userId             Int
+  userId             String
   providerType       String
   providerId         String
   providerAccountId  String
@@ -22,7 +22,7 @@ model Account {
 
 model Session {
   id           Int      @id @default(autoincrement())
-  userId       Int
+  userId       String
   expires      DateTime
   sessionToken String   @unique
   accessToken  String   @unique
@@ -32,7 +32,7 @@ model Session {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
+  id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
@@ -44,7 +44,7 @@ model User {
 }
 
 model VerificationRequest {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(cuid())
   identifier String
   token      String   @unique
   expires    DateTime
