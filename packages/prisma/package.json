@@ -34,10 +34,7 @@
     "@prisma/client": ">=2.16.0",
     "next-auth": ">=3.19.2"
   },
-  "dependencies": {
-    "crypto": "^1.0.1",
-    "lru-cache": "^6.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@prisma/client": "^2.16.0",
     "@types/jest": "^26.0.20",
