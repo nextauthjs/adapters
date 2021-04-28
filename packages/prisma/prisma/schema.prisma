@@ -6,7 +6,7 @@ generator client {
   provider = "prisma-client-js"
 }
 model Account {
-  id                 Int       @id @default(autoincrement())
+  id                 String    @id @default(cuid())
   userId             String
   providerType       String
   providerId         String
@@ -21,7 +21,7 @@ model Account {
 }
 
 model Session {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(cuid())
   userId       String
   expires      DateTime
   sessionToken String   @unique
