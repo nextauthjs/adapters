@@ -253,9 +253,9 @@ const PrismaAdapter: Adapter<
               Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
                 Date.now()
             ) {
-              return
+              return null
             }
-            await prisma.session.update({
+            return await prisma.session.update({
               where: { id: session.id },
               data: {
                 expires: new Date(Date.now() + sessionMaxAgeMs),
