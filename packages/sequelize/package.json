@@ -1,0 +1,33 @@
+{
+  "name": "next-auth-sequelize-adapter",
+  "version": "2.0.0",
+  "description": "Next-Auth adapter for Sequelize ORM.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "./node_modules/.bin/babel src -d dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter.git"
+  },
+  "keywords": [
+    "next-auth-sequelize",
+    "next-auth-sequelize-adapter",
+    "next-auth-adapter"
+  ],
+  "author": "Rafay Khan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter/issues"
+  },
+  "homepage": "https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter#readme",
+  "dependencies": {
+    "core-js": "^3.11.0",
+    "regenerator-runtime": "^0.13.7"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.12.10",
+    "@babel/core": "^7.12.10",
+    "@babel/preset-env": "^7.12.11"
+  }
+}
