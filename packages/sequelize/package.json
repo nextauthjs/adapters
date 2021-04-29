@@ -17,7 +17,7 @@
   ],
   "author": "Rafay Khan",
   "license": "MIT",
-  "homepage": "https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter#readme",
+  "homepage": "https://github.com/nextauthjs/adapters/tree/canary/packages/sequelize",
   "dependencies": {
     "core-js": "^3.11.0",
     "regenerator-runtime": "^0.13.7"
