@@ -6,7 +6,7 @@ import leveldbAdapter from "pouchdb-adapter-leveldb"
 import find from "pouchdb-find"
 import LRU from "lru-cache"
 // import { createHash, randomBytes } from "crypto"
-import { Profile } from "next-auth/adapters"
+import type { Profile } from "next-auth"
 import { AppOptions } from "next-auth/internals"
 import {
   CreateUserError,
