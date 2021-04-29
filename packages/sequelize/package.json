@@ -6,9 +6,9 @@
   "scripts": {
     "build": "babel src -d dist"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter.git"
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/adapters/issues"
   },
   "keywords": [
     "next-auth-sequelize",
