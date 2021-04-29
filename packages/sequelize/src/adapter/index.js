@@ -1,9 +1,8 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
-import { createHash, randomBytes } from "crypto";
 
-import { CreateUserError } from "./lib/errors";
-import logger from "./lib/logger";
+import { createHash, randomBytes } from "crypto";
+import { CreateUserError } from "next-auth/errors";
 
 const Adapter = (config) => {
   const { models } = config;
@@ -15,6 +14,8 @@ const Adapter = (config) => {
   }
 
   async function getAdapter(appOptions) {
+    const logger = appOptions.logger
+
     function debug(debugCode, ...args) {
       logger.debug(`SEQUELIZE${debugCode}`, ...args);
     }
