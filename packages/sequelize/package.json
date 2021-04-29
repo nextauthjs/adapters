@@ -17,9 +17,6 @@
   ],
   "author": "Rafay Khan",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter/issues"
-  },
   "homepage": "https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter#readme",
   "dependencies": {
     "core-js": "^3.11.0",
