@@ -19,8 +19,6 @@
   "license": "MIT",
   "homepage": "https://github.com/nextauthjs/adapters/tree/canary/packages/sequelize",
   "dependencies": {
-    "core-js": "^3.11.0",
-    "regenerator-runtime": "^0.13.7"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.10",
