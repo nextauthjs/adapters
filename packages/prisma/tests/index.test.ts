@@ -1,24 +1,12 @@
-import {
-  PrismaClient,
-  Session,
-  User,
-  VerificationRequest,
-} from "@prisma/client"
+import * as Prisma from "@prisma/client"
 import Adapter from "../src"
-import { AppOptions } from "next-auth/internals"
-const prisma = new PrismaClient()
-const prismaAdapter = Adapter({
-  prisma: prisma,
-  modelMapping: {
-    Account: "account",
-    Session: "session",
-    User: "user",
-    VerificationRequest: "verificationRequest",
-  },
-})
-let session: Session | null = null
-let user: User | null = null
-let verificationRequest: VerificationRequest | null = null
+import type { AppOptions } from "next-auth/internals"
+import Providers from "next-auth/providers"
+const prisma = new Prisma.PrismaClient()
+const prismaAdapter = Adapter({ prisma })
+let session: Prisma.Session | null = null
+let user: Prisma.User | null = null
+let verificationRequest: Prisma.VerificationRequest | null = null
 
 const SECRET = "secret"
 const TOKEN = "secret"
@@ -33,13 +21,25 @@ const appOptions: AppOptions = {
   events: {},
   jwt: {},
   theme: "auto",
-  logger: console,
+  logger: {
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  } as const,
   pages: {},
   providers: [],
   secret: "",
   session: {},
   adapter: prismaAdapter as any,
 }
+
+const sendVerificationRequestMock = jest.fn()
+
+const emailProvider = {
+  ...Providers.Email({
+    sendVerificationRequest: sendVerificationRequestMock,
+  }),
+} as any
 
 describe("adapter functions", () => {
   afterAll(async () => {
@@ -55,7 +55,6 @@ describe("adapter functions", () => {
       image: "https://",
     } as any)
 
-    expect(user.id).toEqual(1)
     expect(user.email).toMatchInlineSnapshot(`"test@next-auth.com"`)
     expect(user.name).toMatchInlineSnapshot(`"test"`)
     expect(user.image).toMatchInlineSnapshot(`"https://"`)
@@ -80,66 +79,81 @@ describe("adapter functions", () => {
 
     expect(session.sessionToken.length).toMatchInlineSnapshot(`64`)
     expect(session.accessToken.length).toMatchInlineSnapshot(`64`)
-    expect(session.userId).toEqual(1)
   })
 
   test("getSession", async () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
     if (!session) throw new Error("No Session Available")
 
-    const result = (await adapter.getSession(session.sessionToken)) as Session
+    const result = await adapter.getSession(session.sessionToken)
 
-    expect(result.sessionToken).toEqual(session.sessionToken)
-    expect(result.accessToken).toEqual(session.accessToken)
-    expect(result.userId).toEqual(1)
+    expect(result?.sessionToken).toEqual(session.sessionToken)
+    expect(result?.accessToken).toEqual(session.accessToken)
   })
   test("updateSession", async () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
     if (!session) throw new Error("No Session Available")
 
     const expires = new Date(2070, 1)
-    session = (await adapter.updateSession(
+    session = await adapter.updateSession(
       {
-        expires: expires,
+        accessToken: "e.e.e",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: "userId",
+        expires,
         id: session.id,
         sessionToken: session.sessionToken,
       },
       true
-    )) as Session
-    expect(session.expires).toEqual(expires)
+    )
+    if (!session) throw new Error("No Session Updated")
+
+    // Using default maxAge, which is 30 days
+    const thirtyDaysFromNow = new Date()
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+    expect(
+      Math.abs(session.expires.getTime() - thirtyDaysFromNow.getTime())
+    ).toBeLessThan(1000)
   })
 
   test("deleteSession", async () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
     if (!session) throw new Error("No Session Available")
-    const result = await adapter.deleteSession(session.sessionToken)
-    expect(result.sessionToken).toEqual(session.sessionToken)
+    await adapter.deleteSession(session.sessionToken)
+    const result = await prisma.session.findUnique({
+      where: { sessionToken: session.sessionToken },
+    })
+    expect(result).toBe(null)
   })
   // VerificationRequests
   test("createVerificationRequest", async () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
-    verificationRequest = await adapter.createVerificationRequest(
-      "any",
+    const identifier = "any"
+    await adapter.createVerificationRequest?.(
+      identifier,
       "https://some.where",
       TOKEN,
       SECRET,
-      {
-        maxAge: 90,
-        sendVerificationRequest: async (request: any) => {},
-      } as any
+      emailProvider
     )
-    expect(verificationRequest.id).toEqual(1)
-    expect(verificationRequest.identifier).toEqual("any")
+    const result = await prisma.verificationRequest.findMany({
+      where: { identifier },
+    })
+    verificationRequest = result?.[0]
+    expect(verificationRequest.identifier).toEqual(identifier)
+    expect(sendVerificationRequestMock).toBeCalledTimes(1)
   })
   test("getVerificationRequest", async () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
     if (!verificationRequest)
       throw new Error("No Verification Request Available")
 
-    const result = await adapter.getVerificationRequest(
+    const result = await adapter.getVerificationRequest?.(
       verificationRequest.identifier,
       TOKEN,
-      SECRET
+      SECRET,
+      emailProvider
     )
     expect(result?.token).toEqual(verificationRequest.token)
   })
@@ -147,12 +161,16 @@ describe("adapter functions", () => {
     const adapter = await prismaAdapter.getAdapter(appOptions)
     if (!verificationRequest)
       throw new Error("No Verification Request Available")
-    const result = await adapter.deleteVerificationRequest(
+    await adapter.deleteVerificationRequest?.(
       verificationRequest.identifier,
       TOKEN,
-      SECRET
+      SECRET,
+      emailProvider
     )
-    expect(result.id).toEqual(verificationRequest.id)
+    const result = await prisma.verificationRequest.findUnique({
+      where: { token: TOKEN },
+    })
+    expect(result).toEqual(null)
   })
 
   // test('linkAccount', async () => {

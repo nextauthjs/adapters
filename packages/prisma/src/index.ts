@@ -1,9 +1,6 @@
-import * as Prisma from "@prisma/client"
-import { Session, User } from "@prisma/client"
+import type * as Prisma from "@prisma/client"
 import { createHash, randomBytes } from "crypto"
-import LRU from "lru-cache"
-import { Profile } from "next-auth/adapters"
-import { AppOptions } from "next-auth/internals"
+import type { Adapter } from "next-auth/adapters"
 import {
   CreateSessionError,
   CreateUserError,
@@ -21,190 +18,123 @@ import {
   UpdateSessionError,
   UpdateUserError,
 } from "next-auth/errors"
-import { EmailConfig } from "next-auth/providers"
 
-type IsValid<
-  T extends Prisma.PrismaClient,
-  U extends keyof T
-> = RequiredMethods extends keyof T[U]
-  ? T[U][RequiredMethods] extends (args?: any) => any
-    ? 1
-    : 0
-  : 0
-type RequiredMethods = "create" | "findUnique" | "delete" | "update"
-type Filter<T extends Prisma.PrismaClient> = {
-  [K in keyof T]-?: {
-    1: K
-    0: never
-  }[IsValid<T, K>]
-}[keyof T]
-
-const sessionCache = new LRU({
-  maxAge: 24 * 60 * 60 * 1000,
-  max: 1000,
-})
-
-const userCache = new LRU<Prisma.User["id"], Prisma.User>({
-  maxAge: 24 * 60 * 60 * 1000,
-  max: 1000,
-})
-
-function maxAge(expires?: string | number | Date | null) {
-  return expires ? new Date(expires).getTime() - Date.now() : undefined
+function verificationRequestToken({
+  token,
+  secret,
+}: {
+  token: string
+  secret: string
+}) {
+  // TODO: Use bcrypt or a more secure method
+  return createHash("sha256").update(`${token}${secret}`).digest("hex")
 }
 
-interface PrismaAdapterConfig<
-  P extends Prisma.PrismaClient,
-  U extends Filter<P> extends string ? Filter<P> : never,
-  A extends Filter<P>,
-  S extends Filter<P>,
-  VR extends Filter<P>
-> {
-  prisma: P
-  modelMapping?: {
-    User: U
-    Account: A
-    Session: S
-    VerificationRequest: VR
-  }
-}
-
-export default function PrismaAdapter<
-  P extends Prisma.PrismaClient,
-  U extends Filter<P> extends string ? Filter<P> : never,
-  A extends Filter<P>,
-  S extends Filter<P>,
-  VR extends Filter<P>
->({ prisma, modelMapping }: PrismaAdapterConfig<P, U, A, S, VR>) {
-  const { User, Account, Session, VerificationRequest } = modelMapping ?? {
-    User: "user",
-    Account: "account",
-    Session: "session",
-    VerificationRequest: "verificationRequest",
-  }
-
+const PrismaAdapter: Adapter<
+  { prisma: Prisma.PrismaClient },
+  unknown,
+  Prisma.User,
+  Prisma.User,
+  Prisma.Session
+> = ({ prisma }) => {
   return {
-    async getAdapter(appOptions: AppOptions) {
-      const logger = appOptions.logger ?? console
-
-      function debug(debugCode: string, ...args: any) {
+    async getAdapter({ logger, session, ...appOptions }) {
+      function debug(debugCode: string, ...args: unknown[]) {
         logger.debug(`PRISMA_${debugCode}`, ...args)
       }
 
-      if (!appOptions.session?.maxAge) {
+      if (!session.maxAge) {
         debug(
           "GET_ADAPTER",
           "Session expiry not configured (defaulting to 30 days)"
         )
       }
+      if (!session.updateAge) {
+        debug(
+          "GET_ADAPTER",
+          "Session update age not configured (defaulting to 1 day)"
+        )
+      }
 
-      const defaultSessionMaxAge = 30 * 24 * 60 * 60
-      const sessionMaxAge =
-        (appOptions.session?.maxAge ?? defaultSessionMaxAge) * 1000
-      const sessionUpdateAge = (appOptions.session?.updateAge ?? 0) * 1000
+      const {
+        maxAge = 30 * 24 * 60 * 60, // 30 days
+        updateAge = 24 * 60 * 60, // 1 day
+      } = session
+
+      const sessionMaxAgeMs = maxAge * 1000
+      const sessionUpdateAgeMs = updateAge * 1000
 
       return {
-        async createUser(profile: Profile & { emailVerified?: Date }) {
+        async createUser(profile) {
           debug("CREATE_USER", profile)
           try {
-            const user = await prisma[User as "user"].create({
+            return await prisma.user.create({
               data: {
                 name: profile.name,
                 email: profile.email,
                 image: profile.image,
-                emailVerified: profile.emailVerified
-                  ? profile.emailVerified.toISOString()
-                  : null,
+                emailVerified: profile.emailVerified?.toISOString() ?? null,
               },
             })
-            userCache.set(user.id, user)
-            return user
           } catch (error) {
             logger.error("CREATE_USER_ERROR", error)
             throw new CreateUserError(error)
           }
         },
-        async getUser(id: number) {
-          debug("GET_USER", id)
+
+        async getUser(id) {
+          debug("GET_USER_BY_ID", id)
           try {
-            const cachedUser = userCache.get(id)
-            if (cachedUser) {
-              debug("GET_USER - Fetched from LRU Cache", cachedUser)
-              // stale while revalidate
-              // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              ;(async () => {
-                const user = (await prisma[User as "user"].findUnique({
-                  where: { id },
-                }))
-                if (user) userCache.set(user.id, user)
-              })()
-              return cachedUser
-            }
-            const user = (await prisma[User as "user"].findUnique({
+            return await prisma.user.findUnique({
               where: { id },
-            }))
-            if (user) userCache.set(user.id, user)
-            return user
+            })
           } catch (error) {
             logger.error("GET_USER_BY_ID_ERROR", error)
             throw new GetUserByIdError(error)
           }
         },
-        async getUserByEmail(email?: string) {
+
+        async getUserByEmail(email) {
           debug("GET_USER_BY_EMAIL", email)
           try {
-            if (!email) {
-              return null
-            }
-            return await prisma[User as "user"].findUnique({
-              where: { email },
-            })
+            if (!email) return null
+            return await prisma.user.findUnique({ where: { email } })
           } catch (error) {
             logger.error("GET_USER_BY_EMAIL_ERROR", error)
             throw new GetUserByEmailError(error)
           }
         },
-        async getUserByProviderAccountId(
-          providerId: string,
-          providerAccountId: string
-        ) {
+
+        async getUserByProviderAccountId(providerId, providerAccountId) {
           debug(
             "GET_USER_BY_PROVIDER_ACCOUNT_ID",
             providerId,
             providerAccountId
           )
           try {
-            if (!providerId || !providerAccountId) return null
-            const account = await prisma[Account as "account"].findUnique({
+            const account = await prisma.account.findUnique({
               where: {
-                providerId_providerAccountId: {
-                  providerId: providerId,
-                  providerAccountId: String(providerAccountId),
-                },
+                providerId_providerAccountId: { providerId, providerAccountId },
               },
-              include: {
-                user: true,
-              },
+              select: { user: true },
             })
-            return account?.user ?? null
+            return account ? account.user : null
           } catch (error) {
             logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error)
             throw new GetUserByProviderAccountIdError(error)
           }
         },
-        async updateUser(user: User) {
+
+        async updateUser(user) {
           debug("UPDATE_USER", user)
           try {
-            const { id, name, email, image, emailVerified } = user
-            userCache.set(id, user)
-            // @ts-expect-error
-            return prisma[User].update({
-              where: { id },
+            return await prisma.user.update({
+              where: { id: user.id },
               data: {
-                name,
-                email,
-                image,
-                emailVerified: emailVerified?.toISOString?.() ?? null,
+                name: user.name,
+                email: user.email,
+                image: user.image,
+                emailVerified: user.emailVerified?.toISOString() ?? null,
               },
             })
           } catch (error) {
@@ -212,26 +142,28 @@ export default function PrismaAdapter<
             throw new UpdateUserError(error)
           }
         },
-        async deleteUser(userId: number) {
-          userCache.del(userId)
+
+        async deleteUser(userId) {
           debug("DELETE_USER", userId)
           try {
-            return await prisma[User as "user"].delete({
+            await prisma.user.delete({
               where: { id: userId },
             })
+            return
           } catch (error) {
             logger.error("DELETE_USER_ERROR", error)
             throw new DeleteUserError(error)
           }
         },
+
         async linkAccount(
-          userId: number,
-          providerId: string,
-          providerType: string,
-          providerAccountId: string,
-          refreshToken: string,
-          accessToken: string,
-          accessTokenExpires?: string | Date | null
+          userId,
+          providerId,
+          providerType,
+          providerAccountId,
+          refreshToken,
+          accessToken,
+          accessTokenExpires
         ) {
           debug(
             "LINK_ACCOUNT",
@@ -244,15 +176,18 @@ export default function PrismaAdapter<
             accessTokenExpires
           )
           try {
-            return await prisma[Account as "account"].create({
+            await prisma.account.create({
               data: {
-                accessToken,
-                refreshToken,
-                providerAccountId: `${providerAccountId}`,
+                userId,
                 providerId,
                 providerType,
-                accessTokenExpires,
-                user: { connect: { id: userId } },
+                providerAccountId,
+                refreshToken,
+                accessToken,
+                accessTokenExpires:
+                  accessTokenExpires != null
+                    ? new Date(accessTokenExpires)
+                    : null,
               },
             })
           } catch (error) {
@@ -260,19 +195,13 @@ export default function PrismaAdapter<
             throw new LinkAccountError(error)
           }
         },
-        async unlinkAccount(
-          userId: string,
-          providerId: string,
-          providerAccountId: string
-        ) {
+
+        async unlinkAccount(userId, providerId, providerAccountId) {
           debug("UNLINK_ACCOUNT", userId, providerId, providerAccountId)
           try {
-            return await prisma[Account as "account"].delete({
+            await prisma.account.delete({
               where: {
-                providerId_providerAccountId: {
-                  providerAccountId: String(providerAccountId),
-                  providerId: providerId,
-                },
+                providerId_providerAccountId: { providerId, providerAccountId },
               },
             })
           } catch (error) {
@@ -280,249 +209,134 @@ export default function PrismaAdapter<
             throw new UnlinkAccountError(error)
           }
         },
-        async createSession(user: User) {
+
+        async createSession(user) {
           debug("CREATE_SESSION", user)
           try {
-            let expires: string | Date | null = null
-            const dateExpires = new Date()
-            dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
-            expires = dateExpires.toISOString()
-
-            const session = {
-              userId: user.id,
-              expires,
-              sessionToken: randomBytes(32).toString("hex"),
-              accessToken: randomBytes(32).toString("hex"),
-            }
-
-            sessionCache.set(session.sessionToken, session, maxAge(expires))
-            const res = await prisma[Session as "session"].create({
-              data: session,
+            return await prisma.session.create({
+              data: {
+                userId: user.id,
+                expires: new Date(Date.now() + sessionMaxAgeMs),
+                sessionToken: randomBytes(32).toString("hex"),
+                accessToken: randomBytes(32).toString("hex"),
+              },
             })
-            return res
           } catch (error) {
             logger.error("CREATE_SESSION_ERROR", error)
             throw new CreateSessionError(error)
           }
         },
-        async getSession(sessionToken: string) {
+
+        async getSession(sessionToken) {
           debug("GET_SESSION", sessionToken)
           try {
-            const cachedSession = sessionCache.get(sessionToken)
-            if (cachedSession) {
-              debug("GET_SESSION - Fetched from LRU Cache", cachedSession)
-              return cachedSession
-            }
-            const session = await prisma[Session as "session"].findUnique({
-              where: { sessionToken: sessionToken },
+            const session = await prisma.session.findUnique({
+              where: { sessionToken },
             })
-
-            // Check session has not expired (do not return it if it has)
-            if (session?.expires && new Date() > session.expires) {
-              await prisma[Session as "session"].delete({
-                where: { sessionToken },
-              })
+            if (session && session.expires < new Date()) {
+              await prisma.session.delete({ where: { sessionToken } })
               return null
             }
-
-            session &&
-              sessionCache.set(
-                session.sessionToken,
-                session,
-                maxAge(session.expires)
-              )
-
             return session
           } catch (error) {
             logger.error("GET_SESSION_ERROR", error)
             throw new GetSessionError(error)
           }
         },
-        async updateSession(
-          session: Pick<Session, "id" | "expires" | "sessionToken">,
-          force: boolean
-        ) {
+
+        async updateSession(session, force) {
           debug("UPDATE_SESSION", session)
           try {
             if (
-              sessionMaxAge &&
-              (sessionUpdateAge || sessionUpdateAge === 0) &&
-              session.expires
+              !force &&
+              Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
+                Date.now()
             ) {
-              // Calculate last updated date, to throttle write updates to database
-              // Formula: ({expiry date} - sessionMaxAge) + sessionUpdateAge
-              //     e.g. ({expiry date} - 30 days) + 1 hour
-              //
-              // Default for sessionMaxAge is 30 days.
-              // Default for sessionUpdateAge is 1 hour.
-              const dateSessionIsDueToBeUpdated = new Date(session.expires)
-              dateSessionIsDueToBeUpdated.setTime(
-                dateSessionIsDueToBeUpdated.getTime() - sessionMaxAge
-              )
-              dateSessionIsDueToBeUpdated.setTime(
-                dateSessionIsDueToBeUpdated.getTime() + sessionUpdateAge
-              )
-
-              // Trigger update of session expiry date and write to database, only
-              // if the session was last updated more than {sessionUpdateAge} ago
-              if (new Date() > dateSessionIsDueToBeUpdated) {
-                const newExpiryDate = new Date()
-                newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
-                session.expires = newExpiryDate
-              } else if (!force) {
-                return null
-              }
-            } else {
-              // If session MaxAge, session UpdateAge or session.expires are
-              // missing then don't even try to save changes, unless force is set.
-              if (!force) {
-                return null
-              }
+              return null
             }
-
-            const { id, expires } = session
-            sessionCache.set(session.sessionToken, session, maxAge(expires))
-            return await prisma[Session as "session"].update({
-              where: { id },
-              data: { expires },
+            return await prisma.session.update({
+              where: { id: session.id },
+              data: {
+                expires: new Date(Date.now() + sessionMaxAgeMs),
+              },
             })
           } catch (error) {
             logger.error("UPDATE_SESSION_ERROR", error)
             throw new UpdateSessionError(error)
           }
         },
-        async deleteSession(sessionToken: string) {
+
+        async deleteSession(sessionToken) {
           debug("DELETE_SESSION", sessionToken)
           try {
-            sessionCache.del(sessionToken)
-            return await prisma[Session as "session"].delete({
-              where: { sessionToken },
-            })
+            await prisma.session.delete({ where: { sessionToken } })
           } catch (error) {
             logger.error("DELETE_SESSION_ERROR", error)
             throw new DeleteSessionError(error)
           }
         },
+
         async createVerificationRequest(
-          identifier: string,
-          url: string,
-          token: string,
-          secret: string,
-          provider: EmailConfig
+          identifier,
+          url,
+          token,
+          secret,
+          provider
         ) {
           debug("CREATE_VERIFICATION_REQUEST", identifier)
           try {
-            const baseUrl = appOptions.baseUrl ?? ""
-            const { sendVerificationRequest, maxAge } = provider
-
-            // Store hashed token (using secret as salt) so that tokens cannot be exploited
-            // even if the contents of the database is compromised.
-            // @TODO Use bcrypt function here instead of simple salted hash
-            const hashedToken = createHash("sha256")
-              .update(`${token}${secret}`)
-              .digest("hex")
-
-            let expires = ""
-            if (maxAge) {
-              const dateExpires = new Date()
-              dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
-              expires = dateExpires.toISOString()
-            }
-
-            // Save to database
-            const verificationRequest = await prisma[
-              VerificationRequest as "verificationRequest"
-            ].create({
+            const hashedToken = verificationRequestToken({ token, secret })
+            await prisma.verificationRequest.create({
               data: {
                 identifier,
                 token: hashedToken,
-                expires,
+                expires: new Date(Date.now() + provider.maxAge * 1000),
               },
             })
-
-            // With the verificationCallback on a provider, you can send an email, or queue
-            // an email to be sent, or perform some other action (e.g. send a text message)
-            await sendVerificationRequest({
+            await provider.sendVerificationRequest({
               identifier,
               url,
               token,
-              baseUrl,
+              baseUrl: appOptions.baseUrl,
               provider,
             })
-
-            return verificationRequest
           } catch (error) {
             logger.error("CREATE_VERIFICATION_REQUEST_ERROR", error)
             throw new CreateVerificationRequestError(error)
           }
         },
-        async getVerificationRequest(
-          identifier: string,
-          token: string,
-          secret: string
-        ) {
+
+        async getVerificationRequest(identifier, token, secret) {
           debug("GET_VERIFICATION_REQUEST", identifier, token)
           try {
-            // Hash token provided with secret before trying to match it with database
-            // @TODO Use bcrypt instead of salted SHA-256 hash for token
-            const hashedToken = createHash("sha256")
-              .update(`${token}${secret}`)
-              .digest("hex")
-            const verificationRequest = await prisma[
-              VerificationRequest as "verificationRequest"
-            ].findUnique({
-              where: {
-                identifier_token: {
-                  identifier: identifier,
-                  token: hashedToken,
-                },
-              },
-            })
-
+            const hashedToken = verificationRequestToken({ token, secret })
+            const verificationRequest = await prisma.verificationRequest.findUnique(
+              {
+                where: { identifier_token: { identifier, token: hashedToken } },
+              }
+            )
             if (
-              verificationRequest?.expires &&
-              new Date() > verificationRequest.expires
+              verificationRequest &&
+              verificationRequest.expires < new Date()
             ) {
-              // Delete verification entry so it cannot be used again
-              await prisma[VerificationRequest as "verificationRequest"].delete(
-                {
-                  where: {
-                    identifier_token: {
-                      identifier: identifier,
-                      token: hashedToken,
-                    },
-                  },
-                }
-              )
+              await prisma.verificationRequest.delete({
+                where: { identifier_token: { identifier, token: hashedToken } },
+              })
               return null
             }
-
             return verificationRequest
           } catch (error) {
             logger.error("GET_VERIFICATION_REQUEST_ERROR", error)
             throw new GetVerificationRequestError(error)
           }
         },
-        async deleteVerificationRequest(
-          identifier: string,
-          token: string,
-          secret: string
-        ) {
-          debug("DELETE_VERIFICATION", identifier, token)
+
+        async deleteVerificationRequest(identifier, token, secret) {
+          debug("DELETE_VERIFICATION_REQUEST", identifier, token)
           try {
-            // Delete verification entry so it cannot be used again
-            const hashedToken = createHash("sha256")
-              .update(`${token}${secret}`)
-              .digest("hex")
-            return await prisma[
-              VerificationRequest as "verificationRequest"
-            ].delete({
-              where: {
-                identifier_token: {
-                  identifier: identifier,
-                  token: hashedToken,
-                },
-              },
+            const hashedToken = verificationRequestToken({ token, secret })
+            await prisma.verificationRequest.delete({
+              where: { identifier_token: { identifier, token: hashedToken } },
             })
           } catch (error) {
             logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error)
@@ -533,3 +347,5 @@ export default function PrismaAdapter<
     },
   }
 }
+
+export default PrismaAdapter
