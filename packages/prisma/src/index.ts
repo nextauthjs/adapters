@@ -35,7 +35,7 @@ const PrismaAdapter: Adapter<
   { prisma: Prisma.PrismaClient },
   never,
   Prisma.User,
-  Profile,
+  Profile & { emailVerified?: Date },
   Prisma.Session
 > = ({ prisma }) => {
   return {
@@ -74,9 +74,7 @@ const PrismaAdapter: Adapter<
                 name: profile.name,
                 email: profile.email,
                 image: profile.image,
-                emailVerified:
-                  (profile.emailVerified as Date | undefined)?.toISOString() ??
-                  null,
+                emailVerified: profile.emailVerified?.toISOString() ?? null,
               },
             })
           } catch (error) {
