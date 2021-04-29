@@ -1,5 +1,6 @@
 import type * as Prisma from "@prisma/client"
 import { createHash, randomBytes } from "crypto"
+import type { Profile } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 import {
   CreateSessionError,
@@ -32,9 +33,9 @@ function verificationRequestToken({
 
 const PrismaAdapter: Adapter<
   { prisma: Prisma.PrismaClient },
-  unknown,
+  never,
   Prisma.User,
-  Prisma.User,
+  Profile,
   Prisma.Session
 > = ({ prisma }) => {
   return {
@@ -73,7 +74,9 @@ const PrismaAdapter: Adapter<
                 name: profile.name,
                 email: profile.email,
                 image: profile.image,
-                emailVerified: profile.emailVerified?.toISOString() ?? null,
+                emailVerified:
+                  (profile.emailVerified as Date | undefined)?.toISOString() ??
+                  null,
               },
             })
           } catch (error) {
