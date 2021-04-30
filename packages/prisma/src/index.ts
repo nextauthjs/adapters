@@ -14,7 +14,7 @@ function verificationRequestToken({
   return createHash("sha256").update(`${token}${secret}`).digest("hex")
 }
 
-const PrismaAdapter: Adapter<
+export const PrismaAdapter: Adapter<
   { prisma: Prisma.PrismaClient },
   never,
   Prisma.User,
@@ -224,5 +224,3 @@ const PrismaAdapter: Adapter<
     },
   }
 }
-
-export default PrismaAdapter

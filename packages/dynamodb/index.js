@@ -18,7 +18,7 @@ import {
   UpdateUserError,
 } from "next-auth/errors"
 
-export default function DynamoDBAdapter(config) {
+export function DynamoDBAdapter(config) {
   const TableName = config.tableName
   const DynamoClient = new config.AWS.DynamoDB.DocumentClient()
 
