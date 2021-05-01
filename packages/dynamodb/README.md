@@ -18,7 +18,7 @@ You need to pass aws-sdk to the adapter in addition to the tablename.
 import AWS from "aws-sdk";
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
-import Adapter from "@next-auth/dynamodb-adapter"
+import { DynamoDBAdapter } from "@next-auth/dynamodb-adapter"
 
 AWS.config.update({
   accessKeyId: process.env.NEXT_AUTH_AWS_ACCESS_KEY,
@@ -39,7 +39,7 @@ export default NextAuth({
     }),
     // ...add more providers here
   ],
-  adapter: Adapter({
+  adapter: DynamoDBAdapter({
     AWS,
     tableName: "next-auth-test",
   }),

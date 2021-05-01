@@ -1,9 +1,9 @@
 import * as Prisma from "@prisma/client"
-import Adapter from "../src"
+import { PrismaAdapter } from "../src"
 import type { AppOptions } from "next-auth/internals"
 import Providers from "next-auth/providers"
 const prisma = new Prisma.PrismaClient()
-const prismaAdapter = Adapter({ prisma })
+const prismaAdapter = PrismaAdapter({ prisma })
 let session: Prisma.Session | null = null
 let user: Prisma.User | null = null
 let verificationRequest: Prisma.VerificationRequest | null = null

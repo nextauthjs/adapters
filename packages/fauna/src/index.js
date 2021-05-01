@@ -1,7 +1,7 @@
 import { query as q } from "faunadb"
 import { createHash, randomBytes } from "crypto"
 
-const Adapter = (config, options = {}) => {
+export const Adapter = (config, options = {}) => {
   const {
     faunaClient,
     collections = {
@@ -542,8 +542,4 @@ const Adapter = (config, options = {}) => {
   return {
     getAdapter,
   }
-}
-
-export default {
-  Adapter,
 }
