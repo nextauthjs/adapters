@@ -1,25 +1,7 @@
-import { ulid } from "ulid"
+import type { Adapter } from "next-auth/adapters"
 // import { createHash, randomBytes } from "crypto"
-// import type PouchDB from "pouchdb"
-// import type { Profile } from "next-auth"
-// import type { Adapter } from "next-auth/adapters"
-import {
-  CreateUserError,
-  GetUserByIdError,
-  GetUserByEmailError,
-  UpdateUserError,
-  DeleteUserError,
-  // CreateSessionError,
-  // CreateVerificationRequestError,
-  // DeleteSessionError,
-  // DeleteVerificationRequestError,
-  // GetSessionError,
-  // GetUserByProviderAccountIdError,
-  // GetVerificationRequestError,
-  // LinkAccountError,
-  // UnlinkAccountError,
-  // UpdateSessionError,
-} from "next-auth/errors"
+import { User, Profile, Session } from "next-auth"
+import { ulid } from "ulid"
 
 // function verificationRequestToken({
 //   token,
@@ -32,14 +14,14 @@ import {
 //   return createHash("sha256").update(`${token}${secret}`).digest("hex")
 // }
 
-// const PouchDBAdapter: Adapter<
-//   { pouchdb: PouchDB.Database },
-//   never,
-//   User,
-//   Profile & { emailVerified?: Date },
-//   Session
-// > = ({ pouchdb }) => {
-const PouchDBAdapter: any = ({ pouchdb }: { pouchdb: PouchDB.Database }) => {
+export const PouchDBAdapter: Adapter<
+  { pouchdb: PouchDB.Database },
+  never,
+  User,
+  Profile & { emailVerified?: Date },
+  Session
+> = ({ pouchdb }) => {
+  // const PouchDBAdapter: any = ({ pouchdb }: { pouchdb: PouchDB.Database }) => {
   return {
     async getAdapter({ logger, session, ...appOptions }: any) {
       function debug(debugCode: string, ...args: unknown[]) {
@@ -66,53 +48,60 @@ const PouchDBAdapter: any = ({ pouchdb }: { pouchdb: PouchDB.Database }) => {
       // const sessionMaxAgeMs = maxAge * 1000
       // const sessionUpdateAgeMs = updateAge * 1000
 
+      // create required database indexes if they don't exist
+      const res = await pouchdb.getIndexes()
+      const indexes = res.indexes.map((index: any) => index.name, [])
+      // nextAuthUserByEmail
+      if (!indexes.includes("nextAuthUserByEmail")) {
+        await pouchdb.createIndex({
+          index: {
+            name: "nextAuthUserByEmail",
+            ddoc: "nextAuthUserByEmail",
+            fields: ["data.email"],
+          },
+        })
+      }
+      // providerId, providerAccountId
+      if (!indexes.includes("nextAuthAccountByProviderId")) {
+        await pouchdb.createIndex({
+          index: {
+            name: "nextAuthAccountByProviderId",
+            ddoc: "nextAuthAccountByProviderId",
+            fields: ["data.providerId", "data.providerAccountId"],
+          },
+        })
+      }
+
       return {
-        async createUser(profile: any) {
-          debug("CREATE_USER", profile)
-          try {
-            const data = {
-              id: ["User", ulid()].join("_"),
-              name: profile.name,
-              email: profile.email,
-              image: profile.image,
-              emailVerified: profile.emailVerified
-                ? profile.emailVerified.toISOString()
-                : null,
-            }
-            await pouchdb.put({
-              _id: data.id,
-              data,
-            })
-            return data
-          } catch (error) {
-            logger.error("CREATE_USER_ERROR", error)
-            throw new CreateUserError(error)
+        async createUser(profile) {
+          const data = {
+            id: ["User", ulid()].join("_"),
+            name: profile.name,
+            email: profile.email,
+            image: profile.image,
+            emailVerified: profile.emailVerified
+              ? profile.emailVerified.toISOString()
+              : null,
           }
+
+          await pouchdb.put({
+            _id: data.id,
+            data,
+          })
+          return data
         },
-        async getUser(id: string) {
-          debug("GET_USER", id)
-          try {
-            const res: any = await pouchdb.get(id)
-            return res.data
-          } catch (error) {
-            logger.error("GET_USER_BY_ID_ERROR", error)
-            throw new GetUserByIdError(error)
-          }
+        async getUser(id) {
+          const res: any = await pouchdb.get(id)
+          return res.data
         },
         async getUserByEmail(email: string) {
-          debug("GET_USER_BY_EMAIL", email)
-          try {
-            if (!email) return null
-            const res: any = await pouchdb.find({
-              use_index: "byEmail",
-              selector: { "data.email": { $eq: email } },
-              limit: 1,
-            })
-            return res.docs[0]?.data ?? null
-          } catch (error) {
-            logger.error("GET_USER_BY_EMAIL_ERROR", error)
-            throw new GetUserByEmailError(error)
-          }
+          if (!email) return null
+          const res: any = await pouchdb.find({
+            use_index: "nextAuthUserByEmail",
+            selector: { "data.email": { $eq: email } },
+            limit: 1,
+          })
+          return res.docs[0]?.data ?? null
         },
         //   async getUserByProviderAccountId(providerId, providerAccountId) {
         //     debug(
@@ -135,75 +124,48 @@ const PouchDBAdapter: any = ({ pouchdb }: { pouchdb: PouchDB.Database }) => {
         //   },
 
         async updateUser(user: any) {
-          debug("UPDATE_USER", user)
-          try {
-            const doc: any = await pouchdb.get(user.id)
-            doc.data = {
-              ...doc.data,
-              ...user,
-            }
-            await pouchdb.put(doc)
-            return doc.data
-          } catch (error) {
-            logger.error("UPDATE_USER_ERROR", error)
-            throw new UpdateUserError(error)
+          const doc: any = await pouchdb.get(user.id)
+          doc.data = {
+            ...doc.data,
+            ...user,
           }
+          await pouchdb.put(doc)
+          return doc.data
         },
 
-        async deleteUser(id: string) {
-          debug("DELETE_USER", id)
-          try {
-            const doc: any = await pouchdb.get(id)
-            await pouchdb.put({
-              ...doc,
-              _deleted: true,
-            })
-            return
-          } catch (error) {
-            logger.error("DELETE_USER_ERROR", error)
-            throw new DeleteUserError(error)
-          }
+        async deleteUser(id) {
+          const doc: any = await pouchdb.get(id)
+          await pouchdb.put({
+            ...doc,
+            _deleted: true,
+          })
         },
 
-        //   async linkAccount(
-        //     userId,
-        //     providerId,
-        //     providerType,
-        //     providerAccountId,
-        //     refreshToken,
-        //     accessToken,
-        //     accessTokenExpires
-        //   ) {
-        //     debug(
-        //       "LINK_ACCOUNT",
-        //       userId,
-        //       providerId,
-        //       providerType,
-        //       providerAccountId,
-        //       refreshToken,
-        //       accessToken,
-        //       accessTokenExpires
-        //     )
-        //     try {
-        //       await prisma.account.create({
-        //         data: {
-        //           userId,
-        //           providerId,
-        //           providerType,
-        //           providerAccountId,
-        //           refreshToken,
-        //           accessToken,
-        //           accessTokenExpires:
-        //             accessTokenExpires != null
-        //               ? new Date(accessTokenExpires)
-        //               : null,
-        //         },
-        //       })
-        //     } catch (error) {
-        //       logger.error("LINK_ACCOUNT_ERROR", error)
-        //       throw new LinkAccountError(error)
-        //     }
-        //   },
+        async linkAccount(
+          userId,
+          providerId,
+          providerType,
+          providerAccountId,
+          refreshToken,
+          accessToken,
+          accessTokenExpires
+        ) {
+          await pouchdb.put({
+            _id: ["Account", ulid()].join("_"),
+            data: {
+              userId,
+              providerId,
+              providerType,
+              providerAccountId,
+              refreshToken,
+              accessToken,
+              accessTokenExpires:
+                accessTokenExpires != null
+                  ? new Date(accessTokenExpires)
+                  : null,
+            },
+          })
+        },
 
         //   async unlinkAccount(userId, providerId, providerAccountId) {
         //     debug("UNLINK_ACCOUNT", userId, providerId, providerAccountId)
