@@ -6,6 +6,7 @@
 
 ```js
 // TODO
-// localdb and remotedb parameters : https://pouchdb.com/api.html#create_database
-// the setup function should return your custom PouchDB
+// provide your pouchdb database instance
+// the database MUST use the find plugin
+// best of both worlds: a) serverless = http-adapter or b) server with any adapter or c) server with a memory-adapter for performance replicated to any persistent slave database
 ```

@@ -13,6 +13,7 @@
   "keywords": [
     "next-auth",
     "next.js",
+    "oauth",
     "pouchdb"
   ],
   "private": false,
@@ -29,14 +30,12 @@
     "dist"
   ],
   "peerDependencies": {
-    "next-auth": ">=3.15.13"
+    "next-auth": ">=3.15.13",
+    "pouchdb": "^7.2.2",
+    "pouchdb-find": "^7.2.2"
   },
   "dependencies": {
     "crypto": "^1.0.1",
-    "lru-cache": "^6.0.0",
-    "pouchdb": "^7.2.2",
-    "pouchdb-adapter-leveldb": "^7.2.2",
-    "pouchdb-find": "^7.2.2",
     "ulid": "^2.3.0"
   },
   "devDependencies": {
@@ -44,6 +43,9 @@
     "@types/pouchdb": "^6.4.0",
     "jest": "^26.6.3",
     "next-auth": "^3.1.0",
+    "pouchdb": "^7.2.2",
+    "pouchdb-adapter-memory": "^7.2.2",
+    "pouchdb-find": "^7.2.2",
     "prettier": "^2.2.1",
     "ts-jest": "^26.4.4",
     "typescript": "^4.1.3"

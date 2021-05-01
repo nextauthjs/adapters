@@ -1,136 +1,77 @@
-import fs from "fs"
-import path from "path"
 import { ulid } from "ulid"
-import PouchDB from "pouchdb"
-import leveldbAdapter from "pouchdb-adapter-leveldb"
-import find from "pouchdb-find"
-import LRU from "lru-cache"
 // import { createHash, randomBytes } from "crypto"
-import type { Profile } from "next-auth"
-import { AppOptions } from "next-auth/internals"
+// import type PouchDB from "pouchdb"
+// import type { Profile } from "next-auth"
+// import type { Adapter } from "next-auth/adapters"
 import {
   CreateUserError,
   GetUserByIdError,
+  GetUserByEmailError,
+  UpdateUserError,
+  DeleteUserError,
   // CreateSessionError,
   // CreateVerificationRequestError,
   // DeleteSessionError,
-  // DeleteUserError,
   // DeleteVerificationRequestError,
   // GetSessionError,
-  // GetUserByEmailError,
   // GetUserByProviderAccountIdError,
   // GetVerificationRequestError,
   // LinkAccountError,
   // UnlinkAccountError,
   // UpdateSessionError,
-  // UpdateUserError,
 } from "next-auth/errors"
-// import { EmailConfig } from "next-auth/providers"
 
-interface PouchDBOptions {
-  name: string
-  options: object
-  setup?: () => PouchDB.Static
-}
-interface ModelMapping {
-  User: string
-  Account: string
-  Session: string
-  VerificationRequest: string
-}
-interface Cache {
-  maxAge: number
-  max: number
-}
-interface Config {
-  pouchdb: PouchDBOptions
-  modelMapping: ModelMapping
-  cache: Cache
-}
-const defaultConfig = {
-  pouchdb: {
-    name: "nextauth",
-    options: { adapter: "leveldb" },
-    setup: () => {
-      // leveldb location folder
-      const prefix = path.join(process.cwd(), ".pouchdb/")
-      !fs.existsSync(prefix) && fs.mkdirSync(prefix, { recursive: true })
-      let CustomPouchDB: any = PouchDB
-      CustomPouchDB = CustomPouchDB.defaults({ prefix })
-      // leveldb adapter
-      CustomPouchDB.plugin(leveldbAdapter)
-      return CustomPouchDB
-    },
-  },
-  modelMapping: {
-    User: "user",
-    Account: "account",
-    Session: "session",
-    VerificationRequest: "verificationRequest",
-  },
-  cache: {
-    maxAge: 24 * 60 * 60 * 1000,
-    max: 1000,
-  },
-}
+// function verificationRequestToken({
+//   token,
+//   secret,
+// }: {
+//   token: string
+//   secret: string
+// }) {
+//   // TODO: Use bcrypt or a more secure method
+//   return createHash("sha256").update(`${token}${secret}`).digest("hex")
+// }
 
-export default async function PouchDBAdapter(config: Config = defaultConfig) {
-  const {
-    User,
-    // Account, Session, VerificationRequest
-  } = config.modelMapping
-
-  // setup LRU caching
-  // const sessionCache = new LRU(config.cache)
-  const userCache = new LRU(config.cache)
-  // const maxAge = (expires?: string | number | Date | null) => {
-  //   return expires ? new Date(expires).getTime() - Date.now() : undefined
-  // }
-
-  // setup PouchDB
-  let CustomPouchDB: PouchDB.Static
-  if (config.pouchdb.setup) {
-    CustomPouchDB = config.pouchdb.setup()
-  } else {
-    CustomPouchDB = PouchDB
-  }
-  CustomPouchDB.plugin(find)
-
-  const pouchdb = new CustomPouchDB(config.pouchdb.name, config.pouchdb.options)
-  await pouchdb.createIndex({
-    index: {
-      fields: ["email"],
-      ddoc: "byEmail",
-    },
-  })
-
-  // return adapter
+// const PouchDBAdapter: Adapter<
+//   { pouchdb: PouchDB.Database },
+//   never,
+//   User,
+//   Profile & { emailVerified?: Date },
+//   Session
+// > = ({ pouchdb }) => {
+const PouchDBAdapter: any = ({ pouchdb }: { pouchdb: PouchDB.Database }) => {
   return {
-    async getAdapter(appOptions: AppOptions) {
-      const logger = appOptions.logger ?? console
-
-      function debug(debugCode: string, ...args: any) {
+    async getAdapter({ logger, session, ...appOptions }: any) {
+      function debug(debugCode: string, ...args: unknown[]) {
         logger.debug(`POUCHDB_${debugCode}`, ...args)
       }
 
-      if (!appOptions.session?.maxAge) {
+      if (!session.maxAge) {
         debug(
           "GET_ADAPTER",
           "Session expiry not configured (defaulting to 30 days)"
         )
       }
+      if (!session.updateAge) {
+        debug(
+          "GET_ADAPTER",
+          "Session update age not configured (defaulting to 1 day)"
+        )
+      }
 
-      // const defaultSessionMaxAge = 30 * 24 * 60 * 60
-      // const sessionMaxAge =
-      //   (appOptions.session?.maxAge ?? defaultSessionMaxAge) * 1000
-      // const sessionUpdateAge = (appOptions.session?.updateAge ?? 0) * 1000
+      // const {
+      //   maxAge = 30 * 24 * 60 * 60, // 30 days
+      //   updateAge = 24 * 60 * 60, // 1 day
+      // } = session
+      // const sessionMaxAgeMs = maxAge * 1000
+      // const sessionUpdateAgeMs = updateAge * 1000
 
       return {
-        async createUser(profile: Profile & { emailVerified?: Date }) {
+        async createUser(profile: any) {
           debug("CREATE_USER", profile)
           try {
             const data = {
-              id: [User, ulid()].join("_"),
+              id: ["User", ulid()].join("_"),
               name: profile.name,
               email: profile.email,
               image: profile.image,
@@ -138,11 +79,10 @@ export default async function PouchDBAdapter(config: Config = defaultConfig) {
                 ? profile.emailVerified.toISOString()
                 : null,
             }
-            const user = await pouchdb.put({
+            await pouchdb.put({
               _id: data.id,
               data,
             })
-            userCache.set(user.id, data)
             return data
           } catch (error) {
             logger.error("CREATE_USER_ERROR", error)
@@ -152,29 +92,269 @@ export default async function PouchDBAdapter(config: Config = defaultConfig) {
         async getUser(id: string) {
           debug("GET_USER", id)
           try {
-            const cachedUser = userCache.get(id)
-            if (cachedUser) {
-              debug("GET_USER - Fetched from LRU Cache", cachedUser)
-              // stale while revalidate
-              // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              ;(async () => {
-                const user = await pouchdb.get(id)
-                if (user) userCache.set(user._id, user)
-                return user
-              })()
-              return cachedUser
-            }
-            const user = await pouchdb.get(id)
-            if (user) userCache.set(user._id, user)
-            return user
+            const res: any = await pouchdb.get(id)
+            return res.data
           } catch (error) {
             logger.error("GET_USER_BY_ID_ERROR", error)
             throw new GetUserByIdError(error)
           }
         },
+        async getUserByEmail(email: string) {
+          debug("GET_USER_BY_EMAIL", email)
+          try {
+            if (!email) return null
+            const res: any = await pouchdb.find({
+              use_index: "byEmail",
+              selector: { "data.email": { $eq: email } },
+              limit: 1,
+            })
+            return res.docs[0]?.data ?? null
+          } catch (error) {
+            logger.error("GET_USER_BY_EMAIL_ERROR", error)
+            throw new GetUserByEmailError(error)
+          }
+        },
+        //   async getUserByProviderAccountId(providerId, providerAccountId) {
+        //     debug(
+        //       "GET_USER_BY_PROVIDER_ACCOUNT_ID",
+        //       providerId,
+        //       providerAccountId
+        //     )
+        //     try {
+        //       const account = await prisma.account.findUnique({
+        //         where: {
+        //           providerId_providerAccountId: { providerId, providerAccountId },
+        //         },
+        //         select: { user: true },
+        //       })
+        //       return account ? account.user : null
+        //     } catch (error) {
+        //       logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error)
+        //       throw new GetUserByProviderAccountIdError(error)
+        //     }
+        //   },
+
+        async updateUser(user: any) {
+          debug("UPDATE_USER", user)
+          try {
+            const doc: any = await pouchdb.get(user.id)
+            doc.data = {
+              ...doc.data,
+              ...user,
+            }
+            await pouchdb.put(doc)
+            return doc.data
+          } catch (error) {
+            logger.error("UPDATE_USER_ERROR", error)
+            throw new UpdateUserError(error)
+          }
+        },
+
+        async deleteUser(id: string) {
+          debug("DELETE_USER", id)
+          try {
+            const doc: any = await pouchdb.get(id)
+            await pouchdb.put({
+              ...doc,
+              _deleted: true,
+            })
+            return
+          } catch (error) {
+            logger.error("DELETE_USER_ERROR", error)
+            throw new DeleteUserError(error)
+          }
+        },
+
+        //   async linkAccount(
+        //     userId,
+        //     providerId,
+        //     providerType,
+        //     providerAccountId,
+        //     refreshToken,
+        //     accessToken,
+        //     accessTokenExpires
+        //   ) {
+        //     debug(
+        //       "LINK_ACCOUNT",
+        //       userId,
+        //       providerId,
+        //       providerType,
+        //       providerAccountId,
+        //       refreshToken,
+        //       accessToken,
+        //       accessTokenExpires
+        //     )
+        //     try {
+        //       await prisma.account.create({
+        //         data: {
+        //           userId,
+        //           providerId,
+        //           providerType,
+        //           providerAccountId,
+        //           refreshToken,
+        //           accessToken,
+        //           accessTokenExpires:
+        //             accessTokenExpires != null
+        //               ? new Date(accessTokenExpires)
+        //               : null,
+        //         },
+        //       })
+        //     } catch (error) {
+        //       logger.error("LINK_ACCOUNT_ERROR", error)
+        //       throw new LinkAccountError(error)
+        //     }
+        //   },
+
+        //   async unlinkAccount(userId, providerId, providerAccountId) {
+        //     debug("UNLINK_ACCOUNT", userId, providerId, providerAccountId)
+        //     try {
+        //       await prisma.account.delete({
+        //         where: {
+        //           providerId_providerAccountId: { providerId, providerAccountId },
+        //         },
+        //       })
+        //     } catch (error) {
+        //       logger.error("UNLINK_ACCOUNT_ERROR", error)
+        //       throw new UnlinkAccountError(error)
+        //     }
+        //   },
+
+        //   async createSession(user) {
+        //     debug("CREATE_SESSION", user)
+        //     try {
+        //       return await prisma.session.create({
+        //         data: {
+        //           userId: user.id,
+        //           expires: new Date(Date.now() + sessionMaxAgeMs),
+        //           sessionToken: randomBytes(32).toString("hex"),
+        //           accessToken: randomBytes(32).toString("hex"),
+        //         },
+        //       })
+        //     } catch (error) {
+        //       logger.error("CREATE_SESSION_ERROR", error)
+        //       throw new CreateSessionError(error)
+        //     }
+        //   },
+
+        //   async getSession(sessionToken) {
+        //     debug("GET_SESSION", sessionToken)
+        //     try {
+        //       const session = await prisma.session.findUnique({
+        //         where: { sessionToken },
+        //       })
+        //       if (session && session.expires < new Date()) {
+        //         await prisma.session.delete({ where: { sessionToken } })
+        //         return null
+        //       }
+        //       return session
+        //     } catch (error) {
+        //       logger.error("GET_SESSION_ERROR", error)
+        //       throw new GetSessionError(error)
+        //     }
+        //   },
+
+        //   async updateSession(session, force) {
+        //     debug("UPDATE_SESSION", session)
+        //     try {
+        //       if (
+        //         !force &&
+        //         Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
+        //           Date.now()
+        //       ) {
+        //         return null
+        //       }
+        //       return await prisma.session.update({
+        //         where: { id: session.id },
+        //         data: {
+        //           expires: new Date(Date.now() + sessionMaxAgeMs),
+        //         },
+        //       })
+        //     } catch (error) {
+        //       logger.error("UPDATE_SESSION_ERROR", error)
+        //       throw new UpdateSessionError(error)
+        //     }
+        //   },
+
+        //   async deleteSession(sessionToken) {
+        //     debug("DELETE_SESSION", sessionToken)
+        //     try {
+        //       await prisma.session.delete({ where: { sessionToken } })
+        //     } catch (error) {
+        //       logger.error("DELETE_SESSION_ERROR", error)
+        //       throw new DeleteSessionError(error)
+        //     }
+        //   },
+
+        //   async createVerificationRequest(
+        //     identifier,
+        //     url,
+        //     token,
+        //     secret,
+        //     provider
+        //   ) {
+        //     debug("CREATE_VERIFICATION_REQUEST", identifier)
+        //     try {
+        //       const hashedToken = verificationRequestToken({ token, secret })
+        //       await prisma.verificationRequest.create({
+        //         data: {
+        //           identifier,
+        //           token: hashedToken,
+        //           expires: new Date(Date.now() + provider.maxAge * 1000),
+        //         },
+        //       })
+        //       await provider.sendVerificationRequest({
+        //         identifier,
+        //         url,
+        //         token,
+        //         baseUrl: appOptions.baseUrl,
+        //         provider,
+        //       })
+        //     } catch (error) {
+        //       logger.error("CREATE_VERIFICATION_REQUEST_ERROR", error)
+        //       throw new CreateVerificationRequestError(error)
+        //     }
+        //   },
+
+        //   async getVerificationRequest(identifier, token, secret) {
+        //     debug("GET_VERIFICATION_REQUEST", identifier, token)
+        //     try {
+        //       const hashedToken = verificationRequestToken({ token, secret })
+        //       const verificationRequest = await prisma.verificationRequest.findUnique(
+        //         {
+        //           where: { identifier_token: { identifier, token: hashedToken } },
+        //         }
+        //       )
+        //       if (
+        //         verificationRequest &&
+        //         verificationRequest.expires < new Date()
+        //       ) {
+        //         await prisma.verificationRequest.delete({
+        //           where: { identifier_token: { identifier, token: hashedToken } },
+        //         })
+        //         return null
+        //       }
+        //       return verificationRequest
+        //     } catch (error) {
+        //       logger.error("GET_VERIFICATION_REQUEST_ERROR", error)
+        //       throw new GetVerificationRequestError(error)
+        //     }
+        //   },
+
+        //   async deleteVerificationRequest(identifier, token, secret) {
+        //     debug("DELETE_VERIFICATION_REQUEST", identifier, token)
+        //     try {
+        //       const hashedToken = verificationRequestToken({ token, secret })
+        //       await prisma.verificationRequest.delete({
+        //         where: { identifier_token: { identifier, token: hashedToken } },
+        //       })
+        //     } catch (error) {
+        //       logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error)
+        //       throw new DeleteVerificationRequestError(error)
+        //     }
+        //   },
       }
     },
   }
 }
 
-export { defaultConfig }
+export default PouchDBAdapter
