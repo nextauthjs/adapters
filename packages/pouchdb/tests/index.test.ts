@@ -4,6 +4,7 @@ import find from "pouchdb-find"
 import Adapter from "../src"
 import { ulid } from "ulid"
 import type { AppOptions } from "next-auth/internals"
+import { randomBytes } from "crypto"
 
 // Prevent "ReferenceError: You are trying to import a file
 // after the Jest environment has been torn down"
@@ -226,5 +227,20 @@ describe("adapter functions", () => {
     expect(res).toHaveProperty("expires")
     expect(res).toHaveProperty("sessionToken")
     expect(res).toHaveProperty("accessToken")
+  })
+
+  test("getSession", async () => {
+    const userId = ["USER", ulid()].join("_")
+    const data = {
+      userId,
+      expires: new Date(Date.now() + 10000).toISOString(),
+      sessionToken: randomBytes(32).toString("hex"),
+      accessToken: randomBytes(32).toString("hex"),
+    }
+    await pouchdb.put({ _id: userId, data })
+
+    const session = await adapter.getSession(data.sessionToken)
+
+    expect(session).toEqual(data)
   })
 })

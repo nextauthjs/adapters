@@ -48,7 +48,7 @@ export const PouchDBAdapter: Adapter<
       const sessionMaxAgeMs = maxAge * 1000
       // const sessionUpdateAgeMs = updateAge * 1000
 
-      // create required database indexes if they don't exist
+      // create indexes if they don't exist
       const res = await pouchdb.getIndexes()
       const indexes = res.indexes.map((index: any) => index.name, [])
       // nextAuthUserByEmail
@@ -61,13 +61,23 @@ export const PouchDBAdapter: Adapter<
           },
         })
       }
-      // providerId, providerAccountId
+      // nextAuthAccountByProviderId
       if (!indexes.includes("nextAuthAccountByProviderId")) {
         await pouchdb.createIndex({
           index: {
             name: "nextAuthAccountByProviderId",
             ddoc: "nextAuthAccountByProviderId",
             fields: ["data.providerId", "data.providerAccountId"],
+          },
+        })
+      }
+      // nextAuthSessionByToken
+      if (!indexes.includes("nextAuthSessionByToken")) {
+        await pouchdb.createIndex({
+          index: {
+            name: "nextAuthSessionByToken",
+            ddoc: "nextAuthSessionByToken",
+            fields: ["data.sessionToken"],
           },
         })
       }
@@ -93,7 +103,7 @@ export const PouchDBAdapter: Adapter<
 
         async getUser(id) {
           const res: any = await pouchdb.get(id)
-          return res.data
+          return res?.data ?? null
         },
 
         async getUserByEmail(email: string) {
@@ -118,7 +128,7 @@ export const PouchDBAdapter: Adapter<
           const user: any = await pouchdb
             .get(account.docs[0]?.data.userId)
             .catch(() => ({ data: null }))
-          return user.data
+          return user?.data ?? null
         },
 
         async updateUser(user: any) {
@@ -183,7 +193,7 @@ export const PouchDBAdapter: Adapter<
         async createSession(user) {
           const data = {
             userId: user.id,
-            expires: new Date(Date.now() + sessionMaxAgeMs),
+            expires: new Date(Date.now() + sessionMaxAgeMs).toISOString(),
             sessionToken: randomBytes(32).toString("hex"),
             accessToken: randomBytes(32).toString("hex"),
           }
@@ -194,22 +204,20 @@ export const PouchDBAdapter: Adapter<
           return data
         },
 
-        //   async getSession(sessionToken) {
-        //     debug("GET_SESSION", sessionToken)
-        //     try {
-        //       const session = await prisma.session.findUnique({
-        //         where: { sessionToken },
-        //       })
-        //       if (session && session.expires < new Date()) {
-        //         await prisma.session.delete({ where: { sessionToken } })
-        //         return null
-        //       }
-        //       return session
-        //     } catch (error) {
-        //       logger.error("GET_SESSION_ERROR", error)
-        //       throw new GetSessionError(error)
-        //     }
-        //   },
+        async getSession(sessionToken) {
+          const session: any = await pouchdb.find({
+            use_index: "nextAuthSessionByToken",
+            selector: {
+              "data.sessionToken": { $eq: sessionToken },
+            },
+            limit: 1,
+          })
+          if (new Date(session.docs[0]?.data.expires) < new Date()) {
+            await pouchdb.put({ ...session.docs[0], _deleted: true })
+            return null
+          }
+          return session.docs[0]?.data
+        },
 
         //   async updateSession(session, force) {
         //     debug("UPDATE_SESSION", session)
