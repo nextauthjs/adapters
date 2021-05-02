@@ -9744,7 +9744,7 @@ throat@^5.0.0:
 
 through2@3.0.2, through2@^3.0.0:
   version "3.0.2"
-  resolved "https://registry.yarnpkg.com/through2/-/through2-3.0.2.tgz#99f88931cfc761ec7678b41d5d7336b5b6a07bf4"
+  resolved "https://registry.npmjs.org/through2/-/through2-3.0.2.tgz"
   integrity sha512-enaDQ4MUyP2W6ZyT6EsMzqBPZaM/avg8iuo+l2d3QCs0J+6RaqkHV/2/lOwDTueBHeJ/2LG9lrLW3d5rWPucuQ==
   dependencies:
     inherits "^2.0.4"
