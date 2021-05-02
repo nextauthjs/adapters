@@ -12,6 +12,7 @@ jest.useFakeTimers()
 
 // nextauth-pouchdb app options
 let pouchdbAdapter: any
+let adapter: any
 const appOptions: AppOptions = {
   action: "signin",
   basePath: "",
@@ -67,6 +68,7 @@ describe("adapter functions", () => {
     try {
       pouchdb = new PouchDB(ulid(), { adapter: "memory" })
       pouchdbAdapter = Adapter({ pouchdb })
+      adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
     } catch (error) {
       console.log(error)
     }
@@ -82,45 +84,81 @@ describe("adapter functions", () => {
   })
 
   test("createUser", async () => {
-    const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
     const res = await adapter.createUser(mock.user)
+
     expect(res.id).not.toBeUndefined()
     expect(res).toEqual(expect.objectContaining(mock.user))
   })
+
   test("getUser", async () => {
     const id = ["User", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
-    const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
+
     const res = await adapter.getUser(id)
+
     expect(res).toEqual({ id, ...mock.user })
   })
+
   test("getUserByEmail", async () => {
     const id = ["User", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
-    const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
+
     const res = await adapter.getUserByEmail(mock.user.email)
+
     expect(res).toEqual({ id, ...mock.user })
   })
+
+  test("getUserByProviderAccountId", async () => {
+    const userId = ["User", ulid()].join("_")
+    const accountId = [
+      "Account",
+      mock.account.providerId,
+      mock.account.providerAccountId,
+    ].join("_")
+    await pouchdb.put({ _id: userId, data: { id: userId, ...mock.user } })
+    await pouchdb.put({
+      _id: accountId,
+      data: {
+        ...mock.account,
+        userId,
+        accessTokenExpires: new Date(
+          mock.account.accessTokenExpires
+        ).toISOString(),
+      },
+    })
+
+    const user = await adapter.getUserByProviderAccountId(
+      mock.account.providerId,
+      mock.account.providerAccountId
+    )
+
+    expect(user).toEqual({ id: userId, ...mock.user })
+  })
+
   test("updateUser", async () => {
     const id = ["User", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
-    const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
+
     const updated = await adapter.updateUser({ id, ...mock.updatedUser })
+
     const res: any = await pouchdb.get(id)
     expect(updated).toEqual(res.data)
   })
+
   test("deleteUser", async () => {
     const id = ["User", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
-    const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
+
     await adapter.deleteUser(id)
+
     const res = await pouchdb.get(id).catch((e) => e.status)
     expect(res).toBe(404)
   })
+
   test("linkAccount", async () => {
     const id = ["User", ulid()].join("_")
-    await pouchdb.put({ _id: id, data: { id, ...mock.user } })
     const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
+
     await adapter.linkAccount(
       id,
       mock.account.providerId,
@@ -130,6 +168,7 @@ describe("adapter functions", () => {
       mock.account.accessToken,
       mock.account.accessTokenExpires
     )
+
     const res: any = await pouchdb.find({
       use_index: "nextAuthAccountByProviderId",
       selector: {

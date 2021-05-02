@@ -90,10 +90,12 @@ export const PouchDBAdapter: Adapter<
           })
           return data
         },
+
         async getUser(id) {
           const res: any = await pouchdb.get(id)
           return res.data
         },
+
         async getUserByEmail(email: string) {
           if (!email) return null
           const res: any = await pouchdb.find({
@@ -103,25 +105,15 @@ export const PouchDBAdapter: Adapter<
           })
           return res.docs[0]?.data ?? null
         },
-        //   async getUserByProviderAccountId(providerId, providerAccountId) {
-        //     debug(
-        //       "GET_USER_BY_PROVIDER_ACCOUNT_ID",
-        //       providerId,
-        //       providerAccountId
-        //     )
-        //     try {
-        //       const account = await prisma.account.findUnique({
-        //         where: {
-        //           providerId_providerAccountId: { providerId, providerAccountId },
-        //         },
-        //         select: { user: true },
-        //       })
-        //       return account ? account.user : null
-        //     } catch (error) {
-        //       logger.error("GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR", error)
-        //       throw new GetUserByProviderAccountIdError(error)
-        //     }
-        //   },
+
+        async getUserByProviderAccountId(providerId, providerAccountId) {
+          const id = ["Account", providerId, providerAccountId].join("_")
+          const account: any = await pouchdb.get(id)
+          const user: any = await pouchdb
+            .get(account.data.userId)
+            .catch(() => ({ data: null }))
+          return user.data
+        },
 
         async updateUser(user: any) {
           const doc: any = await pouchdb.get(user.id)
@@ -151,7 +143,7 @@ export const PouchDBAdapter: Adapter<
           accessTokenExpires
         ) {
           await pouchdb.put({
-            _id: ["Account", ulid()].join("_"),
+            _id: ["Account", providerId, providerAccountId].join("_"),
             data: {
               userId,
               providerId,
