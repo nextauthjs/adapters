@@ -1,19 +1,18 @@
 import type { Adapter } from "next-auth/adapters"
-// import { createHash, randomBytes } from "crypto"
-import { randomBytes } from "crypto"
+import { createHash, randomBytes } from "crypto"
 import { User, Profile, Session } from "next-auth"
 import { ulid } from "ulid"
 
-// function verificationRequestToken({
-//   token,
-//   secret,
-// }: {
-//   token: string
-//   secret: string
-// }) {
-//   // TODO: Use bcrypt or a more secure method
-//   return createHash("sha256").update(`${token}${secret}`).digest("hex")
-// }
+function verificationRequestToken({
+  token,
+  secret,
+}: {
+  token: string
+  secret: string
+}) {
+  // TODO: Use bcrypt or a more secure method
+  return createHash("sha256").update(`${token}${secret}`).digest("hex")
+}
 
 export const PouchDBAdapter: Adapter<
   { pouchdb: PouchDB.Database },
@@ -22,9 +21,8 @@ export const PouchDBAdapter: Adapter<
   Profile & { emailVerified?: Date },
   Session
 > = ({ pouchdb }) => {
-  // const PouchDBAdapter: any = ({ pouchdb }: { pouchdb: PouchDB.Database }) => {
   return {
-    async getAdapter({ logger, session, ...appOptions }: any) {
+    async getAdapter({ logger, session, ...appOptions }) {
       function debug(debugCode: string, ...args: unknown[]) {
         logger.debug(`POUCHDB_${debugCode}`, ...args)
       }
@@ -50,7 +48,7 @@ export const PouchDBAdapter: Adapter<
 
       // create indexes if they don't exist
       const res = await pouchdb.getIndexes()
-      const indexes = res.indexes.map((index: any) => index.name, [])
+      const indexes = res.indexes.map((index) => index.name, [])
       // nextAuthUserByEmail
       if (!indexes.includes("nextAuthUserByEmail")) {
         await pouchdb.createIndex({
@@ -78,6 +76,16 @@ export const PouchDBAdapter: Adapter<
             name: "nextAuthSessionByToken",
             ddoc: "nextAuthSessionByToken",
             fields: ["data.sessionToken"],
+          },
+        })
+      }
+      // nextAuthVerificationRequestByToken
+      if (!indexes.includes("nextAuthVerificationRequestByToken")) {
+        await pouchdb.createIndex({
+          index: {
+            name: "nextAuthVerificationRequestByToken",
+            ddoc: "nextAuthVerificationRequestByToken",
+            fields: ["data.identifier", "data.token"],
           },
         })
       }
@@ -113,7 +121,7 @@ export const PouchDBAdapter: Adapter<
             selector: { "data.email": { $eq: email } },
             limit: 1,
           })
-          return res.docs[0]?.data ?? null
+          return res.docs?.[0].data ?? null
         },
 
         async getUserByProviderAccountId(providerId, providerAccountId) {
@@ -126,7 +134,7 @@ export const PouchDBAdapter: Adapter<
             limit: 1,
           })
           const user: any = await pouchdb
-            .get(account.docs[0]?.data.userId)
+            .get(account.docs?.[0].data.userId)
             .catch(() => ({ data: null }))
           return user?.data ?? null
         },
@@ -142,7 +150,7 @@ export const PouchDBAdapter: Adapter<
         },
 
         async deleteUser(id) {
-          const doc: any = await pouchdb.get(id)
+          const doc = await pouchdb.get(id)
           await pouchdb.put({
             ...doc,
             _deleted: true,
@@ -176,7 +184,7 @@ export const PouchDBAdapter: Adapter<
         },
 
         async unlinkAccount(_, providerId, providerAccountId) {
-          const account: any = await pouchdb.find({
+          const account = await pouchdb.find({
             use_index: "nextAuthAccountByProviderId",
             selector: {
               "data.providerId": { $eq: providerId },
@@ -193,7 +201,7 @@ export const PouchDBAdapter: Adapter<
         async createSession(user) {
           const data = {
             userId: user.id,
-            expires: new Date(Date.now() + sessionMaxAgeMs).toISOString(),
+            expires: new Date(Date.now() + sessionMaxAgeMs),
             sessionToken: randomBytes(32).toString("hex"),
             accessToken: randomBytes(32).toString("hex"),
           }
@@ -212,11 +220,13 @@ export const PouchDBAdapter: Adapter<
             },
             limit: 1,
           })
-          if (new Date(session.docs[0]?.data.expires) < new Date()) {
+          if (
+            new Date(session.docs?.[0].data.expires ?? Infinity) < new Date()
+          ) {
             await pouchdb.put({ ...session.docs[0], _deleted: true })
             return null
           }
-          return session.docs[0]?.data
+          return session.docs?.[0].data
         },
 
         async updateSession(session, force) {
@@ -243,7 +253,7 @@ export const PouchDBAdapter: Adapter<
         },
 
         async deleteSession(sessionToken) {
-          const session: any = await pouchdb.find({
+          const session = await pouchdb.find({
             use_index: "nextAuthSessionByToken",
             selector: {
               "data.sessionToken": { $eq: sessionToken },
@@ -256,73 +266,70 @@ export const PouchDBAdapter: Adapter<
           })
         },
 
-        //   async createVerificationRequest(
-        //     identifier,
-        //     url,
-        //     token,
-        //     secret,
-        //     provider
-        //   ) {
-        //     debug("CREATE_VERIFICATION_REQUEST", identifier)
-        //     try {
-        //       const hashedToken = verificationRequestToken({ token, secret })
-        //       await prisma.verificationRequest.create({
-        //         data: {
-        //           identifier,
-        //           token: hashedToken,
-        //           expires: new Date(Date.now() + provider.maxAge * 1000),
-        //         },
-        //       })
-        //       await provider.sendVerificationRequest({
-        //         identifier,
-        //         url,
-        //         token,
-        //         baseUrl: appOptions.baseUrl,
-        //         provider,
-        //       })
-        //     } catch (error) {
-        //       logger.error("CREATE_VERIFICATION_REQUEST_ERROR", error)
-        //       throw new CreateVerificationRequestError(error)
-        //     }
-        //   },
+        async createVerificationRequest(
+          identifier,
+          url,
+          token,
+          secret,
+          provider
+        ) {
+          const hashedToken = verificationRequestToken({ token, secret })
+          const data = {
+            identifier,
+            token: hashedToken,
+            expires: new Date(Date.now() + provider.maxAge * 1000),
+          }
+          await pouchdb.put({
+            _id: ["VERIFICATION-REQUEST", ulid()].join("_"),
+            data,
+          })
+          await provider.sendVerificationRequest({
+            identifier,
+            url,
+            token,
+            baseUrl: appOptions.baseUrl,
+            provider,
+          })
+        },
 
-        //   async getVerificationRequest(identifier, token, secret) {
-        //     debug("GET_VERIFICATION_REQUEST", identifier, token)
-        //     try {
-        //       const hashedToken = verificationRequestToken({ token, secret })
-        //       const verificationRequest = await prisma.verificationRequest.findUnique(
-        //         {
-        //           where: { identifier_token: { identifier, token: hashedToken } },
-        //         }
-        //       )
-        //       if (
-        //         verificationRequest &&
-        //         verificationRequest.expires < new Date()
-        //       ) {
-        //         await prisma.verificationRequest.delete({
-        //           where: { identifier_token: { identifier, token: hashedToken } },
-        //         })
-        //         return null
-        //       }
-        //       return verificationRequest
-        //     } catch (error) {
-        //       logger.error("GET_VERIFICATION_REQUEST_ERROR", error)
-        //       throw new GetVerificationRequestError(error)
-        //     }
-        //   },
+        async getVerificationRequest(identifier, token, secret) {
+          const hashedToken = verificationRequestToken({ token, secret })
+          const verificationRequest: any = await pouchdb.find({
+            use_index: "nextAuthVerificationRequestByToken",
+            selector: {
+              "data.identifier": { $eq: identifier },
+              "data.token": { $eq: hashedToken },
+            },
+            limit: 1,
+          })
+          if (
+            new Date(verificationRequest.docs?.[0].data.expires ?? Infinity) <
+            new Date()
+          ) {
+            await pouchdb.put({
+              ...verificationRequest.docs[0],
+              _deleted: true,
+            })
+            return null
+          }
+          return verificationRequest.docs?.[0].data
+        },
 
-        //   async deleteVerificationRequest(identifier, token, secret) {
-        //     debug("DELETE_VERIFICATION_REQUEST", identifier, token)
-        //     try {
-        //       const hashedToken = verificationRequestToken({ token, secret })
-        //       await prisma.verificationRequest.delete({
-        //         where: { identifier_token: { identifier, token: hashedToken } },
-        //       })
-        //     } catch (error) {
-        //       logger.error("DELETE_VERIFICATION_REQUEST_ERROR", error)
-        //       throw new DeleteVerificationRequestError(error)
-        //     }
-        //   },
+        async deleteVerificationRequest(identifier, token, secret) {
+          const hashedToken = verificationRequestToken({ token, secret })
+          const verificationRequest: any = await pouchdb.find({
+            use_index: "nextAuthVerificationRequestByToken",
+            selector: {
+              "data.identifier": { $eq: identifier },
+              "data.token": { $eq: hashedToken },
+            },
+            limit: 1,
+          })
+          await pouchdb.put({
+            ...verificationRequest.docs[0],
+            _deleted: true,
+          })
+        },
       }
     },
   }

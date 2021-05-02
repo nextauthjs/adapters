@@ -1,17 +1,29 @@
 import PouchDB from "pouchdb"
 import memoryAdapter from "pouchdb-adapter-memory"
 import find from "pouchdb-find"
-import { PouchDBAdapter } from "../src"
 import { ulid } from "ulid"
+import { PouchDBAdapter } from "../src"
 import type { AppOptions } from "next-auth/internals"
-import { randomBytes } from "crypto"
+import Providers from "next-auth/providers"
+import { createHash } from "crypto"
 
-// Prevent "ReferenceError: You are trying to import a file
-// after the Jest environment has been torn down"
-// https://stackoverflow.com/questions/50793885/referenceerror-you-are-trying-to-import-a-file-after-the-jest-environment-has#50793993
+// pouchdb setup
+PouchDB.plugin(memoryAdapter).plugin(find)
+let pouchdb: PouchDB.Database
+
+// jest setup
+// Prevent "ReferenceError: You are trying to import a file after the Jest environment has been torn down" https://stackoverflow.com/questions/50793885/referenceerror-you-are-trying-to-import-a-file-after-the-jest-environment-has#50793993
 jest.useFakeTimers()
 
-// nextauth-pouchdb app options
+const sendVerificationRequestMock = jest.fn()
+
+const emailProvider = {
+  ...Providers.Email({
+    sendVerificationRequest: sendVerificationRequestMock,
+  }),
+} as any
+
+// nextauth-pouchdb setup
 let pouchdbAdapter: any
 let adapter: any
 const appOptions: AppOptions = {
@@ -36,11 +48,7 @@ const appOptions: AppOptions = {
   adapter: pouchdbAdapter,
 }
 
-// pouchdb setup
-PouchDB.plugin(memoryAdapter).plugin(find)
-let pouchdb: PouchDB.Database
-
-// test mock data
+// data for testing
 const mock = {
   user: {
     email: "EMAIL",
@@ -60,8 +68,20 @@ const mock = {
     accessToken: "ACCESS_TOKEN",
     accessTokenExpires: 0,
   },
-  SECRET: "SECRET",
+  session: {
+    sessionToken: "SESSION_TOKEN",
+    accessToken: "ACCESS_TOKEN",
+    expires: new Date(Date.now() + 10000).toISOString(),
+  },
+  verificationRequest: {
+    identifier: "any",
+    url: "URL",
+    token: createHash("sha256").update(`${"TOKEN"}${"SECRET"}`).digest("hex"),
+    baseUrl: appOptions.baseUrl,
+    provider: emailProvider,
+  },
   TOKEN: "TOKEN",
+  SECRET: "SECRET",
 }
 
 describe("adapter functions", () => {
@@ -122,9 +142,6 @@ describe("adapter functions", () => {
       data: {
         ...mock.account,
         userId,
-        accessTokenExpires: new Date(
-          mock.account.accessTokenExpires
-        ).toISOString(),
       },
     })
 
@@ -196,9 +213,7 @@ describe("adapter functions", () => {
       data: {
         ...mock.account,
         userId,
-        accessTokenExpires: new Date(
-          mock.account.accessTokenExpires
-        ).toISOString(),
+        accessTokenExpires: new Date(mock.account.accessTokenExpires),
       },
     })
 
@@ -233,10 +248,8 @@ describe("adapter functions", () => {
     const userId = ["USER", ulid()].join("_")
     const sessionId = ["SESSION", ulid()].join("_")
     const data = {
+      ...mock.session,
       userId,
-      expires: new Date(Date.now() + 10000).toISOString(),
-      sessionToken: randomBytes(32).toString("hex"),
-      accessToken: randomBytes(32).toString("hex"),
     }
     await pouchdb.put({ _id: sessionId, data })
 
@@ -249,10 +262,8 @@ describe("adapter functions", () => {
     const userId = ["USER", ulid()].join("_")
     const sessionId = ["SESSION", ulid()].join("_")
     const data = {
+      ...mock.session,
       userId,
-      expires: new Date(Date.now() + 10000).toISOString(),
-      sessionToken: randomBytes(32).toString("hex"),
-      accessToken: randomBytes(32).toString("hex"),
     }
     await pouchdb.put({ _id: sessionId, data })
 
@@ -278,10 +289,8 @@ describe("adapter functions", () => {
     const userId = ["USER", ulid()].join("_")
     const sessionId = ["SESSION", ulid()].join("_")
     const data = {
+      ...mock.session,
       userId,
-      expires: new Date(Date.now() + 10000).toISOString(),
-      sessionToken: randomBytes(32).toString("hex"),
-      accessToken: randomBytes(32).toString("hex"),
     }
     await pouchdb.put({ _id: sessionId, data })
 
@@ -292,6 +301,69 @@ describe("adapter functions", () => {
       use_index: "nextAuthSessionByToken",
       selector: {
         "data.sessionToken": { $eq: data.sessionToken },
+      },
+      limit: 1,
+    })
+    expect(res.docs).toHaveLength(0)
+  })
+
+  test("createVerificationRequest", async () => {
+    await adapter.createVerificationRequest(
+      mock.verificationRequest.identifier,
+      mock.verificationRequest.url,
+      mock.TOKEN,
+      mock.SECRET,
+      emailProvider
+    )
+
+    const res: any = await pouchdb.find({
+      use_index: "nextAuthVerificationRequestByToken",
+      selector: {
+        "data.identifier": { $eq: mock.verificationRequest.identifier },
+      },
+      limit: 1,
+    })
+
+    expect(res.docs?.[0].data.identifier).toEqual(
+      mock.verificationRequest.identifier
+    )
+    expect(sendVerificationRequestMock).toBeCalledTimes(1)
+  })
+
+  test("getVerificationRequest", async () => {
+    const verificationRequestId = ["VERIFICATION-REQUEST", ulid()].join("_")
+    await pouchdb.put({
+      _id: verificationRequestId,
+      data: { ...mock.verificationRequest },
+    })
+
+    const result = await adapter.getVerificationRequest(
+      mock.verificationRequest.identifier,
+      mock.TOKEN,
+      mock.SECRET
+    )
+
+    expect(result?.token).toEqual(mock.verificationRequest.token)
+  })
+
+  test("deleteVerificationRequest", async () => {
+    const verificationRequestId = ["VERIFICATION-REQUEST", ulid()].join("_")
+    await pouchdb.put({
+      _id: verificationRequestId,
+      data: { ...mock.verificationRequest },
+    })
+
+    await adapter.deleteVerificationRequest(
+      mock.verificationRequest.identifier,
+      mock.TOKEN,
+      mock.SECRET,
+      emailProvider
+    )
+    const res: any = await pouchdb.find({
+      use_index: "nextAuthVerificationRequestByToken",
+      selector: {
+        "data.identifier": { $eq: mock.verificationRequest.identifier },
+        "data.token": { $eq: mock.verificationRequest.token },
       },
       limit: 1,
     })
