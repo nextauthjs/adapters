@@ -4,9 +4,9 @@
 
 Depending on your architecture you can :
 
-1. Serverless or server setup: use PouchDB's http adapter to reach any database compliant with the CouchDB protocol (CouchDB, Cloudant, ...)
-1. Server setup : use any other PouchDB compatible adapter(in particular leveldb, ...)
-1. Server setup : use PouchDB's powerful sync features together with its memory-adapter and any other persistent adapter to build a memory-first caching strategy that would boost your authentication layer performance
+1. HTTP strategy (serverless or server setup) : use PouchDB's http adapter to reach any database compliant with the CouchDB protocol (CouchDB, Cloudant, ...)
+1. Classic strategy (server setup) : use any other PouchDB compatible adapter (in particular leveldb, ...)
+1. Memory-first caching strategy (server setup) : if you need to boost your authentication layer performance. Use PouchDB's powerful sync features together with its memory-adapter and any other persistent adapter to build a memory-first caching strategy.
 
 ## Usage
 
