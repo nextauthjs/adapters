@@ -185,4 +185,36 @@ describe("adapter functions", () => {
       ).toISOString(),
     })
   })
+
+  test("unlinkAccount", async () => {
+    const userId = ["User", ulid()].join("_")
+    const accountId = ["Account", ulid()].join("_")
+    await pouchdb.put({ _id: userId, data: { id: userId, ...mock.user } })
+    await pouchdb.put({
+      _id: accountId,
+      data: {
+        ...mock.account,
+        userId,
+        accessTokenExpires: new Date(
+          mock.account.accessTokenExpires
+        ).toISOString(),
+      },
+    })
+
+    await adapter.unlinkAccount(
+      userId,
+      mock.account.providerId,
+      mock.account.providerAccountId
+    )
+
+    const res: any = await pouchdb.find({
+      use_index: "nextAuthAccountByProviderId",
+      selector: {
+        "data.providerId": { $eq: mock.account.providerId },
+        "data.providerAccountId": { $eq: mock.account.providerAccountId },
+      },
+      limit: 1,
+    })
+    expect(res.docs).toHaveLength(0)
+  })
 })

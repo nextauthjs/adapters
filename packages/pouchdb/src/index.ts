@@ -107,10 +107,16 @@ export const PouchDBAdapter: Adapter<
         },
 
         async getUserByProviderAccountId(providerId, providerAccountId) {
-          const id = ["Account", providerId, providerAccountId].join("_")
-          const account: any = await pouchdb.get(id)
+          const account: any = await pouchdb.find({
+            use_index: "nextAuthAccountByProviderId",
+            selector: {
+              "data.providerId": { $eq: providerId },
+              "data.providerAccountId": { $eq: providerAccountId },
+            },
+            limit: 1,
+          })
           const user: any = await pouchdb
-            .get(account.data.userId)
+            .get(account.docs[0]?.data.userId)
             .catch(() => ({ data: null }))
           return user.data
         },
@@ -143,7 +149,7 @@ export const PouchDBAdapter: Adapter<
           accessTokenExpires
         ) {
           await pouchdb.put({
-            _id: ["Account", providerId, providerAccountId].join("_"),
+            _id: ["Account", ulid()].join("_"),
             data: {
               userId,
               providerId,
@@ -159,19 +165,20 @@ export const PouchDBAdapter: Adapter<
           })
         },
 
-        //   async unlinkAccount(userId, providerId, providerAccountId) {
-        //     debug("UNLINK_ACCOUNT", userId, providerId, providerAccountId)
-        //     try {
-        //       await prisma.account.delete({
-        //         where: {
-        //           providerId_providerAccountId: { providerId, providerAccountId },
-        //         },
-        //       })
-        //     } catch (error) {
-        //       logger.error("UNLINK_ACCOUNT_ERROR", error)
-        //       throw new UnlinkAccountError(error)
-        //     }
-        //   },
+        async unlinkAccount(_, providerId, providerAccountId) {
+          const account: any = await pouchdb.find({
+            use_index: "nextAuthAccountByProviderId",
+            selector: {
+              "data.providerId": { $eq: providerId },
+              "data.providerAccountId": { $eq: providerAccountId },
+            },
+            limit: 1,
+          })
+          await pouchdb.put({
+            ...account.docs[0],
+            _deleted: true,
+          })
+        },
 
         //   async createSession(user) {
         //     debug("CREATE_SESSION", user)
