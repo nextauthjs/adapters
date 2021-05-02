@@ -231,16 +231,46 @@ describe("adapter functions", () => {
 
   test("getSession", async () => {
     const userId = ["USER", ulid()].join("_")
+    const sessionId = ["SESSION", ulid()].join("_")
     const data = {
       userId,
       expires: new Date(Date.now() + 10000).toISOString(),
       sessionToken: randomBytes(32).toString("hex"),
       accessToken: randomBytes(32).toString("hex"),
     }
-    await pouchdb.put({ _id: userId, data })
+    await pouchdb.put({ _id: sessionId, data })
 
     const session = await adapter.getSession(data.sessionToken)
 
     expect(session).toEqual(data)
+  })
+
+  test("updateSession", async () => {
+    const userId = ["USER", ulid()].join("_")
+    const sessionId = ["SESSION", ulid()].join("_")
+    const data = {
+      userId,
+      expires: new Date(Date.now() + 10000).toISOString(),
+      sessionToken: randomBytes(32).toString("hex"),
+      accessToken: randomBytes(32).toString("hex"),
+    }
+    await pouchdb.put({ _id: sessionId, data })
+
+    const expires = new Date(2070, 1)
+    const session = await adapter.updateSession(
+      {
+        ...data,
+        userId: "userId",
+        expires,
+      },
+      true
+    )
+
+    // Using default maxAge, which is 30 days
+    const thirtyDaysFromNow = new Date()
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+    expect(
+      Math.abs(session.expires.getTime() - thirtyDaysFromNow.getTime())
+    ).toBeLessThan(1000)
   })
 })

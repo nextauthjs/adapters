@@ -43,10 +43,10 @@ export const PouchDBAdapter: Adapter<
       }
       const {
         maxAge = 30 * 24 * 60 * 60, // 30 days
-        // updateAge = 24 * 60 * 60, // 1 day
+        updateAge = 24 * 60 * 60, // 1 day
       } = session
       const sessionMaxAgeMs = maxAge * 1000
-      // const sessionUpdateAgeMs = updateAge * 1000
+      const sessionUpdateAgeMs = updateAge * 1000
 
       // create indexes if they don't exist
       const res = await pouchdb.getIndexes()
@@ -219,27 +219,28 @@ export const PouchDBAdapter: Adapter<
           return session.docs[0]?.data
         },
 
-        //   async updateSession(session, force) {
-        //     debug("UPDATE_SESSION", session)
-        //     try {
-        //       if (
-        //         !force &&
-        //         Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
-        //           Date.now()
-        //       ) {
-        //         return null
-        //       }
-        //       return await prisma.session.update({
-        //         where: { id: session.id },
-        //         data: {
-        //           expires: new Date(Date.now() + sessionMaxAgeMs),
-        //         },
-        //       })
-        //     } catch (error) {
-        //       logger.error("UPDATE_SESSION_ERROR", error)
-        //       throw new UpdateSessionError(error)
-        //     }
-        //   },
+        async updateSession(session, force) {
+          if (
+            !force &&
+            Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
+              Date.now()
+          ) {
+            return null
+          }
+          const previousSession: any = await pouchdb.find({
+            use_index: "nextAuthSessionByToken",
+            selector: {
+              "data.sessionToken": { $eq: session.sessionToken },
+            },
+            limit: 1,
+          })
+          const currentSession = {
+            ...previousSession.docs[0],
+          }
+          currentSession.data.expires = new Date(Date.now() + sessionMaxAgeMs)
+          await pouchdb.put(currentSession)
+          return currentSession.data
+        },
 
         //   async deleteSession(sessionToken) {
         //     debug("DELETE_SESSION", sessionToken)
