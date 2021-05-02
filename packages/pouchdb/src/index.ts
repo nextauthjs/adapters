@@ -323,5 +323,3 @@ export const PouchDBAdapter: Adapter<
     },
   }
 }
-
-export default PouchDBAdapter

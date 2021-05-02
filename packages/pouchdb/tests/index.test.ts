@@ -1,7 +1,7 @@
 import PouchDB from "pouchdb"
 import memoryAdapter from "pouchdb-adapter-memory"
 import find from "pouchdb-find"
-import Adapter from "../src"
+import { PouchDBAdapter } from "../src"
 import { ulid } from "ulid"
 import type { AppOptions } from "next-auth/internals"
 import { randomBytes } from "crypto"
@@ -68,7 +68,7 @@ describe("adapter functions", () => {
   beforeEach(async () => {
     try {
       pouchdb = new PouchDB(ulid(), { adapter: "memory" })
-      pouchdbAdapter = Adapter({ pouchdb })
+      pouchdbAdapter = PouchDBAdapter({ pouchdb })
       adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
     } catch (error) {
       console.log(error)
