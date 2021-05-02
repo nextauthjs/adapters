@@ -1,5 +1,6 @@
 import type { Adapter } from "next-auth/adapters"
 // import { createHash, randomBytes } from "crypto"
+import { randomBytes } from "crypto"
 import { User, Profile, Session } from "next-auth"
 import { ulid } from "ulid"
 
@@ -40,12 +41,11 @@ export const PouchDBAdapter: Adapter<
           "Session update age not configured (defaulting to 1 day)"
         )
       }
-
-      // const {
-      //   maxAge = 30 * 24 * 60 * 60, // 30 days
-      //   updateAge = 24 * 60 * 60, // 1 day
-      // } = session
-      // const sessionMaxAgeMs = maxAge * 1000
+      const {
+        maxAge = 30 * 24 * 60 * 60, // 30 days
+        // updateAge = 24 * 60 * 60, // 1 day
+      } = session
+      const sessionMaxAgeMs = maxAge * 1000
       // const sessionUpdateAgeMs = updateAge * 1000
 
       // create required database indexes if they don't exist
@@ -75,7 +75,7 @@ export const PouchDBAdapter: Adapter<
       return {
         async createUser(profile) {
           const data = {
-            id: ["User", ulid()].join("_"),
+            id: ["USER", ulid()].join("_"),
             name: profile.name,
             email: profile.email,
             image: profile.image,
@@ -149,7 +149,7 @@ export const PouchDBAdapter: Adapter<
           accessTokenExpires
         ) {
           await pouchdb.put({
-            _id: ["Account", ulid()].join("_"),
+            _id: ["ACCOUNT", ulid()].join("_"),
             data: {
               userId,
               providerId,
@@ -180,22 +180,19 @@ export const PouchDBAdapter: Adapter<
           })
         },
 
-        //   async createSession(user) {
-        //     debug("CREATE_SESSION", user)
-        //     try {
-        //       return await prisma.session.create({
-        //         data: {
-        //           userId: user.id,
-        //           expires: new Date(Date.now() + sessionMaxAgeMs),
-        //           sessionToken: randomBytes(32).toString("hex"),
-        //           accessToken: randomBytes(32).toString("hex"),
-        //         },
-        //       })
-        //     } catch (error) {
-        //       logger.error("CREATE_SESSION_ERROR", error)
-        //       throw new CreateSessionError(error)
-        //     }
-        //   },
+        async createSession(user) {
+          const data = {
+            userId: user.id,
+            expires: new Date(Date.now() + sessionMaxAgeMs),
+            sessionToken: randomBytes(32).toString("hex"),
+            accessToken: randomBytes(32).toString("hex"),
+          }
+          await pouchdb.put({
+            _id: ["SESSION", ulid()].join("_"),
+            data,
+          })
+          return data
+        },
 
         //   async getSession(sessionToken) {
         //     debug("GET_SESSION", sessionToken)

@@ -91,7 +91,7 @@ describe("adapter functions", () => {
   })
 
   test("getUser", async () => {
-    const id = ["User", ulid()].join("_")
+    const id = ["USER", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
 
     const res = await adapter.getUser(id)
@@ -100,7 +100,7 @@ describe("adapter functions", () => {
   })
 
   test("getUserByEmail", async () => {
-    const id = ["User", ulid()].join("_")
+    const id = ["USER", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
 
     const res = await adapter.getUserByEmail(mock.user.email)
@@ -111,7 +111,7 @@ describe("adapter functions", () => {
   test("getUserByProviderAccountId", async () => {
     const userId = ["User", ulid()].join("_")
     const accountId = [
-      "Account",
+      "ACCOUNT",
       mock.account.providerId,
       mock.account.providerAccountId,
     ].join("_")
@@ -136,7 +136,7 @@ describe("adapter functions", () => {
   })
 
   test("updateUser", async () => {
-    const id = ["User", ulid()].join("_")
+    const id = ["USER", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
 
     const updated = await adapter.updateUser({ id, ...mock.updatedUser })
@@ -146,7 +146,7 @@ describe("adapter functions", () => {
   })
 
   test("deleteUser", async () => {
-    const id = ["User", ulid()].join("_")
+    const id = ["USER", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
 
     await adapter.deleteUser(id)
@@ -156,7 +156,7 @@ describe("adapter functions", () => {
   })
 
   test("linkAccount", async () => {
-    const id = ["User", ulid()].join("_")
+    const id = ["USER", ulid()].join("_")
     const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
 
     await adapter.linkAccount(
@@ -187,8 +187,8 @@ describe("adapter functions", () => {
   })
 
   test("unlinkAccount", async () => {
-    const userId = ["User", ulid()].join("_")
-    const accountId = ["Account", ulid()].join("_")
+    const userId = ["USER", ulid()].join("_")
+    const accountId = ["ACCOUNT", ulid()].join("_")
     await pouchdb.put({ _id: userId, data: { id: userId, ...mock.user } })
     await pouchdb.put({
       _id: accountId,
@@ -216,5 +216,15 @@ describe("adapter functions", () => {
       limit: 1,
     })
     expect(res.docs).toHaveLength(0)
+  })
+
+  test("createSession", async () => {
+    const id = ["USER", ulid()].join("_")
+    const res = await adapter.createSession({ id, ...mock.user })
+
+    expect(res).toEqual(expect.objectContaining({ userId: id }))
+    expect(res).toHaveProperty("expires")
+    expect(res).toHaveProperty("sessionToken")
+    expect(res).toHaveProperty("accessToken")
   })
 })
