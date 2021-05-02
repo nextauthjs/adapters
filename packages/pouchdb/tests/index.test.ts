@@ -273,4 +273,28 @@ describe("adapter functions", () => {
       Math.abs(session.expires.getTime() - thirtyDaysFromNow.getTime())
     ).toBeLessThan(1000)
   })
+
+  test("deleteSession", async () => {
+    const userId = ["USER", ulid()].join("_")
+    const sessionId = ["SESSION", ulid()].join("_")
+    const data = {
+      userId,
+      expires: new Date(Date.now() + 10000).toISOString(),
+      sessionToken: randomBytes(32).toString("hex"),
+      accessToken: randomBytes(32).toString("hex"),
+    }
+    await pouchdb.put({ _id: sessionId, data })
+
+    await adapter.deleteSession(data.sessionToken)
+
+    // Using default maxAge, which is 30 days
+    const res: any = await pouchdb.find({
+      use_index: "nextAuthSessionByToken",
+      selector: {
+        "data.sessionToken": { $eq: data.sessionToken },
+      },
+      limit: 1,
+    })
+    expect(res.docs).toHaveLength(0)
+  })
 })

@@ -242,15 +242,19 @@ export const PouchDBAdapter: Adapter<
           return currentSession.data
         },
 
-        //   async deleteSession(sessionToken) {
-        //     debug("DELETE_SESSION", sessionToken)
-        //     try {
-        //       await prisma.session.delete({ where: { sessionToken } })
-        //     } catch (error) {
-        //       logger.error("DELETE_SESSION_ERROR", error)
-        //       throw new DeleteSessionError(error)
-        //     }
-        //   },
+        async deleteSession(sessionToken) {
+          const session: any = await pouchdb.find({
+            use_index: "nextAuthSessionByToken",
+            selector: {
+              "data.sessionToken": { $eq: sessionToken },
+            },
+            limit: 1,
+          })
+          await pouchdb.put({
+            ...session.docs[0],
+            _deleted: true,
+          })
+        },
 
         //   async createVerificationRequest(
         //     identifier,
