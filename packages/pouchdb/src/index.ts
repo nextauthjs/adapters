@@ -201,7 +201,7 @@ export const PouchDBAdapter: Adapter<
         async createSession(user) {
           const data = {
             userId: user.id,
-            expires: new Date(Date.now() + sessionMaxAgeMs),
+            expires: new Date(Date.now() + sessionMaxAgeMs).toISOString(),
             sessionToken: randomBytes(32).toString("hex"),
             accessToken: randomBytes(32).toString("hex"),
           }
