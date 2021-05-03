@@ -4,12 +4,12 @@ import type { Profile } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 
 export const PrismaAdapter: Adapter<
-  { prisma: Prisma.PrismaClient },
+  Prisma.PrismaClient,
   never,
   Prisma.User,
   Profile & { emailVerified?: Date },
   Prisma.Session
-> = ({ prisma }) => {
+> = (prisma) => {
   return {
     async getAdapter({ session, secret, ...appOptions }) {
       const sessionMaxAgeMs = session.maxAge * 1000 // default is 30 days
