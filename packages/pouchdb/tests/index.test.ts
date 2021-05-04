@@ -281,7 +281,9 @@ describe("adapter functions", () => {
     const thirtyDaysFromNow = new Date()
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
     expect(
-      Math.abs(session.expires.getTime() - thirtyDaysFromNow.getTime())
+      Math.abs(
+        new Date(session.expires).getTime() - thirtyDaysFromNow.getTime()
+      )
     ).toBeLessThan(1000)
   })
 
