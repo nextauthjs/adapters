@@ -10,10 +10,10 @@ You can use these models with MySQL, MariaDB, Postgres, MongoDB and SQLite.
 ## Creating custom models
 
 ```js title="models/User.js"
-import Adapters from "next-auth/adapters"
+import adapter from "@next-auth/typeorm-legacy-adapter"
 
 // Extend the built-in models using class inheritance
-export default class User extends Adapters.TypeORM.Models.User.model {
+export default class User extends adapter.Models.User.model {
   // You can extend the options in a model but you should not remove the base
   // properties or change the order of the built-in options on the constructor
   constructor(profile) {
@@ -30,7 +30,7 @@ export const UserSchema = {
   name: "User",
   target: User,
   columns: {
-    ...Adapters.TypeORM.Models.User.schema.columns,
+    ...adapter.Models.User.schema.columns,
     // Add custom fields to the User schema
     firstName: {
       type: "varchar",
@@ -75,7 +75,7 @@ You can use custom models by specifying the TypeORM adapter explicitly and passi
 ```js title="pages/api/auth/[...nextauth].js"
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import Adapters from "next-auth/adapters"
+import adapter from "@next-auth/typeorm-legacy-adapter"
 
 import Models from "../../../models"
 
@@ -84,7 +84,7 @@ export default NextAuth({
     // Your providers
   ],
 
-  adapter: Adapters.TypeORM.Adapter(
+  adapter: adapter.Adapter(
     // The first argument should be a database connection string or TypeORM config object
     "mysql://username:password@127.0.0.1:3306/database_name",
     // The second argument can be used to pass custom models and schemas
@@ -94,5 +94,37 @@ export default NextAuth({
       },
     }
   ),
+})
+```
+
+## Adding custom fields from Providers
+
+You can adjust the shape of the profile that is passed to the custom `User` model with the providers `profile` method.
+
+```js title="pages/api/auth/[...nextauth].js"
+import NextAuth from "next-auth"
+import Providers from "next-auth/providers"
+
+export default NextAuth({
+  providers: [
+    Providers.LinkedIn({
+      clientId: process.env.LINKEDIN_CLIENT_ID,
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+      profileUrl:
+        "https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName)",
+      //
+      profile: (profile, tokens) => {
+        return {
+          id: profile.id,
+          name: profile.localizedFirstName + " " + profile.localizedLastName,
+          email: null,
+          image: null,
+          // custom fields
+          firstName: profile.localizedFirstName,
+          lastName: profile.localizedLastName,
+        }
+      },
+    }),
+  ],
 })
 ```
