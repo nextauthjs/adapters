@@ -136,12 +136,7 @@ const Adapter = (typeOrmConfig, options = {}) => {
       debug("CREATE_USER", profile)
       try {
         // Create user account
-        const user = new User(
-          profile.name,
-          profile.email,
-          profile.image,
-          profile.emailVerified
-        )
+        const user = new User(profile)
         return await manager.save(user)
       } catch (error) {
         logger.error("CREATE_USER_ERROR", error)
