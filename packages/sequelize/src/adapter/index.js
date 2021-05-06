@@ -16,6 +16,7 @@ const Adapter = (config) => {
   async function getAdapter(appOptions) {
     const logger = appOptions.logger
 
+    const logger = appOptions.logger
     function debug(debugCode, ...args) {
       logger.debug(`SEQUELIZE${debugCode}`, ...args);
     }
