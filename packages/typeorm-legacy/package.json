@@ -50,7 +50,6 @@
     "mongodb": "^3.6.3",
     "mssql": "^6.3.1",
     "mysql": "^2.18.1",
-    "next-auth": "^3.1.0",
     "pg": "^8.5.1",
     "typeorm-adapter": "^1.2.0"
   },
