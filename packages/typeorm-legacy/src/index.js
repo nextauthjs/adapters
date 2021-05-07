@@ -6,6 +6,8 @@ import { handleConnection } from "./lib/connection"
 import adapterTransform from "./lib/transform"
 import defaultModels from "./models"
 
+export const Models = defaultModels
+
 /** @type {import("..").TypeORMAdapter} */
 export function TypeORMLegacyAdapter(configOrString, options = {}) {
   // Ensure configOrString is normalized to an object
@@ -291,5 +293,3 @@ export function TypeORMLegacyAdapter(configOrString, options = {}) {
     },
   }
 }
-
-export { defaultModels as Models, TypeORMLegacyAdapter as Adapter }
