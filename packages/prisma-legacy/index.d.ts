@@ -1,8 +1,7 @@
-import { PrismaClient } from ".prisma/client"
 import { Adapter } from "next-auth/adapters"
 
 export type PrismaLegacyAdapter = Adapter<{
-  prisma: PrismaClient
+  prisma: any
   modelMapping?: {
     User: string
     Account: string
