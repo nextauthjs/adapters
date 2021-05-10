@@ -10,7 +10,8 @@
   "author": "Iain Collins",
   "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "index.d.ts"
   ],
   "license": "ISC",
   "keywords": [
