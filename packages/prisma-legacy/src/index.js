@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "crypto"
 
-/** @type {import("next-auth/adapters").Adapter} */
+/** @type {import("..").Adapter} */
 export function PrismaLegacyAdapter(config) {
   const {
     prisma,
