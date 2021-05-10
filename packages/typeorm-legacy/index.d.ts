@@ -1,4 +1,4 @@
-import type { Profile, Session, User } from "next-auth"
+import { Profile, Session, User } from "next-auth"
 import { ConnectionOptions, EntitySchema } from "typeorm"
 import { Adapter } from "next-auth/adapters"
 
