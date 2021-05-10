@@ -3,50 +3,24 @@ import { createHash, randomBytes } from "crypto"
 import type { Profile } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 
-function verificationRequestToken({
-  token,
-  secret,
-}: {
-  token: string
-  secret: string
-}) {
-  // TODO: Use bcrypt or a more secure method
-  return createHash("sha256").update(`${token}${secret}`).digest("hex")
-}
-
 export const PrismaAdapter: Adapter<
-  { prisma: Prisma.PrismaClient },
+  Prisma.PrismaClient,
   never,
   Prisma.User,
   Profile & { emailVerified?: Date },
   Prisma.Session
-> = ({ prisma }) => {
+> = (prisma) => {
   return {
-    async getAdapter({ logger, session, ...appOptions }) {
-      function debug(debugCode: string, ...args: unknown[]) {
-        logger.debug(`PRISMA_${debugCode}`, ...args)
-      }
+    async getAdapter({ session, secret, ...appOptions }) {
+      const sessionMaxAgeMs = session.maxAge * 1000 // default is 30 days
+      const sessionUpdateAgeMs = session.updateAge * 1000 // default is 1 day
 
-      if (!session.maxAge) {
-        debug(
-          "GET_ADAPTER",
-          "Session expiry not configured (defaulting to 30 days)"
-        )
-      }
-      if (!session.updateAge) {
-        debug(
-          "GET_ADAPTER",
-          "Session update age not configured (defaulting to 1 day)"
-        )
-      }
-
-      const {
-        maxAge = 30 * 24 * 60 * 60, // 30 days
-        updateAge = 24 * 60 * 60, // 1 day
-      } = session
-
-      const sessionMaxAgeMs = maxAge * 1000
-      const sessionUpdateAgeMs = updateAge * 1000
+      /**
+       * @todo Move this to core package
+       * @todo Use bcrypt or a more secure method
+       */
+      const hashToken = (token: string) =>
+        createHash("sha256").update(`${token}${secret}`).digest("hex")
 
       return {
         createUser(profile) {
@@ -174,18 +148,11 @@ export const PrismaAdapter: Adapter<
           await prisma.session.delete({ where: { sessionToken } })
         },
 
-        async createVerificationRequest(
-          identifier,
-          url,
-          token,
-          secret,
-          provider
-        ) {
-          const hashedToken = verificationRequestToken({ token, secret })
+        async createVerificationRequest(identifier, url, token, _, provider) {
           await prisma.verificationRequest.create({
             data: {
               identifier,
-              token: hashedToken,
+              token: hashToken(token),
               expires: new Date(Date.now() + provider.maxAge * 1000),
             },
           })
@@ -198,8 +165,8 @@ export const PrismaAdapter: Adapter<
           })
         },
 
-        async getVerificationRequest(identifier, token, secret) {
-          const hashedToken = verificationRequestToken({ token, secret })
+        async getVerificationRequest(identifier, token) {
+          const hashedToken = hashToken(token)
           const verificationRequest = await prisma.verificationRequest.findUnique(
             {
               where: { identifier_token: { identifier, token: hashedToken } },
@@ -214,10 +181,11 @@ export const PrismaAdapter: Adapter<
           return verificationRequest
         },
 
-        async deleteVerificationRequest(identifier, token, secret) {
-          const hashedToken = verificationRequestToken({ token, secret })
+        async deleteVerificationRequest(identifier, token) {
           await prisma.verificationRequest.delete({
-            where: { identifier_token: { identifier, token: hashedToken } },
+            where: {
+              identifier_token: { identifier, token: hashToken(token) },
+            },
           })
         },
       }

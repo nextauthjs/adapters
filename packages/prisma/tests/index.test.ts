@@ -3,7 +3,7 @@ import { PrismaAdapter } from "../src"
 import type { AppOptions } from "next-auth/internals"
 import Providers from "next-auth/providers"
 const prisma = new Prisma.PrismaClient()
-const prismaAdapter = PrismaAdapter({ prisma })
+const prismaAdapter = PrismaAdapter(prisma)
 let session: Prisma.Session | null = null
 let user: Prisma.User | null = null
 let verificationRequest: Prisma.VerificationRequest | null = null
@@ -29,7 +29,11 @@ const appOptions: AppOptions = {
   pages: {},
   providers: [],
   secret: "",
-  session: {},
+  session: {
+    jwt: false,
+    maxAge: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24,
+  },
   adapter: prismaAdapter as any,
 }
 

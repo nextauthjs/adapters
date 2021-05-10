@@ -1,8 +1,8 @@
 import { EntitySchema } from "typeorm"
 
-const parseConnectionString = (configString) => {
-  if (typeof configString !== "string") {
-    return configString
+export function parseConnectionString(configOrString) {
+  if (typeof configOrString !== "string") {
+    return configOrString
   }
 
   // If the input is URL string, automatically convert the string to an object
@@ -12,13 +12,13 @@ const parseConnectionString = (configString) => {
   // not for all databases (e.g. SQLite) or for all options, so we handle
   // parsing it in this function.
   try {
-    const parsedUrl = new URL(configString)
+    const parsedUrl = new URL(configOrString)
     const config = {}
 
     if (parsedUrl.protocol.startsWith("mongodb+srv")) {
       // Special case handling is required for mongodb+srv with TypeORM
       config.type = "mongodb"
-      config.url = configString.replace(/\?(.*)$/, "")
+      config.url = configOrString.replace(/\?(.*)$/, "")
       config.useNewUrlParser = true
     } else {
       config.type = parsedUrl.protocol.replace(/:$/, "")
@@ -63,12 +63,12 @@ const parseConnectionString = (configString) => {
   } catch (error) {
     // If URL parsing fails for any reason, try letting TypeORM handle it
     return {
-      url: configString,
+      url: configOrString,
     }
   }
 }
 
-const loadConfig = (config, { models, namingStrategy }) => {
+export function loadConfig(config, { models, namingStrategy }) {
   const defaultConfig = {
     name: "nextauth",
     autoLoadEntities: true,
@@ -78,7 +78,7 @@ const loadConfig = (config, { models, namingStrategy }) => {
       new EntitySchema(models.Session.schema),
       new EntitySchema(models.VerificationRequest.schema),
     ],
-    timezone: "Z", // Required for timestamps to be treated as UTC in MySQL
+    timezone: "Z",
     logging: false,
     namingStrategy,
   }
@@ -87,9 +87,4 @@ const loadConfig = (config, { models, namingStrategy }) => {
     ...defaultConfig,
     ...config,
   }
-}
-
-export default {
-  parseConnectionString,
-  loadConfig,
 }
