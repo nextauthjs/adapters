@@ -2,7 +2,8 @@ import { createHash } from "crypto"
 import requireOptional from "require_optional"
 
 import * as adapterConfig from "./lib/config"
-import { handleConnection } from "./lib/connection"
+import { createConnection, getConnection } from "typeorm"
+import { updateConnectionEntities } from "./lib/utils"
 import adapterTransform from "./lib/transform"
 import defaultModels from "./models"
 
@@ -51,11 +52,39 @@ export function TypeORMLegacyAdapter(configOrString, options = {}) {
       logger,
       ...appOptions
     }) {
-      try {
-        await handleConnection(connection, config)
-      } catch (error) {
-        logger.error("ADAPTER_CONNECTION_ERROR", error)
-        throw error
+      // Helper function to reuse / restablish connections
+      // (useful if they drop when after being idle)
+      async function _connect() {
+        // Get current connection by name
+        connection = getConnection(config.name)
+
+        // If connection is no longer established, reconnect
+        if (!connection.isConnected) {
+          connection = await connection.connect()
+        }
+      }
+
+      if (!connection) {
+        // If no connection, create new connection
+        try {
+          connection = await createConnection(config)
+        } catch (error) {
+          if (error.name === "AlreadyHasActiveConnectionError") {
+            // If creating connection fails because it's already
+            // been re-established, check it's really up
+            await _connect()
+          } else {
+            logger.error("ADAPTER_CONNECTION_ERROR", error)
+            throw error
+          }
+        }
+      } else {
+        // If the connection object already exists, ensure it's valid
+        await _connect()
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        await updateConnectionEntities(connection, config.entities)
       }
 
       // Get manager from connection object
