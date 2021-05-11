@@ -15,7 +15,8 @@
   },
   "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "index.d.ts"
   ],
   "private": false,
   "publishConfig": {
@@ -34,8 +35,7 @@
     "@prisma/client": "^2.16.1",
     "next-auth": "^3.17.2"
   },
-  "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/preset-env": "^7.13.15"
+  "dependencies": {
+    "@babel/runtime": "^7.14.0"
   }
 }
