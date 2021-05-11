@@ -40,6 +40,8 @@ export function TypeORMLegacyAdapter(configOrString, options = {}) {
     VerificationRequest: { model: VerificationRequest },
   } = models
 
+  // Re-assigned in handleConnection
+  // eslint-disable-next-line prefer-const
   let connection = null
 
   return {
@@ -49,15 +51,17 @@ export function TypeORMLegacyAdapter(configOrString, options = {}) {
       logger,
       ...appOptions
     }) {
+      try {
+        await handleConnection(connection, config)
+      } catch (error) {
+        logger.error("ADAPTER_CONNECTION_ERROR", error)
+        throw error
+      }
+
       // Get manager from connection object
       // https://github.com/typeorm/typeorm/blob/master/docs/entity-manager-api.md
-      connection = await handleConnection({
-        connection,
-        config,
-        logger,
-      })
-
       const { manager } = connection
+
       // The models are primarily designed for ANSI SQL database, but some
       // flexiblity is required in the adapter to support non-SQL databases such
       // as MongoDB which have different pragmas.
