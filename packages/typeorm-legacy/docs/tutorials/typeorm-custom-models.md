@@ -19,10 +19,10 @@ export default class User extends adapter.Models.User.model {
   constructor(profile) {
     super(profile)
     // Add custom fields to the User model
-    this.firstName = profile?.firstName || undefined
-    this.lastName = profile?.lastName || undefined
-    this.userType = profile?.userType || undefined
-    this.phoneNumber = profile?.phoneNumber || undefined
+    this.firstName = profile?.firstName
+    this.lastName = profile?.lastName
+    this.userType = profile?.userType
+    this.phoneNumber = profile?.phoneNumber
   }
 }
 

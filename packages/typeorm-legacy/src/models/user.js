@@ -1,9 +1,9 @@
 export class User {
   constructor(profile) {
-    this.name = profile?.name || undefined
-    this.email = profile?.email || undefined
-    this.image = profile?.image || undefined
-    this.emailVerified = profile?.emailVerified ? new Date() : undefined
+    this.name = profile?.name
+    this.email = profile?.email
+    this.image = profile?.image
+    this.emailVerified = profile?.emailVerified && new Date()
   }
 }
 
