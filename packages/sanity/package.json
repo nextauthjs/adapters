@@ -1,0 +1,42 @@
+{
+  "name": "@next-auth/sanity-adapter",
+  "description": "Sanity Adapter for NextAuth",
+  "version": "1.2.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "author": "Fedeya <elfedeminaya@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "keywords": [
+    "next-auth",
+    "oauth",
+    "sanity",
+    "next.js"
+  ],
+  "scripts": {
+    "setup": "yarn build",
+    "build": "tsc"
+  },
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/lru-cache": "^5.1.0",
+    "@types/next-auth": "^3.15.0",
+    "@types/node": "^14.14.41",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {
+    "@sanity/client": "^2.8.0",
+    "argon2": "^0.27.2",
+    "axios": "^0.21.1",
+    "groq": "^2.2.6",
+    "lru-cache": "^6.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/nextauthjs/adapters/issues"
+  },
+  "homepage": "https://next-auth.js.org"
+}
