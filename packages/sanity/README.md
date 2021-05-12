@@ -41,7 +41,7 @@ sanity dataset visibility set <datasetName> private
 ### yarn
 
 ```sh
-yarn add next-auth-sanity
+yarn add @next-auth/sanity-adapter
 ```
 
 ### npm
