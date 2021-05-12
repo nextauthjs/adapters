@@ -170,7 +170,7 @@ export default signUpHandler({ client })
 `Client`
 
 ```ts
-import { signUp } from "next-auth-sanity/client"
+import { signUp } from "@next-auth/sanity-adapter/client"
 import { signIn } from "next-auth/client"
 
 const user = await signUp({
