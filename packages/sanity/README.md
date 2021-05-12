@@ -52,16 +52,15 @@ npm i @next-auth/sanity-adapter
 
 ## Usage
 
-[Full Example](https://github.com/Fedeya/next-auth-sanity/tree/main/examples/full-example)
+[Full Example](https://github.com/nextauthjs/adapters/tree/canary/packages/sanity/examples/full-example)
 
 ```ts
-import NextAuth, { NextAuthOptions } from "next-auth"
+import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import { NextApiRequest, NextApiResponse } from "next"
-import { SanityAdapter, SanityCredentials } from "next-auth-sanity"
+import { SanityAdapter, SanityCredentials } from "@next-auth/sanity-adapter"
 import { client } from "your/sanity/client"
 
-const options: NextAuthOptions = {
+export default NextAuth({
   providers: [
     Providers.GitHub({
       clientId: process.env.GITHUB_CLIENT_ID,
@@ -72,11 +71,8 @@ const options: NextAuthOptions = {
   session: {
     jwt: true,
   },
-  adapter: SanityAdapter({ client }),
-}
-
-export default (req: NextApiRequest, res: NextApiResponse) =>
-  NextAuth(req, res, options)
+  adapter: SanityAdapter(client),
+})
 ```
 
 ### Sanity Schemas
@@ -165,12 +161,10 @@ export default {
 ```ts
 // pages/api/sanity/signUp.ts
 
-import { signUpHandler } from "next-auth-sanity"
-import { NextApiRequest, NextApiResponse } from "next"
+import { signUpHandler } from "@next-auth/sanity-adapter"
 import { client } from "your/sanity/client"
 
-export default (req: NextApiRequest, res: NextApiResponse) =>
-  signUpHandler({ req, res, client })
+export default signUpHandler({ client })
 ```
 
 `Client`

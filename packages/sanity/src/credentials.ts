@@ -10,15 +10,7 @@ interface Options {
 
 type CredentialsConfig = ReturnType<CredentialsProvider>
 
-export interface Handler {
-  req: IncomingMessage & { body: any }
-  res: ServerResponse & {
-    json: (body: any) => void
-  }
-  client: SanityClient
-}
-
-export const signUpHandler = async ({ req, client, res }: Handler) => {
+export const signUpHandler = (req, res) => async ({ client }: Options) => {
   const { email, password, name, image } = req.body
 
   const user = await client.fetch(getUserByEmailQuery, {
@@ -26,8 +18,7 @@ export const signUpHandler = async ({ req, client, res }: Handler) => {
   })
 
   if (user) {
-    res.json({ error: "User already exist" })
-    return
+    return res.json({ error: "User already exist" })
   }
 
   const newUser = await client.create({

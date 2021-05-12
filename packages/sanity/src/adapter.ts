@@ -8,9 +8,6 @@ import {
 import LRU from "lru-cache"
 import { SanityClient } from "@sanity/client"
 
-interface Options {
-  client: SanityClient
-}
 
 const userCache = new LRU<string, User & { id: string }>({
   maxAge: 24 * 60 * 60 * 1000,
@@ -18,12 +15,12 @@ const userCache = new LRU<string, User & { id: string }>({
 })
 
 export const SanityAdapter: Adapter<
-  Options,
+  SanityClient,
   never,
   User & { id: string },
   Profile,
   Session
-> = ({ client }) => {
+> = (client) => {
   return {
     async getAdapter() {
       return {
