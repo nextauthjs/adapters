@@ -1,5 +1,4 @@
 import type { User } from "next-auth"
-import axios from "axios"
 
 export interface SignUpData {
   email: string
@@ -9,9 +8,13 @@ export interface SignUpData {
 }
 
 export const signUp = async (data: SignUpData) => {
-  const res = await axios.post<User>("/api/sanity/signUp", {
-    ...data,
+  const res = await fetch("/api/sanity/signUp", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json"
+    }
   })
-
-  return res.data
+  const user = await res.json() as User
+  return user
 }
