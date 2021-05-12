@@ -195,9 +195,7 @@ await signIn("credentials", {
 - Github: [@Fedeya](https://github.com/Fedeya)
 - LinkedIn: [@federico-minaya](https://linkedin.com/in/federico-minaya)
 
-## 🤝 Contributing
-
-Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/Fedeya/next-auth-sanity/issues).
+Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/nextauthjs/adapters/issues).
 
 ## Show your support
 

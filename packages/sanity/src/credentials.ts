@@ -2,7 +2,6 @@ import Providers, { CredentialsProvider } from "next-auth/providers"
 import type { SanityClient } from "@sanity/client"
 import { getUserByEmailQuery } from "./queries"
 import argon2 from "argon2"
-import type { IncomingMessage, ServerResponse } from "http"
 
 interface Options {
   client: SanityClient
@@ -10,7 +9,9 @@ interface Options {
 
 type CredentialsConfig = ReturnType<CredentialsProvider>
 
-export const signUpHandler = (req, res) => async ({ client }: Options) => {
+export const signUpHandler = (req: any, res: any) => async ({
+  client,
+}: Options) => {
   const { email, password, name, image } = req.body
 
   const user = await client.fetch(getUserByEmailQuery, {
