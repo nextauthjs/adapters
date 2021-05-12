@@ -1,6 +1,6 @@
 <h1 align="center">Welcome to Sanity Adapter for NextAuth 👋</h1>
 <p>
-  <a href="https://www.npmjs.com/package/next-auth-sanity" target="_blank">
+  <a href="https://www.npmjs.com/package/@next-auth/sanity-adapter" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/next-auth-sanity.svg">
   </a>
   <a href="#" target="_blank">
