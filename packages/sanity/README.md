@@ -47,7 +47,7 @@ yarn add @next-auth/sanity-adapter
 ### npm
 
 ```sh
-npm i next-auth-sanity
+npm i @next-auth/sanity-adapter
 ```
 
 ## Usage
