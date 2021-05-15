@@ -37,6 +37,7 @@ export function PrismaLegacyAdapter(config) {
         createHash("sha256").update(`${token}${secret}`).digest("hex")
 
       return {
+        displayName: "PRISMA_LEGACY",
         createUser(profile) {
           return prisma[User].create({
             data: {

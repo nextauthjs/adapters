@@ -1,16 +1,16 @@
 // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore
-import * as Prisma from "prisma"
+import * as Prisma from "@prisma/client"
 // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore
-import { PrismaAdapter } from "../src"
+import { PrismaLegacyAdapter } from "../src"
 import runBasicTests from "../../../basic-tests"
 
 const prisma = new Prisma.PrismaClient()
-const prismaAdapter = PrismaAdapter(prisma)
+const adapter = PrismaLegacyAdapter({ prisma })
 
 runBasicTests({
-  adapter: prismaAdapter,
+  adapter,
   db: {
     async disconnect() {
       await prisma.$disconnect()
