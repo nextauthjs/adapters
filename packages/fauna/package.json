@@ -25,6 +25,7 @@
   },
   "scripts": {
     "reset": "cross-env FAUNA_ADMIN_KEY=secret FAUNADB_DOMAIN=localhost FAUNADB_SCHEME=http FAUNADB_PORT=8443 fauna-schema-migrate apply all",
+    "migrate": "fauna-schema-migrate generate",
     "test:db:start": "docker run -d --rm --name next-auth-fauna-test -p 8443:8443 fauna/faunadb",
     "test:db:stop": "docker stop next-auth-fauna-test",
     "test": "yarn setup && jest;yarn test:db:stop",

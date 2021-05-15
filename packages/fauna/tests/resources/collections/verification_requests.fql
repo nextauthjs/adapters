@@ -1,13 +1,3 @@
 CreateCollection({ 
   name: 'verification_requests' 
 })
-
-/**
-# "data": {
-#   "identifier": String(email),
-#   "token": String,
-#   "expires": Time,
-#   "createdAt": Time,
-#   "updatedAt": Time
-# }
-**/

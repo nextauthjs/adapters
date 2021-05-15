@@ -1,14 +1,3 @@
 CreateCollection({ 
   name: 'sessions' 
 })
-
-/**
-# "data": {
-#   "userId": String,
-#   "expires": Time,
-#   "sessionToken": String,
-#   "accessToken": String,
-#   "createdAt": Time,
-#   "updatedAt": Time
-# }
-**/
