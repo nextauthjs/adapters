@@ -23,7 +23,9 @@
     "access": "public"
   },
   "scripts": {
-    "test": "echo \"TODO: Add tests...\"; exit 0",
+    "setup": "yarn reset && yarn build",
+    "reset": "prisma migrate reset --preview-feature -f",
+    "test": "yarn setup && jest",
     "build": "babel src --out-dir dist"
   },
   "contributors": [
@@ -37,5 +39,9 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.14.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^2.16.0",
+    "prisma": "^2.16.0"
   }
 }
