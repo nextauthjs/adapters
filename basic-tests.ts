@@ -111,11 +111,11 @@ export default function basicTests(options: {
       expect(updatedUser.email).toBe(user.email)
     })
 
-    // (Currently unimplemented in core)
+    // (Currently unimplemented in core, so we don't require it yet)
     test.skip("deleteUser", async () => {
       if (adapter.deleteUser) {
         await adapter.deleteUser(user.id)
-        const expectedUser = await adapter.getUser(user.id)
+        const expectedUser = await options.db.user(user.id)
         expect(expectedUser).toBeNull()
       }
     })
@@ -173,7 +173,7 @@ export default function basicTests(options: {
   describe("Account", () => {
     test.todo("linkAccount")
 
-    // (Currently unimplemented in core)
+    // (Currently unimplemented in core, so we don't require it yet)
     test.skip("unlinkAccount", async () => {
       await adapter.unlinkAccount?.("", "", "")
     })
