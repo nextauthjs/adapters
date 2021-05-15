@@ -23,8 +23,8 @@
   "scripts": {
     "setup": "yarn reset && yarn build",
     "reset": "prisma migrate reset --preview-feature -f",
-    "build": "tsc",
-    "test": "yarn setup && jest"
+    "test": "yarn setup && jest",
+    "build": "tsc"
   },
   "files": [
     "README.md",
@@ -37,10 +37,6 @@
   "dependencies": {},
   "devDependencies": {
     "@prisma/client": "^2.16.0",
-    "@types/jest": "^26.0.20",
-    "@types/lru-cache": "^5.1.0",
-    "jest": "^26.6.3",
-    "prisma": "^2.16.0",
-    "ts-jest": "^26.4.4"
+    "prisma": "^2.16.0"
   }
 }
