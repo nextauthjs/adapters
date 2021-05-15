@@ -23,6 +23,7 @@ export const PrismaAdapter: Adapter<
         createHash("sha256").update(`${token}${secret}`).digest("hex")
 
       return {
+        displayName: "PRISMA",
         createUser(profile) {
           return prisma.user.create({
             data: {
