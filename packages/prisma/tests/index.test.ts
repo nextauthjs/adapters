@@ -2,8 +2,32 @@ import * as Prisma from "@prisma/client"
 import { PrismaAdapter } from "../src"
 import type { AppOptions } from "next-auth/internals"
 import Providers from "next-auth/providers"
+import runBasicTests from "../../../basic-tests"
+
 const prisma = new Prisma.PrismaClient()
 const prismaAdapter = PrismaAdapter(prisma)
+
+runBasicTests({
+  adapter: prismaAdapter,
+  db: {
+    async disconnect() {
+      await prisma.$disconnect()
+    },
+    session(sessionToken) {
+      return prisma.session.findUnique({ where: { sessionToken } })
+    },
+    user(id) {
+      return prisma.user.findUnique({ where: { id } })
+    },
+    account(id) {
+      return prisma.account.findUnique({ where: { id } })
+    },
+    verificationRequest(id) {
+      return prisma.verificationRequest.findUnique({ where: { id } })
+    },
+  },
+})
+
 let session: Prisma.Session | null = null
 let user: Prisma.User | null = null
 let verificationRequest: Prisma.VerificationRequest | null = null
