@@ -24,8 +24,7 @@
     "reset": "export FAUNA_ADMIN_KEY=secret;export FAUNADB_DOMAIN=localhost; export FAUNADB_SCHEME=http;export FAUNADB_PORT=8443;fauna-schema-migrate apply all",
     "test:db:start": "docker run -d --rm --name faunadb -p 8443:8443 fauna/faunadb",
     "test:db:stop": "docker stop faunadb",
-    "test:wip": "yarn setup && jest;yarn test:db:stop",
-    "test": "echo \"Replace with test:wip when tests are ready.\";echo 0",
+    "test": "yarn setup && jest;yarn test:db:stop",
     "setup": "yarn test:db:start && echo \"Waiting 10 sec for db to start...\" && sleep 10 && yarn reset"
   },
   "peerDependencies": {
