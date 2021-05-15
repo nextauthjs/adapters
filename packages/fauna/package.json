@@ -24,7 +24,7 @@
     "access": "public"
   },
   "scripts": {
-    "reset": "export FAUNA_ADMIN_KEY=secret;export FAUNADB_DOMAIN=localhost; export FAUNADB_SCHEME=http;export FAUNADB_PORT=8443;fauna-schema-migrate apply all",
+    "reset": "cross-env FAUNA_ADMIN_KEY=secret FAUNADB_DOMAIN=localhost FAUNADB_SCHEME=http FAUNADB_PORT=8443 fauna-schema-migrate apply all",
     "test:db:start": "docker run -d --rm --name next-auth-fauna-test -p 8443:8443 fauna/faunadb",
     "test:db:stop": "docker stop next-auth-fauna-test",
     "test": "yarn setup && jest;yarn test:db:stop",
@@ -35,6 +35,7 @@
     "next-auth": "^3.11.2"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "fauna-schema-migrate": "^2.1.2",
     "faunadb": "^4.2.0"
   }
