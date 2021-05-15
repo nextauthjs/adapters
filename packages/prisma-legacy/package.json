@@ -23,7 +23,7 @@
     "access": "public"
   },
   "scripts": {
-    "setup": "yarn reset && yarn build",
+    "setup": "yarn reset",
     "reset": "prisma migrate reset --preview-feature -f",
     "test": "yarn setup && jest",
     "build": "babel src --out-dir dist"
