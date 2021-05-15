@@ -7,6 +7,9 @@
   "bugs": {
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
+  "files": [
+    "src"
+  ],
   "author": "Bhanu Teja P",
   "main": "src/index.js",
   "license": "ISC",
