@@ -21,10 +21,19 @@
     "access": "public"
   },
   "scripts": {
-    "test": "exit 0"
+    "reset": "export FAUNA_ADMIN_KEY=secret;export FAUNADB_DOMAIN=localhost; export FAUNADB_SCHEME=http;export FAUNADB_PORT=8443;fauna-schema-migrate apply all",
+    "test:db:start": "docker run -d --rm --name faunadb -p 8443:8443 fauna/faunadb",
+    "test:db:stop": "docker stop faunadb",
+    "test:wip": "yarn setup && jest && yarn test:db:stop",
+    "test": "echo \"Replace with test:wip when tests are ready.\";echo 0",
+    "setup": "yarn test:db:start && echo \"Waiting 10 sec for db to start...\" && sleep 10 && yarn reset"
   },
   "peerDependencies": {
     "faunadb": "^4.1.1",
     "next-auth": "^3.11.2"
+  },
+  "devDependencies": {
+    "fauna-schema-migrate": "^2.1.2",
+    "faunadb": "^4.2.0"
   }
 }

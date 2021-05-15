@@ -10,8 +10,8 @@ export default function basicTests(options: {
   adapter: ReturnType<Adapter>
   /** Utility functions to talk directly with the db */
   db: {
-    /** After all tests have been run, this will make sure the database is disconnected */
-    disconnect: () => any
+    /** Optional, after all tests have been run, this will make sure the database is disconnected */
+    disconnect?: () => any
     /** Optional, establishes a db connection before all tests, if your db doesn't do this manually */
     connect?: () => any
     /** A simple query function that returns a session directly from the db. */
