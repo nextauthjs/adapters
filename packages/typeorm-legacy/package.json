@@ -28,9 +28,7 @@
     "build": "babel src --out-dir dist",
     "test": "yarn mysql",
     "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
-    "mysql:start": "./tests/mysql/start.sh",
-    "mysql:stop": "docker stop next-auth-mysql-test",
-    "mysql": "yarn mysql:start && jest tests/mysql --detectOpenHandles --forceExit; yarn mysql:stop",
+    "mysql": "./tests/mysql/test.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
