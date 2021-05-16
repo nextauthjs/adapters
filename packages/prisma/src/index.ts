@@ -12,8 +12,8 @@ export const PrismaAdapter: Adapter<
 > = (prisma) => {
   return {
     async getAdapter({ session, secret, ...appOptions }) {
-      const sessionMaxAgeMs = session.maxAge * 1000 // default is 30 days
-      const sessionUpdateAgeMs = session.updateAge * 1000 // default is 1 day
+      const sessionMaxAge = session.maxAge * 1000 // default is 30 days
+      const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
 
       /**
        * @todo Move this to core package
@@ -111,7 +111,7 @@ export const PrismaAdapter: Adapter<
           return prisma.session.create({
             data: {
               userId: user.id,
-              expires: new Date(Date.now() + sessionMaxAgeMs),
+              expires: new Date(Date.now() + sessionMaxAge),
               sessionToken: randomBytes(32).toString("hex"),
               accessToken: randomBytes(32).toString("hex"),
             },
@@ -132,7 +132,7 @@ export const PrismaAdapter: Adapter<
         async updateSession(session, force) {
           if (
             !force &&
-            Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
+            Number(session.expires) - sessionMaxAge + sessionUpdateAge >
               Date.now()
           ) {
             return null
@@ -140,7 +140,7 @@ export const PrismaAdapter: Adapter<
           return await prisma.session.update({
             where: { id: session.id },
             data: {
-              expires: new Date(Date.now() + sessionMaxAgeMs),
+              expires: new Date(Date.now() + sessionMaxAge),
             },
           })
         },
