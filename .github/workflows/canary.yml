@@ -32,11 +32,11 @@ jobs:
         id: filter
         with:
           filters: |
-            prisma: packages/prisma
-            fauna: packages/fauna
-            dynamodb: packages/dynamodb
-            typeorm-legacy: packages/typeorm-legacy
-            prisma-legacy: packages/prisma-legacy
+            prisma: packages/prisma/**
+            fauna: packages/fauna/**
+            dynamodb: packages/dynamodb/**
+            typeorm-legacy: packages/typeorm-legacy/**
+            prisma-legacy: packages/prisma-legacy/**
   test-adapters:
     runs-on: ubuntu-latest
     needs: changes
