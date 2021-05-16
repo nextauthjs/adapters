@@ -6,7 +6,7 @@ import { AppOptions } from "next-auth/internals"
  * Run this at the top of your test file.
  * You can add additional tests below, if you wish.
  */
-export default function basicTests(options: {
+export function runBasicTests(options: {
   adapter: ReturnType<Adapter>
   /** Utility functions to talk directly with the db */
   db: {
@@ -88,7 +88,7 @@ export default function basicTests(options: {
   describe("User", () => {
     let user: any
 
-    test("createUser", async () => {
+    test.only("createUser", async () => {
       user = await adapter.createUser(defaultUser)
       expect(user).toEqual(expect.objectContaining(defaultUser))
     })

@@ -4,7 +4,7 @@ import * as Prisma from "@prisma/client"
 // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore
 import { PrismaLegacyAdapter } from "../src"
-import runBasicTests from "../../../basic-tests"
+import { runBasicTests } from "../../../basic-tests"
 
 const prisma = new Prisma.PrismaClient()
 const adapter = PrismaLegacyAdapter({ prisma })

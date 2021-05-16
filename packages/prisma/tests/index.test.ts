@@ -2,7 +2,7 @@ import * as Prisma from "@prisma/client"
 import { PrismaAdapter } from "../src"
 import type { AppOptions } from "next-auth/internals"
 import Providers from "next-auth/providers"
-import runBasicTests from "../../../basic-tests"
+import { runBasicTests } from "../../../basic-tests"
 
 const prisma = new Prisma.PrismaClient()
 const prismaAdapter = PrismaAdapter(prisma)

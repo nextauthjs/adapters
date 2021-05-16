@@ -1,6 +1,6 @@
 import { AWS } from "dynamodb"
 import { DynamoDBAdapter } from "../src"
-import runBasicTests from "../../../basic-tests"
+import { runBasicTests } from "../../../basic-tests"
 
 const client = new AWS.DynamoDB.DocumentClient()
 const adapter = DynamoDBAdapter(client)
