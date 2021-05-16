@@ -24,19 +24,14 @@
     "access": "public"
   },
   "scripts": {
-    "reset": "cross-env FAUNA_ADMIN_KEY=secret FAUNADB_DOMAIN=localhost FAUNADB_SCHEME=http FAUNADB_PORT=8443 fauna-schema-migrate apply all",
     "migrate": "fauna-schema-migrate generate",
-    "test:db:start": "docker run -d --rm --name next-auth-fauna-test -p 8443:8443 fauna/faunadb",
-    "test:db:stop": "docker stop next-auth-fauna-test",
-    "test": "yarn setup && jest;yarn test:db:stop",
-    "setup": "yarn test:db:start && echo \"Waiting 10 sec for db to start...\" && sleep 10 && yarn reset"
+    "test": "./tests/test.sh"
   },
   "peerDependencies": {
     "faunadb": "^4.1.1",
     "next-auth": "^3.11.2"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "fauna-schema-migrate": "^2.1.2",
     "faunadb": "^4.2.0"
   }
