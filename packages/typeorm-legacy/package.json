@@ -28,9 +28,9 @@
     "build": "babel src --out-dir dist",
     "test": "yarn mysql",
     "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
-    "mysql:start": "docker run -d --rm --name next-auth-mysql-test -e MYSQL_DATABASE=next-auth -e MYSQL_ROOT_PASSWORD=password -p 3306:3306 mysql && echo \"Waiting 10 sec for db to start...\" && sleep 10",
+    "mysql:start": "./tests/mysql/start.sh",
     "mysql:stop": "docker stop next-auth-mysql-test",
-    "mysql": "yarn mysql:start && jest tests/mysql.test.ts; yarn mysql:stop",
+    "mysql": "yarn mysql:start && jest tests/mysql --detectOpenHandles --forceExit; yarn mysql:stop",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

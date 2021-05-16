@@ -88,7 +88,7 @@ export function runBasicTests(options: {
   describe("User", () => {
     let user: any
 
-    test.only("createUser", async () => {
+    test("createUser", async () => {
       user = await adapter.createUser(defaultUser)
       expect(user).toEqual(expect.objectContaining(defaultUser))
     })
