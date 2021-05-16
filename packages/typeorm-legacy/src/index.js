@@ -41,8 +41,7 @@ export function TypeORMLegacyAdapter(configOrString, options = {}) {
     VerificationRequest: { model: VerificationRequest },
   } = models
 
-  // Re-assigned in handleConnection
-  // eslint-disable-next-line prefer-const
+  /** @type {import("typeorm").Connection} */
   let connection = null
 
   return {
