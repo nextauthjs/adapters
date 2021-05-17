@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 PGUSER=nextauth
+PGDATABASE=nextauth
 PGPORT=5432
 CONTAINER_NAME=next-auth-postgres-test
 
@@ -17,10 +18,8 @@ postgres:13.3
 echo \"Waiting 20 sec for db to start...\" && sleep 20
 
 # Always stop container, but exit with 1 when tests are failing
-if npx jest tests/postgres --detectOpenHandles --forceExit;then
-    # docker stop "${CONTAINER_NAME}"
-    echo "good"
+if npx jest tests/postgresql --detectOpenHandles --forceExit;then
+    docker stop "${CONTAINER_NAME}"
 else
-    # docker stop "${CONTAINER_NAME}" && exit 1
-    echo "bad"
+    docker stop "${CONTAINER_NAME}" && exit 1
 fi
