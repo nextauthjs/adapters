@@ -29,6 +29,7 @@
     "test": "yarn mysql",
     "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
     "mysql": "./tests/mysql/test.sh",
+    "postgres": "./tests/postgresql/test.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
