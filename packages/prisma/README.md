@@ -1,141 +1,61 @@
-# Prisma Adapter
+<p align="center">
+   <br/>
+   <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
+   <h3 align="center"><b>Prisma Adapter</b> - NextAuth.js</h3>
+   <p align="center">
+   Open Source. Full Stack. Own Your Data.
+   </p>
+   <p align="center" style="align: center;">
+      <img src="https://github.com/nextauthjs/adapters/workflows/Build%20Test/badge.svg" alt="Build Test" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/prisma-adapter" alt="Bundle Size"/>
+      <img src="https://img.shields.io/github/v/release/nextauthjs/adapters?include_prereleases" alt="Github Release" />
+   </p>
+</p>
 
-```prisma filename="schema.prisma"
-model Account {
-  id                 String    @id @default(cuid())
-  userId             String
-  providerType       String
-  providerId         String
-  providerAccountId  String
-  refreshToken       String?
-  accessToken        String?
-  accessTokenExpires DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  user               User      @relation(fields: [userId], references: [id])
+## Overview
 
-  @@unique([providerId, providerAccountId])
-}
+This is the Prisma Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  expires      DateTime
-  sessionToken String   @unique
-  accessToken  String   @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id])
-}
+You can find the Prisma schema in the docs at [next-auth.js.org/schemas/prisma](https://next-auth.js.org/schemas/prisma).
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-}
+## Getting Started
 
-model VerificationRequest {
-  id         String   @id @default(cuid())
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+1. Install `next-auth` and `@next-auth/prisma-adapter`
 
-  @@unique([identifier, token])
-}
-
+```js
+npm install next-auth @next-auth/prisma-adapter
 ```
 
-Changes from the original Prisma Adapter
+2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
-```diff
- model Account {
--  id                 Int       @default(autoincrement()) @id
-+  id                 String    @id @default(cuid())
--  compoundId         String    @unique @map(name: "compound_id")
--  userId             Int       @map(name: "user_id")
-+  userId             String
-+  user               User      @relation(fields: [userId], references: [id])
--  providerType       String    @map(name: "provider_type")
-+  providerType       String
--  providerId         String    @map(name: "provider_id")
-+  providerId         String
--  providerAccountId  String    @map(name: "provider_account_id")
-+  providerAccountId  String
--  refreshToken       String?   @map(name: "refresh_token")
-+  refreshToken       String?
--  accessToken        String?   @map(name: "access_token")
-+  accessToken        String?
--  accessTokenExpires DateTime? @map(name: "access_token_expires")
-+  accessTokenExpires DateTime?
--  createdAt          DateTime  @default(now()) @map(name: "created_at")
-+  createdAt          DateTime  @default(now())
--  updatedAt          DateTime  @default(now()) @map(name: "updated_at")
-+  updatedAt          DateTime  @updatedAt
+```js
+import NextAuth from "next-auth"
+import Providers from "next-auth/providers"
+import PrismaAdapter from "@next-auth/prisma-adapter"
+import * as Prisma from "@prisma/client"
 
--  @@index([providerAccountId], name: "providerAccountId")
--  @@index([providerId], name: "providerId")
--  @@index([userId], name: "userId")
--  @@map(name: "accounts")
-+  @@unique([providerId, providerAccountId])
- }
+const prisma = new Prisma.PrismaClient()
+const prismaAdapter = PrismaAdapter(prisma)
 
- model Session {
--  id           Int      @default(autoincrement()) @id
-+  id           String   @id @default(cuid())
--  userId       Int      @map(name: "user_id")
-+  userId       String
-+  user         User     @relation(fields: [userId], references: [id])
-   expires      DateTime
--  sessionToken String   @unique @map(name: "session_token")
-+  sessionToken String   @unique
--  accessToken  String   @unique @map(name: "access_token")
-+  accessToken  String   @unique
--  createdAt    DateTime @default(now()) @map(name: "created_at")
-+  createdAt    DateTime @default(now())
--  updatedAt    DateTime @default(now()) @map(name: "updated_at")
-+  updatedAt    DateTime @updatedAt
--
--  @@map(name: "sessions")
- }
-
- model User {
--  id            Int       @default(autoincrement()) @id
-+  id            String    @id @default(cuid())
-   name          String?
-   email         String?   @unique
--  emailVerified DateTime? @map(name: "email_verified")
-+  emailVerified DateTime?
-   image         String?
-+  accounts      Account[]
-+  sessions      Session[]
--  createdAt     DateTime  @default(now()) @map(name: "created_at")
-+  createdAt     DateTime  @default(now())
--  updatedAt     DateTime  @default(now()) @map(name: "updated_at")
-+  updatedAt     DateTime  @updatedAt
-
--  @@map(name: "users")
- }
-
- model VerificationRequest {
--  id         Int      @default(autoincrement()) @id
-+  id         String   @id @default(cuid())
-   identifier String
-   token      String   @unique
-   expires    DateTime
--  createdAt  DateTime  @default(now()) @map(name: "created_at")
-+  createdAt  DateTime @default(now())
--  updatedAt  DateTime  @default(now()) @map(name: "updated_at")
-+  updatedAt  DateTime @updatedAt
-
--  @@map(name: "verification_requests")
-+  @@unique([identifier, token])
- }
+// For more information on each option (and a full list of options) go to
+// https://next-auth.js.org/configuration/options
+export default NextAuth({
+  // https://next-auth.js.org/configuration/providers
+  providers: [
+    Providers.Google({
+      clientId: process.env.GOOGLE_ID,
+      clientSecret: process.env.GOOGLE_SECRET,
+    }),
+  ],
+  adapters: prismaAdapter
+  ...
+})
 ```
+
+## Contributing
+
+We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
+
+## License
+
+ISC
