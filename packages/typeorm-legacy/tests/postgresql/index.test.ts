@@ -15,9 +15,9 @@ const config: ConnectionOptions = {
   type: "postgres",
   host: "localhost",
   port: 5432,
-  username: "root",
+  username: "nextauth",
   password: "password",
-  database: "next-auth",
+  database: "nextauth",
 }
 
 const adapter = new TypeORMLegacyAdapter(config)
