@@ -57,6 +57,14 @@ runBasicTests({
       })
       return session ?? null
     },
+    async expireSession(sessionToken, expires) {
+      const c = await connection()
+      await c.manager.update(
+        models.Session.model,
+        { sessionToken },
+        { expires }
+      )
+    },
     async account(id) {
       // TODO:
     },

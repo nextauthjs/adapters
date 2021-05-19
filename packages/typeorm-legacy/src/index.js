@@ -211,9 +211,9 @@ export function TypeORMLegacyAdapter(configOrString, options = {}) {
 
         async getSession(sessionToken) {
           const session = await manager.findOne(Session, { sessionToken })
-          // Check session has not expired (do not return it if it has)
+          // Check if session has expired (return null if it has, and delete it from DB)
           if (session?.expires && new Date() > new Date(session.expires)) {
-            // @TODO Delete old sessions from database
+            await manager.delete(Session, { sessionToken })
             return null
           }
 

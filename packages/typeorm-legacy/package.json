@@ -26,7 +26,7 @@
   },
   "scripts": {
     "build": "babel src --out-dir dist",
-    "test": "yarn mysql",
+    "test": "yarn mysql && yarn postgres",
     "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
     "mysql": "./tests/mysql/test.sh",
     "postgres": "./tests/postgresql/test.sh",

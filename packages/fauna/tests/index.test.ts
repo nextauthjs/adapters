@@ -38,6 +38,17 @@ runBasicTests({
         q.Get(q.Match(q.Index("session_by_token"), sessionToken))
       )
     },
+    async expireSession(sessionToken, expires) {
+      await client.query(
+        q.Update(
+          q.Select(
+            ["ref"],
+            q.Get(q.Match(q.Index("session_by_token"), sessionToken))
+          ),
+          { data: { expires: q.Time(expires.toISOString()) } }
+        )
+      )
+    },
     async account(id) {
       return await returnNullIfError(q.Get(q.Ref(q.Collection("accounts"), id)))
     },

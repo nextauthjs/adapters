@@ -18,6 +18,12 @@ runBasicTests({
     session(sessionToken) {
       return prisma.session.findUnique({ where: { sessionToken } })
     },
+    expireSession(sessionToken, expires) {
+      return prisma.session.update({
+        where: { sessionToken },
+        data: { expires },
+      })
+    },
     user(id) {
       return prisma.user.findUnique({ where: { id } })
     },

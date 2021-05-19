@@ -16,6 +16,12 @@ export function runBasicTests(options: {
     connect?: () => any
     /** A simple query function that returns a session directly from the db. */
     session: (token: string) => any
+    /**
+     * Forcefully sets the expiry date to a value
+     * in the past on the given session. This helps to
+     * test if an invalidated session is properly cleaned up.
+     */
+    expireSession: (sessionToken: string, expires: Date) => any
     /** A simple query function that returns a user directly from the db. */
     user: (id: string) => any
     /** A simple query function that returns an account directly from the db. */
@@ -123,40 +129,50 @@ export function runBasicTests(options: {
 
   describe("Session", () => {
     const now = Date.now()
-    let userFromDB: any, session: any, sessionByToken: any
+    let user: any
+
     beforeAll(async () => {
-      userFromDB = await adapter.createUser(defaultUser)
+      user = await adapter.createUser(defaultUser)
     })
 
     test("createSession", async () => {
-      session = await adapter.createSession(userFromDB)
+      const session = await adapter.createSession(user)
       expect(session.accessToken).toHaveLength(64)
       expect(session.sessionToken).toHaveLength(64)
-      expect(session.userId).toBe(userFromDB.id)
+      expect(session.userId).toBe(user.id)
       expect(session.expires.valueOf()).toBeGreaterThanOrEqual(
         now + appOptions.session.maxAge
       )
     })
 
     test("getSession", async () => {
-      sessionByToken = await adapter.getSession(session.sessionToken)
+      const session = await adapter.createSession(user)
+      const sessionByToken = await adapter.getSession(session.sessionToken)
       expect(sessionByToken).toMatchObject(session)
+
+      // Invalidate expired session
+      await options.db.expireSession(session.sessionToken, new Date(1970, 1, 1))
+      // Expired session should return null
+      expect(await adapter.getSession(session.sessionToken)).toBeNull()
+      // Expired session should be removed from the database
+      expect(await options.db.session(session.sessionToken)).toBeNull()
     })
 
     test("updateSession", async () => {
+      const session = await adapter.createSession(user)
       // Don't update session if not forced
-      expect(await adapter.updateSession(sessionByToken)).toBeNull()
-      expect(await adapter.updateSession(sessionByToken, false)).toBeNull()
+      expect(await adapter.updateSession(session)).toBeNull()
+      expect(await adapter.updateSession(session, false)).toBeNull()
 
       // Update session if forced
-      const updated = await adapter.updateSession(sessionByToken, true)
+      const updated = await adapter.updateSession(session, true)
       expect(updated.accessToken).toBe(session.accessToken)
       expect(updated.sessionToken).toBe(session.sessionToken)
       expect(updated.userId).toBe(session.userId)
       // TODO: expect(updated.expires.valueOf()).toBe(????)
 
       // Update session if expired
-      const expired = await adapter.updateSession(sessionByToken, true)
+      const expired = await adapter.updateSession(session, true)
       expect(expired.accessToken).toBe(session.accessToken)
       expect(expired.sessionToken).toBe(session.sessionToken)
       expect(expired.userId).toBe(session.userId)
@@ -164,8 +180,9 @@ export function runBasicTests(options: {
     })
 
     test("deleteSession", async () => {
-      await adapter.deleteSession(session.sessionToken)
+      const session = await adapter.createSession(user)
 
+      await adapter.deleteSession(session.sessionToken)
       expect(await options.db.session(session.sessionToken)).toBeNull()
     })
   })

@@ -211,6 +211,9 @@ export function Adapter(config, options = {}) {
           session.expires = new Date(session.expires.value)
           // Check session has not expired (do not return it if it has)
           if (session?.expires && new Date() > session.expires) {
+            await faunaClient.query(
+              q.Delete(q.Ref(q.Collection(collections.Session), ref.id))
+            )
             return null
           }
           return session
