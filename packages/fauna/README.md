@@ -53,7 +53,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapters: adapter
+  adapter
   ...
 })
 ```
