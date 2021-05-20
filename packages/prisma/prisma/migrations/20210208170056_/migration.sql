@@ -59,4 +59,4 @@ CREATE UNIQUE INDEX "Session.accessToken_unique" ON "Session"("accessToken");
 CREATE UNIQUE INDEX "User.email_unique" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationRequest.token_unique" ON "VerificationRequest"("token");
+CREATE UNIQUE INDEX "VerificationRequest.identifier_token_unique" ON "VerificationRequest"("identifier", "token");

@@ -1,0 +1,30 @@
+{
+  "name": "@next-auth/fauna-adapter",
+  "version": "0.0.0",
+  "description": "FaunaDB Adapter for NextAuth",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "author": "Bhanu Teja P",
+  "main": "src/index.js",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "fauna",
+    "faunadb"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "exit 0"
+  },
+  "peerDependencies": {
+    "faunadb": "^4.1.1",
+    "next-auth": "^3.11.2"
+  }
+}

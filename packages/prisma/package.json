@@ -1,14 +1,21 @@
 {
   "name": "@next-auth/prisma-adapter",
-  "repository": "https://github.com/nextauthjs/adapters",
-  "version": "0.0.0",
+  "version": "0.4.4",
   "description": "Prisma adapter for next-auth.",
-  "keywords": ["next-auth", "next.js", "oauth", "prisma"],
   "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
   "bugs": {
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
+  "author": "William Luke",
   "main": "dist/index.js",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "prisma"
+  ],
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -19,27 +26,21 @@
     "build": "tsc",
     "test": "yarn setup && jest"
   },
-  "author": "William Luke",
-  "license": "ISC",
+  "files": [
+    "README.md",
+    "dist"
+  ],
   "peerDependencies": {
-    "@prisma/client": "^2.15.0",
-    "next-auth": "^3.1.0"
+    "@prisma/client": ">=2.16.0",
+    "next-auth": ">=3.19.2"
   },
-  "dependencies": {
-    "crypto": "^1.0.1",
-    "klona": "^2.0.4",
-    "lru-cache": "^6.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@prisma/cli": "^2.15.0",
-    "@prisma/client": "^2.15.0",
+    "@prisma/client": "^2.16.0",
     "@types/jest": "^26.0.20",
     "@types/lru-cache": "^5.1.0",
-    "@types/next-auth": "^3.1.21",
     "jest": "^26.6.3",
-    "next-auth": "^3.1.0",
-    "prettier": "^2.2.1",
-    "ts-jest": "^26.4.4",
-    "typescript": "^4.1.3"
+    "prisma": "^2.16.0",
+    "ts-jest": "^26.4.4"
   }
 }
