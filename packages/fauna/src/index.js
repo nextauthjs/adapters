@@ -332,8 +332,7 @@ export function Adapter(config, options = {}) {
           const nowDate = Date.now()
 
           if (
-            verificationRequest &&
-            verificationRequest.expires &&
+            verificationRequest?.expires &&
             verificationRequest.expires < nowDate
           ) {
             // Delete the expired request so it cannot be used
