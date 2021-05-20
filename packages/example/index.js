@@ -1,4 +1,4 @@
-export default function Adapter (config, options = {}) {
+export function Adapter (config, options = {}) {
   async function getAdapter (appOptions) {
     // Display debug output if debug option enabled
     function _debug (...args) {
@@ -104,8 +104,4 @@ export default function Adapter (config, options = {}) {
   return {
     getAdapter
   }
-}
-
-export default {
-  Adapter
 }
