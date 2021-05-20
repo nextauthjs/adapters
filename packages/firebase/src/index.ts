@@ -1,64 +1,65 @@
-import * as admin from "firebase-admin";
-import { createHash, randomBytes } from "crypto";
-import { AppOptions } from "next-auth";
+import * as admin from "firebase-admin"
+import { createHash, randomBytes } from "crypto"
+import type { AppOptions } from "next-auth/internals"
+
 interface IAdapterConfig {
-  firestoreAdmin: admin.firestore.Firestore;
-  usersCollection: "users" | string;
-  accountsCollection: "accounts" | string;
-  sessionsCollection: "sessions" | string;
-  verificationRequestsCollection: "verificationRequests" | string;
+  firestoreAdmin: admin.firestore.Firestore
+  usersCollection: "users" | string
+  accountsCollection: "accounts" | string
+  sessionsCollection: "sessions" | string
+  verificationRequestsCollection: "verificationRequests" | string
 }
 
 export interface IProfile {
-  name: string;
-  email: string | null;
-  image: string | null;
-  emailVerified: boolean | undefined;
+  name: string
+  email: string | null
+  image: string | null
+  emailVerified: boolean | undefined
 }
 
 export interface IUser extends IProfile {
-  id: string;
-  createdAt: admin.firestore.FieldValue;
-  updatedAt: admin.firestore.FieldValue;
+  id: string
+  createdAt: admin.firestore.FieldValue
+  updatedAt: admin.firestore.FieldValue
 }
 
 export interface IAccount {
-  providerId: string;
-  providerAccountId: number | string;
-  userId: string;
-  providerType: string;
-  refreshToken?: string;
-  accessToken: string;
-  accessTokenExpires: string;
-  createdAt: admin.firestore.FieldValue;
-  updatedAt: admin.firestore.FieldValue;
+  providerId: string
+  providerAccountId: number | string
+  userId: string
+  providerType: string
+  refreshToken?: string
+  accessToken: string
+  accessTokenExpires: string
+  createdAt: admin.firestore.FieldValue
+  updatedAt: admin.firestore.FieldValue
 }
 
 export interface ISession {
-  id: string;
-  userId: IUser["id"];
-  expires: Date;
-  sessionToken: string;
-  accessToken: string;
-  createdAt: admin.firestore.FieldValue;
-  updatedAt: admin.firestore.FieldValue;
+  id: string
+  userId: IUser["id"]
+  expires: Date
+  sessionToken: string
+  accessToken: string
+  createdAt: admin.firestore.FieldValue
+  updatedAt: admin.firestore.FieldValue
 }
 
 export interface IVerificationRequest {
-  id: string;
-  identifier: string;
-  token: string;
-  expires: Date | null;
-  createdAt: admin.firestore.FieldValue;
-  updatedAt: admin.firestore.FieldValue;
+  id: string
+  identifier: string
+  token: string
+  expires: Date | null
+  createdAt: admin.firestore.FieldValue
+  updatedAt: admin.firestore.FieldValue
 }
 
 const Adapter = (config: IAdapterConfig, _options = {}) => {
   async function getAdapter(appOptions?: Partial<AppOptions>) {
     // Display debug output if debug option enabled
     function _debug(...args: any[]) {
-      if (appOptions && appOptions.debug) {
-        console.log("[next-auth][firebase][debug]", ...args);
+      if (appOptions?.debug) {
+        console.log("[next-auth][firebase][debug]", ...args)
       }
     }
 
@@ -66,23 +67,21 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       _debug(
         "GET_ADAPTER",
         "Session expiry not configured (defaulting to 30 days"
-      );
+      )
     }
 
-    const DEFAULT_SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
-    const SESSION_MAX_AGE =
-      appOptions && appOptions.session && appOptions.session.maxAge
-        ? appOptions.session.maxAge * 1000
-        : DEFAULT_SESSION_MAX_AGE;
-    const SESSION_UPDATE_AGE =
-      appOptions && appOptions.session && appOptions.session.updateAge
-        ? appOptions.session.updateAge * 1000
-        : 0;
+    const DEFAULT_SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000
+    const SESSION_MAX_AGE = appOptions?.session?.maxAge
+      ? appOptions.session.maxAge * 1000
+      : DEFAULT_SESSION_MAX_AGE
+    const SESSION_UPDATE_AGE = appOptions?.session?.updateAge
+      ? appOptions.session.updateAge * 1000
+      : 0
 
     async function createUser(profile: IProfile): Promise<IUser | null> {
-      _debug("createUser", profile);
+      _debug("createUser", profile)
 
-      const { firestoreAdmin, usersCollection } = config;
+      const { firestoreAdmin, usersCollection } = config
 
       try {
         const newUserRef = await firestoreAdmin
@@ -96,65 +95,65 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
               : false,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
+          })
 
-        const newUserSnapshot = await newUserRef.get();
+        const newUserSnapshot = await newUserRef.get()
 
         const newUser = {
           ...newUserSnapshot.data(),
           id: newUserSnapshot.id,
-        } as IUser;
+        } as IUser
 
-        return newUser;
+        return newUser
       } catch (error) {
-        console.error("CREATE_USER", error);
-        return Promise.reject(new Error("CREATE_USER"));
+        console.error("CREATE_USER", error)
+        return await Promise.reject(new Error("CREATE_USER"))
       }
     }
 
     async function getUser(id: IUser["id"]): Promise<IUser> {
-      _debug("getUser", id);
+      _debug("getUser", id)
 
-      const { firestoreAdmin, usersCollection } = config;
+      const { firestoreAdmin, usersCollection } = config
 
       try {
         const snapshot = await firestoreAdmin
           .collection(usersCollection)
           .doc(id)
-          .get();
+          .get()
 
-        return { ...snapshot.data(), id: snapshot.id } as IUser;
+        return { ...snapshot.data(), id: snapshot.id } as IUser
       } catch (error) {
-        console.error("GET_USER", error.message);
-        return Promise.reject(new Error("GET_USER"));
+        console.error("GET_USER", error.message)
+        return await Promise.reject(new Error("GET_USER"))
       }
     }
 
     async function getUserByEmail(email: string): Promise<IUser | null> {
-      _debug("getUserByEmail", email);
+      _debug("getUserByEmail", email)
 
-      if (!email) return Promise.resolve(null);
+      if (!email) return await Promise.resolve(null)
 
-      const { firestoreAdmin, usersCollection } = config;
+      const { firestoreAdmin, usersCollection } = config
 
       try {
         const snapshot = await firestoreAdmin
           .collection(usersCollection)
           .where("email", "==", email)
           .limit(1)
-          .get();
+          .get()
 
-        if (snapshot.empty) return Promise.resolve(null);
+        if (snapshot.empty) return await Promise.resolve(null)
 
         const user = {
           ...snapshot.docs[0].data(),
           id: snapshot.docs[0].id,
-        } as IUser;
+        } as IUser
 
-        return user;
+        return user
       } catch (error) {
-        console.error("GET_USER_BY_EMAIL", error.message);
-        return Promise.reject(new Error("GET_USER_BY_EMAIL"));
+        console.error("GET_USER_BY_EMAIL", error.message)
+        return await Promise.reject(new Error("GET_USER_BY_EMAIL"))
       }
     }
 
@@ -162,9 +161,9 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       providerId: IAccount["providerId"],
       providerAccountId: IAccount["providerAccountId"]
     ): Promise<IUser | null> {
-      _debug("getUserByProviderAccountId", providerId, providerAccountId);
+      _debug("getUserByProviderAccountId", providerId, providerAccountId)
 
-      const { firestoreAdmin, accountsCollection, usersCollection } = config;
+      const { firestoreAdmin, accountsCollection, usersCollection } = config
 
       try {
         const accountSnapshot = await firestoreAdmin
@@ -172,59 +171,61 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           .where("providerId", "==", providerId)
           .where("providerAccountId", "==", providerAccountId)
           .limit(1)
-          .get();
+          .get()
 
-        if (accountSnapshot.empty) return null;
+        if (accountSnapshot.empty) return null
 
-        const userId = accountSnapshot.docs[0].data().userId;
+        const userId = accountSnapshot.docs[0].data().userId
 
         const userSnapshot = await firestoreAdmin
           .collection(usersCollection)
           .doc(userId)
-          .get();
+          .get()
 
-        const user = { ...userSnapshot.data(), id: userSnapshot.id } as IUser;
+        const user = { ...userSnapshot.data(), id: userSnapshot.id } as IUser
 
-        return user;
+        return user
       } catch (error) {
-        console.error("GET_USER_BY_PROVIDER_ACCOUNT_ID", error.message);
-        return Promise.reject(new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID"));
+        console.error("GET_USER_BY_PROVIDER_ACCOUNT_ID", error.message)
+        return await Promise.reject(
+          new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID")
+        )
       }
     }
 
     async function updateUser(user: IUser): Promise<IUser> {
-      _debug("updateUser", user);
+      _debug("updateUser", user)
 
-      const { firestoreAdmin, usersCollection } = config;
+      const { firestoreAdmin, usersCollection } = config
 
       const updatedUser: IUser = {
         ...user,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      };
+      }
 
       try {
         await firestoreAdmin
           .collection(usersCollection)
           .doc(user.id)
-          .update(updatedUser);
+          .update(updatedUser)
 
-        return updatedUser;
+        return updatedUser
       } catch (error) {
-        console.error("UPDATE_USER", error.message);
-        return Promise.reject(new Error("UPDATE_USER"));
+        console.error("UPDATE_USER", error.message)
+        return await Promise.reject(new Error("UPDATE_USER"))
       }
     }
 
     async function deleteUser(userId: IUser["id"]): Promise<void> {
-      _debug("deleteUser", userId);
+      _debug("deleteUser", userId)
 
-      const { firestoreAdmin, usersCollection } = config;
+      const { firestoreAdmin, usersCollection } = config
 
       try {
-        await firestoreAdmin.collection(usersCollection).doc(userId).delete();
+        await firestoreAdmin.collection(usersCollection).doc(userId).delete()
       } catch (error) {
-        console.error("DELETE_USER", error.message);
-        return Promise.reject(new Error("DELETE_USER"));
+        console.error("DELETE_USER", error.message)
+        return await Promise.reject(new Error("DELETE_USER"))
       }
     }
 
@@ -246,9 +247,9 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
         refreshToken,
         accessToken,
         accessTokenExpires
-      );
+      )
 
-      const { firestoreAdmin, accountsCollection } = config;
+      const { firestoreAdmin, accountsCollection } = config
 
       const newAccountData: IAccount = removeUndefinedValues({
         userId,
@@ -260,20 +261,20 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
         accessTokenExpires,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      } as IAccount);
+      } as IAccount)
 
       try {
         // create Account
         const accountRef = await firestoreAdmin
           .collection(accountsCollection)
-          .add(newAccountData);
+          .add(newAccountData)
 
-        const accountSnapshot = await accountRef.get();
+        const accountSnapshot = await accountRef.get()
 
-        return accountSnapshot.data() as IAccount;
+        return accountSnapshot.data() as IAccount
       } catch (error) {
-        console.error("LINK_ACCOUNT", error.message);
-        return Promise.reject(new Error("LINK_ACCOUNT"));
+        console.error("LINK_ACCOUNT", error.message)
+        return await Promise.reject(new Error("LINK_ACCOUNT"))
       }
     }
 
@@ -282,9 +283,9 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       providerId: IAccount["providerId"],
       providerAccountId: IAccount["providerAccountId"]
     ): Promise<void> {
-      _debug("unlinkAccount", userId, providerId, providerAccountId);
+      _debug("unlinkAccount", userId, providerId, providerAccountId)
 
-      const { firestoreAdmin, accountsCollection } = config;
+      const { firestoreAdmin, accountsCollection } = config
 
       try {
         const snapshot = await firestoreAdmin
@@ -293,30 +294,30 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           .where("providerId", "==", providerId)
           .where("providerAccountId", "==", providerAccountId)
           .limit(1)
-          .get();
+          .get()
 
-        const accountId = snapshot.docs[0].id;
+        const accountId = snapshot.docs[0].id
 
         await firestoreAdmin
           .collection(accountsCollection)
           .doc(accountId)
-          .delete();
+          .delete()
       } catch (error) {
-        console.error("UNLINK_ACCOUNT", error.message);
-        return Promise.reject(new Error("UNLINK_ACCOUNT"));
+        console.error("UNLINK_ACCOUNT", error.message)
+        return await Promise.reject(new Error("UNLINK_ACCOUNT"))
       }
     }
 
     async function createSession(user: IUser): Promise<ISession> {
-      _debug("createSession", user);
+      _debug("createSession", user)
 
-      const { firestoreAdmin, sessionsCollection } = config;
+      const { firestoreAdmin, sessionsCollection } = config
 
-      let expires = null;
+      let expires = null
 
       if (SESSION_MAX_AGE) {
-        const expireDate = new Date();
-        expires = expireDate.setTime(expireDate.getTime() + SESSION_MAX_AGE);
+        const expireDate = new Date()
+        expires = expireDate.setTime(expireDate.getTime() + SESSION_MAX_AGE)
       }
 
       try {
@@ -329,39 +330,39 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
             accessToken: randomBytes(32).toString("hex"),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-        const newSessionSnapshot = await newSessionRef.get();
+          })
+        const newSessionSnapshot = await newSessionRef.get()
 
         return {
           ...newSessionSnapshot.data(),
           id: newSessionSnapshot.id,
-        } as ISession;
+        } as ISession
       } catch (error) {
-        console.error("CREATE_SESSION", error.message);
-        return Promise.reject(new Error("CREATE_SESSION"));
+        console.error("CREATE_SESSION", error.message)
+        return await Promise.reject(new Error("CREATE_SESSION"))
       }
     }
 
     async function getSession(
       sessionToken: ISession["sessionToken"]
     ): Promise<ISession | null> {
-      _debug("getSession", sessionToken);
+      _debug("getSession", sessionToken)
 
-      const { firestoreAdmin, sessionsCollection } = config;
+      const { firestoreAdmin, sessionsCollection } = config
 
       try {
         const snapshot = await firestoreAdmin
           .collection(sessionsCollection)
           .where("sessionToken", "==", sessionToken)
           .limit(1)
-          .get();
+          .get()
 
-        if (snapshot.empty) return null;
+        if (snapshot.empty) return null
 
         const session = {
           ...snapshot.docs[0].data(),
           id: snapshot.docs[0].id,
-        } as ISession;
+        } as ISession
 
         // if the session has expired
         if (
@@ -373,13 +374,13 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           await firestoreAdmin
             .collection(sessionsCollection)
             .doc(snapshot.docs[0].id)
-            .delete();
+            .delete()
         }
         // return already existing session
-        return session;
+        return session
       } catch (error) {
-        console.error("GET_SESSION", error.message);
-        return Promise.reject(new Error("GET_SESSION"));
+        console.error("GET_SESSION", error.message)
+        return await Promise.reject(new Error("GET_SESSION"))
       }
     }
 
@@ -387,17 +388,17 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       session: ISession,
       force: boolean
     ): Promise<ISession | null> {
-      _debug("updateSession", session);
+      _debug("updateSession", session)
 
-      const { firestoreAdmin, sessionsCollection } = config;
+      const { firestoreAdmin, sessionsCollection } = config
 
       try {
         const shouldUpdate =
           SESSION_MAX_AGE &&
           (SESSION_UPDATE_AGE || SESSION_UPDATE_AGE === 0) &&
-          session.expires;
+          session.expires
 
-        if (!shouldUpdate && !force) return null;
+        if (!shouldUpdate && !force) return null
 
         // Calculate last updated date, to throttle write updates to database
         // Formula: ({expiry date} - sessionMaxAge) + sessionUpdateAge
@@ -405,65 +406,65 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
         //
         // Default for sessionMaxAge is 30 days.
         // Default for sessionUpdateAge is 1 hour.
-        const dateSessionIsDueToBeUpdated = new Date(session.expires);
+        const dateSessionIsDueToBeUpdated = new Date(session.expires)
         dateSessionIsDueToBeUpdated.setTime(
           dateSessionIsDueToBeUpdated.getTime() - SESSION_MAX_AGE
-        );
+        )
         dateSessionIsDueToBeUpdated.setTime(
           dateSessionIsDueToBeUpdated.getTime() + SESSION_UPDATE_AGE
-        );
+        )
 
         // Trigger update of session expiry date and write to database, only
         // if the session was last updated more than {sessionUpdateAge} ago
-        const currentDate = new Date();
-        if (currentDate < dateSessionIsDueToBeUpdated && !force) return null;
+        const currentDate = new Date()
+        if (currentDate < dateSessionIsDueToBeUpdated && !force) return null
 
-        const newExpiryDate = new Date();
-        newExpiryDate.setTime(newExpiryDate.getTime() + SESSION_MAX_AGE);
+        const newExpiryDate = new Date()
+        newExpiryDate.setTime(newExpiryDate.getTime() + SESSION_MAX_AGE)
 
         const updatedSessionData: ISession = {
           ...session,
           expires: newExpiryDate,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        };
+        }
         // Update the item in the database
         await firestoreAdmin
           .collection(sessionsCollection)
           .doc(session.id)
-          .update(updatedSessionData);
+          .update(updatedSessionData)
 
-        return updatedSessionData;
+        return updatedSessionData
       } catch (error) {
-        console.error("UPDATE_SESSION", error.message);
-        return Promise.reject(new Error("UPDATE_SESSION"));
+        console.error("UPDATE_SESSION", error.message)
+        return await Promise.reject(new Error("UPDATE_SESSION"))
       }
     }
 
     async function deleteSession(
       sessionToken: ISession["sessionToken"]
     ): Promise<void> {
-      _debug("deleteSession", sessionToken);
+      _debug("deleteSession", sessionToken)
 
-      const { firestoreAdmin, sessionsCollection } = config;
+      const { firestoreAdmin, sessionsCollection } = config
 
       try {
         const snapshot = await firestoreAdmin
           .collection(sessionsCollection)
           .where("sessionToken", "==", sessionToken)
           .limit(1)
-          .get();
+          .get()
 
-        if (snapshot.empty) return;
+        if (snapshot.empty) return
 
-        const sessionId = snapshot.docs[0].id;
+        const sessionId = snapshot.docs[0].id
 
         await firestoreAdmin
           .collection(sessionsCollection)
           .doc(sessionId)
-          .delete();
+          .delete()
       } catch (error) {
-        console.error("DELETE_SESSION", error.message);
-        return Promise.reject(new Error("DELETE_SESSION"));
+        console.error("DELETE_SESSION", error.message)
+        return await Promise.reject(new Error("DELETE_SESSION"))
       }
     }
 
@@ -473,29 +474,29 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       token: string,
       secret: string,
       provider: {
-        maxAge: number;
-        sendVerificationRequest: ({}: any) => {};
+        maxAge: number
+        sendVerificationRequest: ({}: any) => {}
       }
     ): Promise<IVerificationRequest> {
-      _debug("createVerificationRequest", identifier);
-      const { firestoreAdmin, verificationRequestsCollection } = config;
-      const baseUrl = appOptions?.baseUrl ?? '';
-      const { sendVerificationRequest, maxAge } = provider;
+      _debug("createVerificationRequest", identifier)
+      const { firestoreAdmin, verificationRequestsCollection } = config
+      const baseUrl = appOptions?.baseUrl ?? ""
+      const { sendVerificationRequest, maxAge } = provider
 
       // Store hashed token (using secret as salt) so that tokens cannot be exploited
       // even if the contents of the database is compromised
       // @TODO Use bcrypt function here instead of simple salted hash
       const hashedToken = createHash("sha256")
         .update(`${token}${secret}`)
-        .digest("hex");
+        .digest("hex")
 
-      let expires = null;
+      let expires = null
 
       if (maxAge) {
-        const dateExpires = new Date();
-        dateExpires.setTime(dateExpires.getTime() + maxAge * 1000);
+        const dateExpires = new Date()
+        dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
 
-        expires = dateExpires;
+        expires = dateExpires
       }
 
       try {
@@ -508,9 +509,9 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
             expires,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          } as IVerificationRequest);
+          } as IVerificationRequest)
 
-        const newVerificationRequestSnapshot = await newVerificationRequestRef.get();
+        const newVerificationRequestSnapshot = await newVerificationRequestRef.get()
 
         // With the verificationCallback on a provider, you can send an email, or queue
         // an email to be sent, or perform some other action (e.g. send a text message)
@@ -520,15 +521,15 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           token,
           baseUrl,
           provider,
-        });
+        })
 
         return {
           ...newVerificationRequestSnapshot.data(),
           id: newVerificationRequestSnapshot.id,
-        } as IVerificationRequest;
+        } as IVerificationRequest
       } catch (error) {
-        console.error("CREATE_VERIFICATION_REQUEST", error.message);
-        return Promise.reject(new Error("CREATE_VERIFICATION_REQUEST"));
+        console.error("CREATE_VERIFICATION_REQUEST", error.message)
+        return await Promise.reject(new Error("CREATE_VERIFICATION_REQUEST"))
       }
     }
 
@@ -538,42 +539,41 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       secret: string,
       _provider: any
     ): Promise<IVerificationRequest | null> {
-      _debug("getVerificationRequest", identifier, token);
-      const { firestoreAdmin, verificationRequestsCollection } = config;
+      _debug("getVerificationRequest", identifier, token)
+      const { firestoreAdmin, verificationRequestsCollection } = config
 
       const hashedToken = createHash("sha256")
         .update(`${token}${secret}`)
-        .digest("hex");
+        .digest("hex")
 
       try {
         const snapshot = await firestoreAdmin
           .collection(verificationRequestsCollection)
           .where("token", "==", hashedToken)
           .limit(1)
-          .get();
+          .get()
 
         const verificationRequest = {
           ...snapshot.docs[0].data(),
           id: snapshot.docs[0].id,
-        } as IVerificationRequest;
+        } as IVerificationRequest
 
         if (
-          verificationRequest &&
-          verificationRequest.expires &&
-          new Date() > verificationRequest.expires
+          verificationRequest?.expires &&
+          new Date() > verificationRequest?.expires
         ) {
           // Delete verification entry so it cannot be used again
           await firestoreAdmin
             .collection(verificationRequestsCollection)
             .doc(verificationRequest.id)
-            .delete();
+            .delete()
 
-          return null;
+          return null
         }
-        return verificationRequest;
+        return verificationRequest
       } catch (error) {
-        console.error("GET_VERIFICATION_REQUEST", error.message);
-        return Promise.reject(new Error("GET_VERIFICATION_REQUEST"));
+        console.error("GET_VERIFICATION_REQUEST", error.message)
+        return await Promise.reject(new Error("GET_VERIFICATION_REQUEST"))
       }
     }
 
@@ -583,33 +583,35 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       secret: string,
       _provider: any
     ): Promise<void> {
-      _debug("deleteVerification", identifier, token);
-      const { firestoreAdmin, verificationRequestsCollection } = config;
+      _debug("deleteVerification", identifier, token)
+      const { firestoreAdmin, verificationRequestsCollection } = config
 
       try {
         // Delete verification entry so it cannot be used again
         const hashedToken = createHash("sha256")
           .update(`${token}${secret}`)
-          .digest("hex");
+          .digest("hex")
         const snapshot = await firestoreAdmin
           .collection(verificationRequestsCollection)
           .where("token", "==", hashedToken)
           .limit(1)
-          .get();
+          .get()
 
-        const verificationRequestId = snapshot.docs[0].id;
+        const verificationRequestId = snapshot.docs[0].id
 
         await firestoreAdmin
           .collection(verificationRequestsCollection)
           .doc(verificationRequestId)
-          .delete();
+          .delete()
       } catch (error) {
-        console.error("DELETE_VERIFICATION_REQUEST_ERROR", error.message);
-        return Promise.reject(new Error("DELETE_VERIFICATION_REQUEST_ERROR"));
+        console.error("DELETE_VERIFICATION_REQUEST_ERROR", error.message)
+        return await Promise.reject(
+          new Error("DELETE_VERIFICATION_REQUEST_ERROR")
+        )
       }
     }
 
-    return Promise.resolve({
+    return await Promise.resolve({
       createUser,
       getUser,
       getUserByEmail,
@@ -625,23 +627,23 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       createVerificationRequest,
       getVerificationRequest,
       deleteVerificationRequest,
-    });
+    })
   }
 
   return {
     getAdapter,
-  };
-};
+  }
+}
 
-export default Adapter;
+export default Adapter
 
 // helpers
 function removeUndefinedValues(obj: any) {
   Object.keys(obj).map((key) => {
     if (typeof obj[key] === "undefined") {
-      delete obj[key];
+      delete obj[key]
     }
-  });
+  })
 
-  return obj;
+  return obj
 }

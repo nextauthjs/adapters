@@ -1,9 +1,6 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  modulePathIgnorePatterns: [
-    'dist/',
-    'node_modules/',
-    '__helpers__'
-  ],
-};
+  ...require("../../jest.config"),
+  transform: {
+    "^.+\\.jsx?$": "babel-jest",
+  },
+}

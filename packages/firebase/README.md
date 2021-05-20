@@ -19,6 +19,7 @@ This is the Firebase Adapter for [`next-auth`](https://next-auth.js.org). This p
 ## Getting Started
 
 1. Install `next-auth` and `@next-auth/firebase-adapter`
+
 ```js
 npm install next-auth @next-auth/firebase-adapter
 ```
