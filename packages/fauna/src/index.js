@@ -15,7 +15,7 @@ export function Adapter(config, options = {}) {
       Account: "account_by_provider_account_id",
       User: "user_by_email",
       Session: "session_by_token",
-      VerificationRequest: "verification_request_by_token",
+      VerificationRequest: "verification_request_by_token_and_identifier",
     },
   } = config
 
@@ -329,11 +329,10 @@ export function Adapter(config, options = {}) {
               )
             )
           )
-          const nowDate = Date.now()
 
           if (
             verificationRequest?.expires &&
-            verificationRequest.expires < nowDate
+            new Date(verificationRequest.expires.value) < new Date()
           ) {
             // Delete the expired request so it cannot be used
             await faunaClient.query(q.Delete(ref))
@@ -341,7 +340,12 @@ export function Adapter(config, options = {}) {
             return null
           }
 
-          return verificationRequest
+          return {
+            ...verificationRequest,
+            expires: new Date(verificationRequest.expires.value),
+            createdAt: new Date(verificationRequest.createdAt.value),
+            updatedAt: new Date(verificationRequest.updatedAt.value),
+          }
         },
         async deleteVerificationRequest(identifier, token) {
           await faunaClient.query(
