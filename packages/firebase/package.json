@@ -36,6 +36,7 @@
     "next-auth": "latest"
   },
   "devDependencies": {
-    "firebase-admin": "^9.4.2"
+    "firebase-admin": "^9.4.2",
+    "ts-mock-firebase": "^2.3.0"
   }
 }

@@ -99,10 +99,10 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
 
         const newUserSnapshot = await newUserRef.get()
 
-        const newUser = {
+        const newUser: IUser = {
           ...newUserSnapshot.data(),
           id: newUserSnapshot.id,
-        } as IUser
+        }
 
         return newUser
       } catch (error) {
@@ -122,7 +122,8 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           .doc(id)
           .get()
 
-        return { ...snapshot.data(), id: snapshot.id } as IUser
+        const returnUser: IUser = { ...snapshot.data(), id: snapshot.id }
+        return returnUser
       } catch (error) {
         console.error("GET_USER", error.message)
         return await Promise.reject(new Error("GET_USER"))
@@ -145,10 +146,10 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
 
         if (snapshot.empty) return await Promise.resolve(null)
 
-        const user = {
+        const user: IUser = {
           ...snapshot.docs[0].data(),
           id: snapshot.docs[0].id,
-        } as IUser
+        }
 
         return user
       } catch (error) {
@@ -182,7 +183,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           .doc(userId)
           .get()
 
-        const user = { ...userSnapshot.data(), id: userSnapshot.id } as IUser
+        const user: IUser = { ...userSnapshot.data(), id: userSnapshot.id }
 
         return user
       } catch (error) {
@@ -261,7 +262,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
         accessTokenExpires,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      } as IAccount)
+      })
 
       try {
         // create Account
@@ -333,10 +334,11 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           })
         const newSessionSnapshot = await newSessionRef.get()
 
-        return {
+        const returnSession: ISession = {
           ...newSessionSnapshot.data(),
           id: newSessionSnapshot.id,
-        } as ISession
+        }
+        return returnSession
       } catch (error) {
         console.error("CREATE_SESSION", error.message)
         return await Promise.reject(new Error("CREATE_SESSION"))
@@ -359,10 +361,10 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
 
         if (snapshot.empty) return null
 
-        const session = {
+        const session: ISession = {
           ...snapshot.docs[0].data(),
           id: snapshot.docs[0].id,
-        } as ISession
+        }
 
         // if the session has expired
         if (
@@ -475,7 +477,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       secret: string,
       provider: {
         maxAge: number
-        sendVerificationRequest: ({}: any) => {}
+        sendVerificationRequest: (a: any) => {}
       }
     ): Promise<IVerificationRequest> {
       _debug("createVerificationRequest", identifier)
@@ -501,15 +503,16 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
 
       try {
         // add to database
+        const newVerification: Partial<IVerificationRequest> = {
+          identifier,
+          token: hashedToken,
+          expires,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }
         const newVerificationRequestRef = await firestoreAdmin
           .collection(verificationRequestsCollection)
-          .add({
-            identifier,
-            token: hashedToken,
-            expires,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          } as IVerificationRequest)
+          .add(newVerification)
 
         const newVerificationRequestSnapshot = await newVerificationRequestRef.get()
 
@@ -523,10 +526,13 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           provider,
         })
 
-        return {
+        // TODO: How to get typescript to recognize the types from newVerification(L506)
+        //       here when spread in? Same pattern in all other types too..
+        const returnVerificationRequest: IVerificationRequest = {
           ...newVerificationRequestSnapshot.data(),
           id: newVerificationRequestSnapshot.id,
-        } as IVerificationRequest
+        }
+        return returnVerificationRequest
       } catch (error) {
         console.error("CREATE_VERIFICATION_REQUEST", error.message)
         return await Promise.reject(new Error("CREATE_VERIFICATION_REQUEST"))
@@ -553,10 +559,10 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
           .limit(1)
           .get()
 
-        const verificationRequest = {
+        const verificationRequest: IVerificationRequest = {
           ...snapshot.docs[0].data(),
           id: snapshot.docs[0].id,
-        } as IVerificationRequest
+        }
 
         if (
           verificationRequest?.expires &&
@@ -639,10 +645,9 @@ export default Adapter
 
 // helpers
 function removeUndefinedValues(obj: any) {
-  Object.keys(obj).map((key) => {
-    if (typeof obj[key] === "undefined") {
-      delete obj[key]
-    }
+  Object.keys(obj).forEach((key) => {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    typeof obj[key] === "undefined" && delete obj[key]
   })
 
   return obj
