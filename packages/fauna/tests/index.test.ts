@@ -52,9 +52,24 @@ runBasicTests({
     async account(id) {
       return await returnNullIfError(q.Get(q.Ref(q.Collection("accounts"), id)))
     },
-    async verificationRequest(id) {
+    async verificationRequest(identifier, hashedToken) {
       return await returnNullIfError(
-        q.Get(q.Ref(q.Collection("verification_requests"), id))
+        q.Let(
+          {
+            ref: q.Match(q.Index("verification_requests"), [
+              hashedToken,
+              identifier,
+            ]),
+          },
+          q.If(
+            q.Exists(q.Var("ref")),
+            {
+              ref: q.Var("ref"),
+              request: q.Select("data", q.Get(q.Var("ref"))),
+            },
+            null
+          )
+        )
       )
     },
   },

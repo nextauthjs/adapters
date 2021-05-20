@@ -30,8 +30,10 @@ runBasicTests({
     account(id) {
       return prisma.account.findUnique({ where: { id } })
     },
-    verificationRequest(id) {
-      return prisma.verificationRequest.findUnique({ where: { id } })
+    verificationRequest(identifier, hashedToken) {
+      return prisma.verificationRequest.findUnique({
+        where: { identifier_token: { identifier, token: hashedToken } },
+      })
     },
   },
 })

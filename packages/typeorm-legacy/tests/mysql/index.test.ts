@@ -68,8 +68,16 @@ runBasicTests({
     async account(id) {
       // TODO:
     },
-    async verificationRequest(id) {
-      // TODO:
+    async verificationRequest(identifier, hashedToken) {
+      const c = await connection()
+      const verificationRequest = await c.manager.findOne(
+        models.VerificationRequest.model,
+        {
+          identifier,
+          token: hashedToken,
+        }
+      )
+      return verificationRequest ?? null
     },
   },
 })

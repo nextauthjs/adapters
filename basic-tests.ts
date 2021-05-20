@@ -1,5 +1,7 @@
 import { Adapter, AdapterInstance } from "next-auth/adapters"
 import { AppOptions } from "next-auth/internals"
+import Providers, { EmailConfig } from "next-auth/providers"
+import { createHash } from "crypto"
 
 /**
  * A wrapper to run the most basic tests.
@@ -26,23 +28,28 @@ export function runBasicTests(options: {
     user: (id: string) => any
     /** A simple query function that returns an account directly from the db. */
     account: (id: string) => any
-    /** A simple query function that returns an verification token directly from the db. */
-    verificationRequest: (id: string) => any
+    /**
+     * A simple query function that returns an verification token directly from the db,
+     * based on the user identifier and the verification token (hashed).
+     */
+    verificationRequest: (identifier: string, hashedToken: string) => any
   }
   /** Optionally overrides the default mock data values */
   mock?: {
     /** The options that `getAdapter()` receives from `next-auth` */
     appOptions?: AppOptions
     /** The user object passed to the adapter from `next-auth` */
-    user: any
+    user?: any
+    /** The params */
+    verificationParams?: string[]
   }
 }) {
   // Mock data
 
-  const appOptions: AppOptions = options.mock?.appOptions ?? {
+  const appOptions: AppOptions = {
     action: "signin",
     basePath: "",
-    baseUrl: "",
+    baseUrl: "http://example.com",
     callbacks: {},
     cookies: {},
     debug: false,
@@ -56,19 +63,21 @@ export function runBasicTests(options: {
     } as const,
     pages: {},
     providers: [],
-    secret: "",
+    secret: "VERY SECRET",
     session: {
       jwt: false,
       maxAge: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24,
     },
     adapter: (null as unknown) as ReturnType<Adapter>, // TODO: Make it optional on AppOptions
+    ...options.mock?.appOptions,
   }
 
-  const defaultUser = options.mock?.user ?? {
+  const defaultUser = {
     email: "fill@murray.com",
     image: "https://www.fillmurray.com/460/300",
     name: "Fill Murray",
+    ...options.mock?.user,
   }
 
   // Init
@@ -105,6 +114,7 @@ export function runBasicTests(options: {
     })
 
     test("getUserByEmail", async () => {
+      expect(await adapter.getUserByEmail(null)).toBeNull()
       const userByEmail = await adapter.getUserByEmail(user.email)
       expect(userByEmail).toMatchObject(user)
     })
@@ -197,8 +207,106 @@ export function runBasicTests(options: {
   })
 
   describe("Verification Request", () => {
-    test.todo("createVerificationRequest")
-    test.todo("getVerificationRequest")
-    test.todo("deleteVerificationRequest")
+    const email = "jane@example.com"
+    const url = appOptions.baseUrl
+    const token = "000000000000"
+    const hashToken = (token: string) =>
+      createHash("sha256").update(`${token}${appOptions.secret}`).digest("hex")
+    // @ts-expect-error
+    const provider: EmailConfig & {
+      maxAge: number
+      from: string
+    } = Providers.Email({
+      sendVerificationRequest: jest.fn(),
+      server: "",
+      maxAge: 60,
+      from: "noreply@example.com",
+    })
+
+    test("createVerificationRequest", async () => {
+      if (!adapter.createVerificationRequest) {
+        return console.warn("This adapter does not support Email providers")
+      }
+      await adapter.createVerificationRequest(
+        email,
+        appOptions.baseUrl,
+        token,
+        appOptions.secret,
+        provider
+      )
+
+      expect(provider.sendVerificationRequest).toBeCalledTimes(1)
+      expect(provider.sendVerificationRequest).toBeCalledWith({
+        baseUrl: appOptions.baseUrl,
+        identifier: email,
+        provider,
+        token,
+        url,
+      })
+      const dbVerificationRequest = await options.db.verificationRequest(
+        email,
+        hashToken(token)
+      )
+      expect(dbVerificationRequest.identifier).toBe(email)
+      expect(dbVerificationRequest.expires.valueOf()).toBeLessThanOrEqual(
+        Date.now() + provider.maxAge * 1000
+      )
+      expect(dbVerificationRequest.token).toBe(hashToken(token))
+    })
+    test("getVerificationRequest", async () => {
+      if (!adapter.getVerificationRequest) {
+        return console.warn("This adapter does not support Email providers")
+      }
+      expect(
+        await adapter.getVerificationRequest(
+          email,
+          token,
+          appOptions.secret,
+          provider
+        )
+      ).toEqual(
+        expect.objectContaining({
+          identifier: email,
+          expires: expect.any(Date),
+          token: hashToken(token),
+        })
+      )
+
+      // TODO: getVerificationRequest should delete the token from the database immediatelly
+      // expect(
+      //   await options.db.verificationRequest(email, hashToken(token))
+      // ).toBeNull()
+    })
+    test("deleteVerificationRequest", async () => {
+      // TODO: Deprecate in favour of getVerificationRequest doing this.
+      if (
+        !adapter.deleteVerificationRequest ||
+        !adapter.createVerificationRequest
+      ) {
+        return console.warn("This adapter does not support Email providers")
+      }
+      const token = "1111111111111111"
+      await adapter.createVerificationRequest(
+        email,
+        appOptions.baseUrl,
+        token,
+        appOptions.secret,
+        provider
+      )
+
+      await adapter.deleteVerificationRequest(
+        email,
+        token,
+        appOptions.secret,
+        provider
+      )
+      expect(
+        await options.db.verificationRequest(email, hashToken(token))
+      ).toBeNull()
+    })
   })
+
+  return {
+    appOptions,
+  }
 }

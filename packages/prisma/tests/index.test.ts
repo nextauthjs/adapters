@@ -28,8 +28,15 @@ runBasicTests({
     account(id) {
       return prisma.account.findUnique({ where: { id } })
     },
-    verificationRequest(id) {
-      return prisma.verificationRequest.findUnique({ where: { id } })
+    verificationRequest(identifier, token) {
+      return prisma.verificationRequest.findUnique({
+        where: { identifier_token: { identifier, token } },
+      })
+    },
+  },
+  mock: {
+    user: {
+      emailVerified: new Date("2017-01-01"),
     },
   },
 })
