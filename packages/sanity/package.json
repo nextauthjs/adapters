@@ -23,7 +23,6 @@
     "dist"
   ],
   "devDependencies": {
-    "@types/lru-cache": "^5.1.0",
     "@sanity/client": "^2.8.0"
   },
   "peerDependencies": {
@@ -31,8 +30,7 @@
   },
   "dependencies": {
     "argon2": "^0.27.2",
-    "groq": "^2.2.6",
-    "lru-cache": "^6.0.0"
+    "groq": "^2.2.6"
   },
   "bugs": {
     "url": "https://github.com/nextauthjs/adapters/issues"

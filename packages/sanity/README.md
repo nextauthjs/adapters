@@ -16,7 +16,6 @@
 
 - Saving users and account in Sanity
 - Retrieving of full linked provider information for a user
-- Stale While Revalidate
 - Auth with Credentials
 - Hash Credentials Passwords with Argon2
 

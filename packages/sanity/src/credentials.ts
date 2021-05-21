@@ -9,9 +9,10 @@ interface Options {
 
 type CredentialsConfig = ReturnType<CredentialsProvider>
 
-export const signUpHandler = (req: any, res: any) => async ({
-  client,
-}: Options) => {
+export const signUpHandler = ({ client }: Options) => async (
+  req: any,
+  res: any
+) => {
   const { email, password, name, image } = req.body
 
   const user = await client.fetch(getUserByEmailQuery, {
