@@ -24,6 +24,7 @@ Currently, there are the following adapters ready for use
 - [prisma-legacy](./packages/prisma-legacy/README.md)
 - [faunadb](./packages/fauna/README.md)
 - [dynamodb](./packages/dynamodb/README.md)
+- [firebase](./packages/firebase/README.md)
 
 ## Contributing
 
