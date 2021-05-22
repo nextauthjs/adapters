@@ -24,7 +24,6 @@ Currently, there are the following adapters ready for use
 - [prisma-legacy](./packages/prisma-legacy/README.md)
 - [faunadb](./packages/fauna/README.md)
 - [dynamodb](./packages/dynamodb/README.md)
-- [example](./packages/example/README.md)
 
 ## Contributing
 
@@ -32,9 +31,11 @@ Currently, there are the following adapters ready for use
 
 If you already have an adapter you would like to add, please create a Pull Request and we will work with you to get it officially supported!
 
-We have an official TypeScript [`Adapter` Interface](https://github.com/nextauthjs/next-auth/blob/main/types/adapters.d.ts), which should make complying with the existing adapter structure and the common tests, etc. much easier.
-
 If you would like to also take on the maintenance of the adapter, let us know, and we would be happy to add you as a maintainer to the repository.
+
+## TypeScript
+
+We have an official TypeScript [`Adapter` Interface](https://github.com/nextauthjs/next-auth/blob/main/types/adapters.d.ts), which should make complying with the existing adapter structure and the common tests, etc. much easier.
 
 ## Publishing
 

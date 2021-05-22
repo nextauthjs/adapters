@@ -32,7 +32,7 @@ npm install next-auth @next-auth/fauna-adapter
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
 import * as Fauna from "faunadb"
-import FaunaAdapter from "@next-auth/fauna-adapter"
+import { FaunaAdapter } from "@next-auth/fauna-adapter"
 
 const client = new Fauna.Client({
   secret: "secret",
@@ -40,8 +40,6 @@ const client = new Fauna.Client({
   domain: "localhost",
   port: 8443,
 })
-
-const adapter = FaunaAdapter({ faunaClient: client })
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -53,7 +51,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapter
+  adapter: FaunaAdapter({ faunaClient: client})
   ...
 })
 ```

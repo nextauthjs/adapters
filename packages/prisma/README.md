@@ -31,11 +31,10 @@ npm install next-auth @next-auth/prisma-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import PrismaAdapter from "@next-auth/prisma-adapter"
+import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import * as Prisma from "@prisma/client"
 
 const prisma = new Prisma.PrismaClient()
-const prismaAdapter = PrismaAdapter(prisma)
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -47,7 +46,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapters: prismaAdapter
+  adapter: PrismaAdapter(prisma)
   ...
 })
 ```

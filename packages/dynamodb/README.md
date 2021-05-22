@@ -20,9 +20,8 @@ You need a table with as partition key `pk` and as sort key `sk`. Your table als
 
 You need to pass aws-sdk to the adapter in addition to the tablename.
 
-```JAVASCRIPT
+```js
 // /pages/api/auth/[...nextauth].js
-
 import AWS from "aws-sdk";
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
@@ -53,7 +52,6 @@ export default NextAuth({
   }),
   ...
 });
-
 ```
 
 (AWS secrets start with `NEXT_AUTH_` in order to not conflict with [Vercel's reserved environment variables](https://vercel.com/docs/environment-variables#reserved-environment-variables).)
