@@ -1,0 +1,4 @@
+
+CreateCollection({ 
+  name: 'users' 
+})
