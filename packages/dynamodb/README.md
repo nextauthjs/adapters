@@ -1,7 +1,15 @@
-# AWS DynamoDB Adapter
-
 <p align="center">
-    <img src="https://i.imgur.com/cRg0uvm.png" alt="AWS Dynamodb + NextAuth.js">
+   <br/>
+   <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
+   <h3 align="center"><b>DynamoDB Adapter</b> - NextAuth.js</h3>
+   <p align="center">
+   Open Source. Full Stack. Own Your Data.
+   </p>
+   <p align="center" style="align: center;">
+      <img src="https://github.com/nextauthjs/adapters/workflows/Build%20Test/badge.svg" alt="Build Test" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter" alt="Bundle Size"/>
+      <img src="https://img.shields.io/github/v/release/nextauthjs/adapters?include_prereleases" alt="Github Release" />
+   </p>
 </p>
 
 ## Initial Setup
@@ -12,9 +20,8 @@ You need a table with as partition key `pk` and as sort key `sk`. Your table als
 
 You need to pass aws-sdk to the adapter in addition to the tablename.
 
-```JAVASCRIPT
+```js
 // /pages/api/auth/[...nextauth].js
-
 import AWS from "aws-sdk";
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
@@ -45,7 +52,6 @@ export default NextAuth({
   }),
   ...
 });
-
 ```
 
 (AWS secrets start with `NEXT_AUTH_` in order to not conflict with [Vercel's reserved environment variables](https://vercel.com/docs/environment-variables#reserved-environment-variables).)
