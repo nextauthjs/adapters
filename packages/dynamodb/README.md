@@ -12,13 +12,19 @@
    </p>
 </p>
 
-## Initial Setup
+## Overview
 
-You need a table with as partition key `pk` and as sort key `sk`. Your table also need a global secondary index names `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
+This is the AWS DynamoDB Adapter for next-auth. This package can only be used in conjunction with the primary next-auth package. It is not a standalone package.
+
+## Getting started
+
+You need a table with a partition key `pk` and a sort key `sk`. Your table also needs a global secondary index named `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
+
+You can find the full schema in the table structure section below.
 
 ## Config
 
-You need to pass aws-sdk to the adapter in addition to the tablename.
+You need to pass `aws-sdk` to the adapter in addition to the table name.
 
 ```js
 // /pages/api/auth/[...nextauth].js
@@ -58,11 +64,11 @@ export default NextAuth({
 
 ## Table structure
 
-The table respect the single table strucuture. This has many advantages :
+The table respects the single table design pattern. This has many advantages:
 
-- Only one table to manage, monitor and provisioned
-- Querying relation is faster than with multi table schema (if you want to retreive all sessions from an user for example)
-- Only one table need to be replicated if you want to be multi-regions
+- Only one table to manage, monitor and provision.
+- Querying relations is faster than with multi-table schemas (for eg. retreiving all sessions for a user).
+- Only one table needs to be replicated, if you want to go multi-region.
 
 Here is a schema of the table :
 
