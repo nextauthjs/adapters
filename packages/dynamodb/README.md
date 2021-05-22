@@ -16,18 +16,23 @@
 
 This is the AWS DynamoDB Adapter for next-auth. This package can only be used in conjunction with the primary next-auth package. It is not a standalone package.
 
-## Getting started
-
 You need a table with a partition key `pk` and a sort key `sk`. Your table also needs a global secondary index named `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
 
 You can find the full schema in the table structure section below.
 
-## Config
+## Getting Started
+
+1. Install `next-auth` and `@next-auth/dynamodb-adapter`
+
+```js
+npm install next-auth @next-auth/dynamodb-adapter
+```
+
+2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
 You need to pass `aws-sdk` to the adapter in addition to the table name.
 
 ```js
-// /pages/api/auth/[...nextauth].js
 import AWS from "aws-sdk";
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
@@ -73,5 +78,13 @@ The table respects the single table design pattern. This has many advantages:
 Here is a schema of the table :
 
 <p align="center">
-    <img src="https://i.imgur.com/hGZtWDq.png" alt="Table schema">
+    <img src="https://i.imgur.com/hGZtWDq.png" alt="">
 </p>
+
+## Contributing
+
+We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
+
+## License
+
+ISC
