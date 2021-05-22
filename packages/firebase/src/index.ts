@@ -1,21 +1,12 @@
 import * as admin from "firebase-admin"
 import { createHash, randomBytes } from "crypto"
-import type { AppOptions } from "next-auth/internals"
 import { Adapter } from "next-auth/adapters"
-
-interface IAdapterConfig {
-  firestoreAdmin: admin.firestore.Firestore
-  usersCollection: "users" | string
-  accountsCollection: "accounts" | string
-  sessionsCollection: "sessions" | string
-  verificationRequestsCollection: "verificationRequests" | string
-}
 
 export interface FirebaseProfile {
   name: string
   email: string | null
   image: string | null
-  emailVerified: boolean | undefined
+  emailVerified: Date | null
 }
 
 export interface FirebaseUser extends FirebaseProfile {
@@ -55,6 +46,7 @@ export interface FirebaseVerificationRequest {
   updatedAt: admin.firestore.FieldValue
 }
 
+// @ts-expect-error
 export const FirebaseAdapter: Adapter<
   admin.firestore.Firestore,
   never,
@@ -62,600 +54,340 @@ export const FirebaseAdapter: Adapter<
   FirebaseProfile,
   FirebaseSession
 > = (firestoreAdmin) => {
-  async function getAdapter(appOptions?: Partial<AppOptions>) {
-    // Display debug output if debug option enabled
-    function _debug(...args: any[]) {
-      if (appOptions?.debug) {
-        console.log("[next-auth][firebase][debug]", ...args)
-      }
-    }
+  return {
+    async getAdapter({ session, secret, ...appOptions }) {
+      const sessionMaxAge = session.maxAge * 1000 // default is 30 days
+      const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
+      /**
+       * @todo Move this to core package
+       * @todo Use bcrypt or a more secure method
+       */
+      const hashToken = (token: string) =>
+        createHash("sha256").update(`${token}${secret}`).digest("hex")
 
-    if (appOptions && (!appOptions.session || !appOptions.session.maxAge)) {
-      _debug(
-        "GET_ADAPTER",
-        "Session expiry not configured (defaulting to 30 days"
-      )
-    }
-
-    const DEFAULT_SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000
-    const SESSION_MAX_AGE = appOptions?.session?.maxAge
-      ? appOptions.session.maxAge * 1000
-      : DEFAULT_SESSION_MAX_AGE
-    const SESSION_UPDATE_AGE = appOptions?.session?.updateAge
-      ? appOptions.session.updateAge * 1000
-      : 0
-
-    async function createUser(
-      profile: FirebaseProfile
-    ): Promise<FirebaseUser | null> {
-      _debug("createUser", profile)
-
-      try {
-        const newUserRef = await firestoreAdmin
-          .collection(usersCollection)
-          .add({
+      return {
+        async createUser(profile) {
+          const newUserRef = await firestoreAdmin.collection("users").add({
             name: profile.name,
             email: profile.email,
             image: profile.image,
-            emailVerified: profile.emailVerified
-              ? profile.emailVerified
-              : false,
+            emailVerified: profile.emailVerified,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           })
 
-        const newUserSnapshot = await newUserRef.get()
+          const newUserSnapshot = await newUserRef.get()
 
-        const newUser: IUser = {
-          ...newUserSnapshot.data(),
-          id: newUserSnapshot.id,
-        }
+          const newUser: any = {
+            ...newUserSnapshot.data(),
+            id: newUserSnapshot.id,
+          }
 
-        return newUser
-      } catch (error) {
-        console.error("CREATE_USER", error)
-        return await Promise.reject(new Error("CREATE_USER"))
-      }
-    }
+          return newUser
+        },
 
-    async function getUser(id: IUser["id"]): Promise<IUser> {
-      _debug("getUser", id)
+        async getUser(id) {
+          const snapshot = await firestoreAdmin
+            .collection("users")
+            .doc(id)
+            .get()
 
-      const { firestoreAdmin, usersCollection } = firebase
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          return { ...snapshot.data(), id: snapshot.id } as any
+        },
 
-      try {
-        const snapshot = await firestoreAdmin
-          .collection(usersCollection)
-          .doc(id)
-          .get()
+        async getUserByEmail(email) {
+          if (!email) return null
 
-        const returnUser: IUser = { ...snapshot.data(), id: snapshot.id }
-        return returnUser
-      } catch (error) {
-        console.error("GET_USER", error.message)
-        return await Promise.reject(new Error("GET_USER"))
-      }
-    }
+          const snapshot = await firestoreAdmin
+            .collection("users")
+            .where("email", "==", email)
+            .limit(1)
+            .get()
 
-    async function getUserByEmail(email: string): Promise<IUser | null> {
-      _debug("getUserByEmail", email)
+          if (snapshot.empty) return null
 
-      if (!email) return await Promise.resolve(null)
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          return {
+            ...snapshot.docs[0].data(),
+            id: snapshot.docs[0].id,
+          } as any
+        },
 
-      const { firestoreAdmin, usersCollection } = firebase
+        async getUserByProviderAccountId(providerId, providerAccountId) {
+          const accountSnapshot = await firestoreAdmin
+            .collection("accounts")
+            .where("providerId", "==", providerId)
+            .where("providerAccountId", "==", providerAccountId)
+            .limit(1)
+            .get()
 
-      try {
-        const snapshot = await firestoreAdmin
-          .collection(usersCollection)
-          .where("email", "==", email)
-          .limit(1)
-          .get()
+          if (accountSnapshot.empty) return null
 
-        if (snapshot.empty) return await Promise.resolve(null)
+          const userId = accountSnapshot.docs[0].data().userId
 
-        const user: IUser = {
-          ...snapshot.docs[0].data(),
-          id: snapshot.docs[0].id,
-        }
+          const userSnapshot = await firestoreAdmin
+            .collection("users")
+            .doc(userId)
+            .get()
 
-        return user
-      } catch (error) {
-        console.error("GET_USER_BY_EMAIL", error.message)
-        return await Promise.reject(new Error("GET_USER_BY_EMAIL"))
-      }
-    }
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          return { ...userSnapshot.data(), id: userSnapshot.id } as any
+        },
 
-    async function getUserByProviderAccountId(
-      providerId: IAccount["providerId"],
-      providerAccountId: IAccount["providerAccountId"]
-    ): Promise<IUser | null> {
-      _debug("getUserByProviderAccountId", providerId, providerAccountId)
+        async updateUser(user) {
+          return await firestoreAdmin
+            .collection("users")
+            .doc(user.id)
+            .update({
+              ...user,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            })
+        },
 
-      const { firestoreAdmin, accountsCollection, usersCollection } = firebase
+        async deleteUser(userId) {
+          await firestoreAdmin.collection("users").doc(userId).delete()
+        },
 
-      try {
-        const accountSnapshot = await firestoreAdmin
-          .collection(accountsCollection)
-          .where("providerId", "==", providerId)
-          .where("providerAccountId", "==", providerAccountId)
-          .limit(1)
-          .get()
-
-        if (accountSnapshot.empty) return null
-
-        const userId = accountSnapshot.docs[0].data().userId
-
-        const userSnapshot = await firestoreAdmin
-          .collection(usersCollection)
-          .doc(userId)
-          .get()
-
-        const user: IUser = { ...userSnapshot.data(), id: userSnapshot.id }
-
-        return user
-      } catch (error) {
-        console.error("GET_USER_BY_PROVIDER_ACCOUNT_ID", error.message)
-        return await Promise.reject(
-          new Error("GET_USER_BY_PROVIDER_ACCOUNT_ID")
-        )
-      }
-    }
-
-    async function updateUser(user: IUser): Promise<IUser> {
-      _debug("updateUser", user)
-
-      const { firestoreAdmin, usersCollection } = firebase
-
-      const updatedUser: IUser = {
-        ...user,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }
-
-      try {
-        await firestoreAdmin
-          .collection(usersCollection)
-          .doc(user.id)
-          .update(updatedUser)
-
-        return updatedUser
-      } catch (error) {
-        console.error("UPDATE_USER", error.message)
-        return await Promise.reject(new Error("UPDATE_USER"))
-      }
-    }
-
-    async function deleteUser(userId: IUser["id"]): Promise<void> {
-      _debug("deleteUser", userId)
-
-      const { firestoreAdmin, usersCollection } = firebase
-
-      try {
-        await firestoreAdmin.collection(usersCollection).doc(userId).delete()
-      } catch (error) {
-        console.error("DELETE_USER", error.message)
-        return await Promise.reject(new Error("DELETE_USER"))
-      }
-    }
-
-    async function linkAccount(
-      userId: IAccount["userId"],
-      providerId: IAccount["providerId"],
-      providerType: IAccount["providerType"],
-      providerAccountId: IAccount["providerAccountId"],
-      refreshToken: IAccount["refreshToken"],
-      accessToken: IAccount["accessToken"],
-      accessTokenExpires: IAccount["accessTokenExpires"]
-    ): Promise<IAccount> {
-      _debug(
-        "linkAccount",
-        userId,
-        providerId,
-        providerType,
-        providerAccountId,
-        refreshToken,
-        accessToken,
-        accessTokenExpires
-      )
-
-      const { firestoreAdmin, accountsCollection } = firebase
-
-      const newAccountData: IAccount = removeUndefinedValues({
-        userId,
-        providerId,
-        providerType,
-        providerAccountId,
-        refreshToken,
-        accessToken,
-        accessTokenExpires,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      })
-
-      try {
-        // create Account
-        const accountRef = await firestoreAdmin
-          .collection(accountsCollection)
-          .add(newAccountData)
-
-        const accountSnapshot = await accountRef.get()
-
-        return accountSnapshot.data()
-      } catch (error) {
-        console.error("LINK_ACCOUNT", error.message)
-        return await Promise.reject(new Error("LINK_ACCOUNT"))
-      }
-    }
-
-    async function unlinkAccount(
-      userId: IAccount["userId"],
-      providerId: IAccount["providerId"],
-      providerAccountId: IAccount["providerAccountId"]
-    ): Promise<void> {
-      _debug("unlinkAccount", userId, providerId, providerAccountId)
-
-      const { firestoreAdmin, accountsCollection } = firebase
-
-      try {
-        const snapshot = await firestoreAdmin
-          .collection(accountsCollection)
-          .where("userId", "==", userId)
-          .where("providerId", "==", providerId)
-          .where("providerAccountId", "==", providerAccountId)
-          .limit(1)
-          .get()
-
-        const accountId = snapshot.docs[0].id
-
-        await firestoreAdmin
-          .collection(accountsCollection)
-          .doc(accountId)
-          .delete()
-      } catch (error) {
-        console.error("UNLINK_ACCOUNT", error.message)
-        return await Promise.reject(new Error("UNLINK_ACCOUNT"))
-      }
-    }
-
-    async function createSession(user: IUser): Promise<ISession> {
-      _debug("createSession", user)
-
-      const { firestoreAdmin, sessionsCollection } = firebase
-
-      let expires = null
-
-      if (SESSION_MAX_AGE) {
-        const expireDate = new Date()
-        expires = expireDate.setTime(expireDate.getTime() + SESSION_MAX_AGE)
-      }
-
-      try {
-        const newSessionRef = await firestoreAdmin
-          .collection(sessionsCollection)
-          .add({
-            userId: user.id,
-            expires: expires,
-            sessionToken: randomBytes(32).toString("hex"),
-            accessToken: randomBytes(32).toString("hex"),
+        async linkAccount(
+          userId,
+          providerId,
+          providerType,
+          providerAccountId,
+          refreshToken,
+          accessToken,
+          accessTokenExpires
+        ) {
+          const accountRef = await firestoreAdmin.collection("accounts").add({
+            userId,
+            providerId,
+            providerType,
+            providerAccountId,
+            refreshToken,
+            accessToken,
+            accessTokenExpires,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           })
-        const newSessionSnapshot = await newSessionRef.get()
 
-        const returnSession: ISession = {
-          ...newSessionSnapshot.data(),
-          id: newSessionSnapshot.id,
-        }
-        return returnSession
-      } catch (error) {
-        console.error("CREATE_SESSION", error.message)
-        return await Promise.reject(new Error("CREATE_SESSION"))
-      }
-    }
+          const accountSnapshot = await accountRef.get()
+          return accountSnapshot.data()
+        },
 
-    async function getSession(
-      sessionToken: ISession["sessionToken"]
-    ): Promise<ISession | null> {
-      _debug("getSession", sessionToken)
+        async unlinkAccount(userId, providerId, providerAccountId) {
+          const snapshot = await firestoreAdmin
+            .collection("accounts")
+            .where("userId", "==", userId)
+            .where("providerId", "==", providerId)
+            .where("providerAccountId", "==", providerAccountId)
+            .limit(1)
+            .get()
 
-      const { firestoreAdmin, sessionsCollection } = firebase
+          const accountId = snapshot.docs[0].id
 
-      try {
-        const snapshot = await firestoreAdmin
-          .collection(sessionsCollection)
-          .where("sessionToken", "==", sessionToken)
-          .limit(1)
-          .get()
+          await firestoreAdmin.collection("accounts").doc(accountId).delete()
+        },
 
-        if (snapshot.empty) return null
+        async createSession(user) {
+          let expires = null
 
-        const session: ISession = {
-          ...snapshot.docs[0].data(),
-          id: snapshot.docs[0].id,
-        }
+          if (sessionMaxAge) {
+            const expireDate = new Date()
+            expires = expireDate.setTime(expireDate.getTime() + sessionMaxAge)
+          }
 
-        // if the session has expired
-        if (
-          !snapshot.empty &&
-          session.expires &&
-          new Date() > session.expires
-        ) {
-          // delete the session
+          const newSessionRef = await firestoreAdmin
+            .collection("sessions")
+            .add({
+              userId: user.id,
+              expires: expires,
+              sessionToken: randomBytes(32).toString("hex"),
+              accessToken: randomBytes(32).toString("hex"),
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            })
+          const newSessionSnapshot = await newSessionRef.get()
+
+          return {
+            ...newSessionSnapshot.data(),
+            id: newSessionSnapshot.id,
+          }
+        },
+
+        async getSession(sessionToken) {
+          const snapshot = await firestoreAdmin
+            .collection("sessions")
+            .where("sessionToken", "==", sessionToken)
+            .limit(1)
+            .get()
+
+          if (snapshot.empty) return null
+
+          const session: any = {
+            ...snapshot.docs[0].data(),
+            id: snapshot.docs[0].id,
+          }
+
+          // if the session has expired
+          if (
+            !snapshot.empty &&
+            session.expires &&
+            new Date() > session.expires
+          ) {
+            // delete the session
+            await firestoreAdmin
+              .collection("sessions")
+              .doc(snapshot.docs[0].id)
+              .delete()
+          }
+          // return already existing session
+          return session
+        },
+
+        async updateSession(session, force) {
+          const shouldUpdate =
+            sessionMaxAge && sessionUpdateAge && session.expires
+
+          if (!shouldUpdate && !force) return null
+
+          // Calculate last updated date, to throttle write updates to database
+          // Formula: ({expiry date} - sessionMaxAge) + sessionUpdateAge
+          //     e.g. ({expiry date} - 30 days) + 1 hour
+          //
+          // Default for sessionMaxAge is 30 days.
+          // Default for sessionUpdateAge is 1 hour.
+          const dateSessionIsDueToBeUpdated = new Date(session.expires)
+          dateSessionIsDueToBeUpdated.setTime(
+            dateSessionIsDueToBeUpdated.getTime() - sessionMaxAge
+          )
+          dateSessionIsDueToBeUpdated.setTime(
+            dateSessionIsDueToBeUpdated.getTime() + sessionUpdateAge
+          )
+
+          // Trigger update of session expiry date and write to database, only
+          // if the session was last updated more than {sessionUpdateAge} ago
+          const currentDate = new Date()
+          if (currentDate < dateSessionIsDueToBeUpdated && !force) return null
+
+          const newExpiryDate = new Date()
+          newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
+
+          const updatedSessionData: any = {
+            ...session,
+            expires: new Date(Date.now() + sessionMaxAge),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }
+          // Update the item in the database
           await firestoreAdmin
-            .collection(sessionsCollection)
-            .doc(snapshot.docs[0].id)
-            .delete()
-        }
-        // return already existing session
-        return session
-      } catch (error) {
-        console.error("GET_SESSION", error.message)
-        return await Promise.reject(new Error("GET_SESSION"))
-      }
-    }
+            .collection("sessions")
+            .doc(session.id)
+            .update(updatedSessionData)
 
-    async function updateSession(
-      session: ISession,
-      force: boolean
-    ): Promise<ISession | null> {
-      _debug("updateSession", session)
+          return updatedSessionData
+        },
 
-      const { firestoreAdmin, sessionsCollection } = firebase
+        async deleteSession(sessionToken) {
+          const snapshot = await firestoreAdmin
+            .collection("sessions")
+            .where("sessionToken", "==", sessionToken)
+            .limit(1)
+            .get()
 
-      try {
-        const shouldUpdate =
-          SESSION_MAX_AGE &&
-          (SESSION_UPDATE_AGE || SESSION_UPDATE_AGE === 0) &&
-          session.expires
+          if (snapshot.empty) return
 
-        if (!shouldUpdate && !force) return null
+          const sessionId = snapshot.docs[0].id
 
-        // Calculate last updated date, to throttle write updates to database
-        // Formula: ({expiry date} - sessionMaxAge) + sessionUpdateAge
-        //     e.g. ({expiry date} - 30 days) + 1 hour
-        //
-        // Default for sessionMaxAge is 30 days.
-        // Default for sessionUpdateAge is 1 hour.
-        const dateSessionIsDueToBeUpdated = new Date(session.expires)
-        dateSessionIsDueToBeUpdated.setTime(
-          dateSessionIsDueToBeUpdated.getTime() - SESSION_MAX_AGE
-        )
-        dateSessionIsDueToBeUpdated.setTime(
-          dateSessionIsDueToBeUpdated.getTime() + SESSION_UPDATE_AGE
-        )
+          await firestoreAdmin.collection("sessions").doc(sessionId).delete()
+        },
 
-        // Trigger update of session expiry date and write to database, only
-        // if the session was last updated more than {sessionUpdateAge} ago
-        const currentDate = new Date()
-        if (currentDate < dateSessionIsDueToBeUpdated && !force) return null
+        async createVerificationRequest(identifier, url, token, _, provider) {
+          const { sendVerificationRequest, maxAge } = provider
 
-        const newExpiryDate = new Date()
-        newExpiryDate.setTime(newExpiryDate.getTime() + SESSION_MAX_AGE)
+          let expires = null
 
-        const updatedSessionData: ISession = {
-          ...session,
-          expires: newExpiryDate,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }
-        // Update the item in the database
-        await firestoreAdmin
-          .collection(sessionsCollection)
-          .doc(session.id)
-          .update(updatedSessionData)
+          if (maxAge) {
+            const dateExpires = new Date()
+            dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
 
-        return updatedSessionData
-      } catch (error) {
-        console.error("UPDATE_SESSION", error.message)
-        return await Promise.reject(new Error("UPDATE_SESSION"))
-      }
-    }
+            expires = dateExpires
+          }
 
-    async function deleteSession(
-      sessionToken: ISession["sessionToken"]
-    ): Promise<void> {
-      _debug("deleteSession", sessionToken)
+          // add to database
+          const newVerification = {
+            identifier,
+            token: hashToken(token),
+            expires,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }
+          const newVerificationRequestRef = await firestoreAdmin
+            .collection("verificationRequests")
+            .add(newVerification)
 
-      const { firestoreAdmin, sessionsCollection } = firebase
+          const newVerificationRequestSnapshot = await newVerificationRequestRef.get()
 
-      try {
-        const snapshot = await firestoreAdmin
-          .collection(sessionsCollection)
-          .where("sessionToken", "==", sessionToken)
-          .limit(1)
-          .get()
+          // With the verificationCallback on a provider, you can send an email, or queue
+          // an email to be sent, or perform some other action (e.g. send a text message)
+          await sendVerificationRequest({
+            identifier,
+            url,
+            token,
+            baseUrl: appOptions.baseUrl,
+            provider,
+          })
 
-        if (snapshot.empty) return
+          // TODO: How to get typescript to recognize the types from newVerification(L506)
+          //       here when spread in? Same pattern in all other types too..
+          return {
+            ...newVerificationRequestSnapshot.data(),
+            id: newVerificationRequestSnapshot.id,
+          }
+        },
 
-        const sessionId = snapshot.docs[0].id
+        async getVerificationRequest(identifier, token) {
+          const snapshot = await firestoreAdmin
+            .collection("verificationRequests")
+            .where("token", "==", hashToken(token))
+            .where("identifier", "==", identifier)
+            .limit(1)
+            .get()
 
-        await firestoreAdmin
-          .collection(sessionsCollection)
-          .doc(sessionId)
-          .delete()
-      } catch (error) {
-        console.error("DELETE_SESSION", error.message)
-        return await Promise.reject(new Error("DELETE_SESSION"))
-      }
-    }
+          const verificationRequest: any = {
+            ...snapshot.docs[0].data(),
+            id: snapshot.docs[0].id,
+          }
 
-    async function createVerificationRequest(
-      identifier: string,
-      url: string,
-      token: string,
-      secret: string,
-      provider: {
-        maxAge: number
-        sendVerificationRequest: (a: any) => {}
-      }
-    ): Promise<IVerificationRequest> {
-      _debug("createVerificationRequest", identifier)
-      const { firestoreAdmin, verificationRequestsCollection } = firebase
-      const baseUrl = appOptions?.baseUrl ?? ""
-      const { sendVerificationRequest, maxAge } = provider
+          if (
+            verificationRequest?.expires &&
+            new Date() > verificationRequest?.expires
+          ) {
+            // Delete verification entry so it cannot be used again
+            await firestoreAdmin
+              .collection("verificationRequests")
+              .doc(verificationRequest.id)
+              .delete()
 
-      // Store hashed token (using secret as salt) so that tokens cannot be exploited
-      // even if the contents of the database is compromised
-      // @TODO Use bcrypt function here instead of simple salted hash
-      const hashedToken = createHash("sha256")
-        .update(`${token}${secret}`)
-        .digest("hex")
+            return null
+          }
+          return verificationRequest
+        },
 
-      let expires = null
+        async deleteVerificationRequest(identifier, token) {
+          const snapshot = await firestoreAdmin
+            .collection("verificationRequests")
+            .where("token", "==", hashToken(token))
+            .where("identifier", "==", identifier)
+            .limit(1)
+            .get()
 
-      if (maxAge) {
-        const dateExpires = new Date()
-        dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
+          const verificationRequestId = snapshot.docs[0].id
 
-        expires = dateExpires
-      }
-
-      try {
-        // add to database
-        const newVerification: Partial<IVerificationRequest> = {
-          identifier,
-          token: hashedToken,
-          expires,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }
-        const newVerificationRequestRef = await firestoreAdmin
-          .collection(verificationRequestsCollection)
-          .add(newVerification)
-
-        const newVerificationRequestSnapshot = await newVerificationRequestRef.get()
-
-        // With the verificationCallback on a provider, you can send an email, or queue
-        // an email to be sent, or perform some other action (e.g. send a text message)
-        await sendVerificationRequest({
-          identifier,
-          url,
-          token,
-          baseUrl,
-          provider,
-        })
-
-        // TODO: How to get typescript to recognize the types from newVerification(L506)
-        //       here when spread in? Same pattern in all other types too..
-        const returnVerificationRequest: IVerificationRequest = {
-          ...newVerificationRequestSnapshot.data(),
-          id: newVerificationRequestSnapshot.id,
-        }
-        return returnVerificationRequest
-      } catch (error) {
-        console.error("CREATE_VERIFICATION_REQUEST", error.message)
-        return await Promise.reject(new Error("CREATE_VERIFICATION_REQUEST"))
-      }
-    }
-
-    async function getVerificationRequest(
-      identifier: string,
-      token: string,
-      secret: string,
-      _provider: any
-    ): Promise<IVerificationRequest | null> {
-      _debug("getVerificationRequest", identifier, token)
-      const { firestoreAdmin, verificationRequestsCollection } = firebase
-
-      const hashedToken = createHash("sha256")
-        .update(`${token}${secret}`)
-        .digest("hex")
-
-      try {
-        const snapshot = await firestoreAdmin
-          .collection(verificationRequestsCollection)
-          .where("token", "==", hashedToken)
-          .limit(1)
-          .get()
-
-        const verificationRequest: IVerificationRequest = {
-          ...snapshot.docs[0].data(),
-          id: snapshot.docs[0].id,
-        }
-
-        if (
-          verificationRequest?.expires &&
-          new Date() > verificationRequest?.expires
-        ) {
-          // Delete verification entry so it cannot be used again
           await firestoreAdmin
-            .collection(verificationRequestsCollection)
-            .doc(verificationRequest.id)
+            .collection("verificationRequest")
+            .doc(verificationRequestId)
             .delete()
-
-          return null
-        }
-        return verificationRequest
-      } catch (error) {
-        console.error("GET_VERIFICATION_REQUEST", error.message)
-        return await Promise.reject(new Error("GET_VERIFICATION_REQUEST"))
+        },
       }
-    }
-
-    async function deleteVerificationRequest(
-      identifier: string,
-      token: string,
-      secret: string,
-      _provider: any
-    ): Promise<void> {
-      _debug("deleteVerification", identifier, token)
-      const { firestoreAdmin, verificationRequestsCollection } = firebase
-
-      try {
-        // Delete verification entry so it cannot be used again
-        const hashedToken = createHash("sha256")
-          .update(`${token}${secret}`)
-          .digest("hex")
-        const snapshot = await firestoreAdmin
-          .collection(verificationRequestsCollection)
-          .where("token", "==", hashedToken)
-          .limit(1)
-          .get()
-
-        const verificationRequestId = snapshot.docs[0].id
-
-        await firestoreAdmin
-          .collection(verificationRequestsCollection)
-          .doc(verificationRequestId)
-          .delete()
-      } catch (error) {
-        console.error("DELETE_VERIFICATION_REQUEST_ERROR", error.message)
-        return await Promise.reject(
-          new Error("DELETE_VERIFICATION_REQUEST_ERROR")
-        )
-      }
-    }
-
-    return await Promise.resolve({
-      createUser,
-      getUser,
-      getUserByEmail,
-      getUserByProviderAccountId,
-      updateUser,
-      deleteUser,
-      linkAccount,
-      unlinkAccount,
-      createSession,
-      getSession,
-      updateSession,
-      deleteSession,
-      createVerificationRequest,
-      getVerificationRequest,
-      deleteVerificationRequest,
-    })
+    },
   }
-
-  return {
-    getAdapter,
-  }
-}
-
-export default Adapter
-
-// helpers
-function removeUndefinedValues(obj: any) {
-  Object.keys(obj).forEach((key) => {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    typeof obj[key] === "undefined" && delete obj[key]
-  })
-
-  return obj
 }
