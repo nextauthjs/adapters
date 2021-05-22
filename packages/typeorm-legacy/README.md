@@ -29,7 +29,7 @@ npm install next-auth @next-auth/typeorm-legacy-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import Adapter from "@next-auth/typeorm-legacy-adapter"
+import { TypeORMLegacyAdapter } from "@next-auth/typeorm-legacy-adapter"
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -41,7 +41,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapters: Adapter({
+  adapter: TypeORMLegacyAdapter({
     type: 'sqlite',  // or mysql, postgresql, mssql
     database: ':memory:',
     synchronize: true
@@ -66,19 +66,19 @@ With sqlite, you have the option of using a file on disk as the database, or usi
 
 For MySQL, simply pass a valid connection string to the `database` option, such as `mysql://nextauth:password@127.0.0.1:3306/nextauth?synchronise=true`, and do not forget to set the `type` value to `mysql`.
 
-Schema: [next-auth.js.org/schemas/mysql](https://next-auth.js.org/schemas/mysql)
+Schema: [mysql/schema.sql](https://github.com/nextauthjs/adapters/tree/canary/packages/typeorm-legacy/tests/mysql/schema.sql)
 
 ### PostgreSQL
 
 For PostgreSQL, you also only need to pass a valid connection string to the `database` option, such as `postgres://nextauth:password@127.0.0.1:5432/nextauth`, and do not forget to set the `type` value to `postgres`.
 
-Schema: [next-auth.js.org/schemas/postgres](https://next-auth.js.org/schemas/postgres)
+Schema: [postgresql/schema.sql](https://github.com/nextauthjs/adapters/tree/canary/packages/typeorm-legacy/tests/postgresql/schema.sql)
 
 ### MsSQL
 
 For MsSQL, pass a valid connection string to the `database` option, such as `mssql://nextauth:password@127.0.0.1:1433/nextauth`, and do not forget to set the `type` value to `mssql`.
 
-Schema: [next-auth.js.org/schemas/mssql](https://next-auth.js.org/schemas/mssql)
+Schema: [mssql/schema.sql](https://github.com/nextauthjs/adapters/tree/canary/packages/typeorm-legacy/tests/mssql/schema.sql)
 
 ## Contributing
 
