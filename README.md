@@ -1,7 +1,7 @@
 <p align="center">
    <br/>
    <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
-   <h3 align="center">NextAuth.js Adapterse</h3>
+   <h3 align="center">NextAuth.js Adapters</h3>
    <p align="center">Adapter Repository for NextAuth.js</p>
 </p>
 
