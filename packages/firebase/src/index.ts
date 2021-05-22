@@ -53,7 +53,7 @@ export const FirebaseAdapter: Adapter<
   FirebaseUser,
   FirebaseProfile,
   FirebaseSession
-> = (firestoreAdmin) => {
+> = (client) => {
   return {
     async getAdapter({ session, secret, ...appOptions }) {
       const sessionMaxAge = session.maxAge * 1000 // default is 30 days
@@ -66,40 +66,38 @@ export const FirebaseAdapter: Adapter<
         createHash("sha256").update(`${token}${secret}`).digest("hex")
 
       return {
+        displayName: "FIREBASE",
         async createUser(profile) {
-          const newUserRef = await firestoreAdmin.collection("users").add({
+          const user = {
             name: profile.name,
             email: profile.email,
             image: profile.image,
-            emailVerified: profile.emailVerified,
+            emailVerified: profile.emailVerified ?? null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          })
-
-          const newUserSnapshot = await newUserRef.get()
-
-          const newUser: any = {
-            ...newUserSnapshot.data(),
-            id: newUserSnapshot.id,
           }
+          const { id } = await client.collection("users").add(user)
 
-          return newUser
+          return { ...user, id }
         },
 
         async getUser(id) {
-          const snapshot = await firestoreAdmin
-            .collection("users")
-            .doc(id)
-            .get()
-
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-          return { ...snapshot.data(), id: snapshot.id } as any
+          const snapshot = await client.collection("users").doc(id).get()
+          if (snapshot.exists) {
+            return {
+              ...snapshot.data(),
+              id,
+              updatedAt: snapshot.updateTime?.toDate(),
+              createdAt: snapshot.createTime?.toDate(),
+            }
+          }
+          return null
         },
 
         async getUserByEmail(email) {
           if (!email) return null
 
-          const snapshot = await firestoreAdmin
+          const snapshot = await client
             .collection("users")
             .where("email", "==", email)
             .limit(1)
@@ -115,7 +113,7 @@ export const FirebaseAdapter: Adapter<
         },
 
         async getUserByProviderAccountId(providerId, providerAccountId) {
-          const accountSnapshot = await firestoreAdmin
+          const accountSnapshot = await client
             .collection("accounts")
             .where("providerId", "==", providerId)
             .where("providerAccountId", "==", providerAccountId)
@@ -126,7 +124,7 @@ export const FirebaseAdapter: Adapter<
 
           const userId = accountSnapshot.docs[0].data().userId
 
-          const userSnapshot = await firestoreAdmin
+          const userSnapshot = await client
             .collection("users")
             .doc(userId)
             .get()
@@ -136,17 +134,15 @@ export const FirebaseAdapter: Adapter<
         },
 
         async updateUser(user) {
-          return await firestoreAdmin
+          const snapshot = await client
             .collection("users")
             .doc(user.id)
-            .update({
-              ...user,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            })
+            .update(user)
+          return { ...user, updatedAt: snapshot.writeTime.toDate() }
         },
 
         async deleteUser(userId) {
-          await firestoreAdmin.collection("users").doc(userId).delete()
+          await client.collection("users").doc(userId).delete()
         },
 
         async linkAccount(
@@ -158,7 +154,7 @@ export const FirebaseAdapter: Adapter<
           accessToken,
           accessTokenExpires
         ) {
-          const accountRef = await firestoreAdmin.collection("accounts").add({
+          const accountRef = await client.collection("accounts").add({
             userId,
             providerId,
             providerType,
@@ -166,8 +162,6 @@ export const FirebaseAdapter: Adapter<
             refreshToken,
             accessToken,
             accessTokenExpires,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           })
 
           const accountSnapshot = await accountRef.get()
@@ -175,7 +169,7 @@ export const FirebaseAdapter: Adapter<
         },
 
         async unlinkAccount(userId, providerId, providerAccountId) {
-          const snapshot = await firestoreAdmin
+          const snapshot = await client
             .collection("accounts")
             .where("userId", "==", userId)
             .where("providerId", "==", providerId)
@@ -185,37 +179,26 @@ export const FirebaseAdapter: Adapter<
 
           const accountId = snapshot.docs[0].id
 
-          await firestoreAdmin.collection("accounts").doc(accountId).delete()
+          await client.collection("accounts").doc(accountId).delete()
         },
 
         async createSession(user) {
-          let expires = null
-
-          if (sessionMaxAge) {
-            const expireDate = new Date()
-            expires = expireDate.setTime(expireDate.getTime() + sessionMaxAge)
+          const session = {
+            userId: user.id,
+            expires: new Date(Date.now() + sessionMaxAge),
+            sessionToken: randomBytes(32).toString("hex"),
+            accessToken: randomBytes(32).toString("hex"),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           }
 
-          const newSessionRef = await firestoreAdmin
-            .collection("sessions")
-            .add({
-              userId: user.id,
-              expires: expires,
-              sessionToken: randomBytes(32).toString("hex"),
-              accessToken: randomBytes(32).toString("hex"),
-              createdAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            })
-          const newSessionSnapshot = await newSessionRef.get()
-
-          return {
-            ...newSessionSnapshot.data(),
-            id: newSessionSnapshot.id,
-          }
+          const { id } = await client.collection("sessions").add(session)
+          const now = new Date()
+          return { ...session, id, createdAt: now, updatedAt: now }
         },
 
         async getSession(sessionToken) {
-          const snapshot = await firestoreAdmin
+          const snapshot = await client
             .collection("sessions")
             .where("sessionToken", "==", sessionToken)
             .limit(1)
@@ -223,30 +206,27 @@ export const FirebaseAdapter: Adapter<
 
           if (snapshot.empty) return null
 
-          const session: any = {
-            ...snapshot.docs[0].data(),
+          const data = snapshot.docs[0].data()
+          const session = {
+            ...data,
             id: snapshot.docs[0].id,
+            expires: data.expires.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            createdAt: data.createdAt.toDate(),
           }
 
           // if the session has expired
-          if (
-            !snapshot.empty &&
-            session.expires &&
-            new Date() > session.expires
-          ) {
+          if (session.expires < new Date()) {
             // delete the session
-            await firestoreAdmin
-              .collection("sessions")
-              .doc(snapshot.docs[0].id)
-              .delete()
+            await client.collection("sessions").doc(session.id).delete()
+            return null
           }
           // return already existing session
           return session
         },
 
         async updateSession(session, force) {
-          const shouldUpdate =
-            sessionMaxAge && sessionUpdateAge && session.expires
+          const shouldUpdate = session.expires
 
           if (!shouldUpdate && !force) return null
 
@@ -278,7 +258,7 @@ export const FirebaseAdapter: Adapter<
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           }
           // Update the item in the database
-          await firestoreAdmin
+          await client
             .collection("sessions")
             .doc(session.id)
             .update(updatedSessionData)
@@ -287,7 +267,7 @@ export const FirebaseAdapter: Adapter<
         },
 
         async deleteSession(sessionToken) {
-          const snapshot = await firestoreAdmin
+          const snapshot = await client
             .collection("sessions")
             .where("sessionToken", "==", sessionToken)
             .limit(1)
@@ -297,38 +277,23 @@ export const FirebaseAdapter: Adapter<
 
           const sessionId = snapshot.docs[0].id
 
-          await firestoreAdmin.collection("sessions").doc(sessionId).delete()
+          await client.collection("sessions").doc(sessionId).delete()
         },
 
         async createVerificationRequest(identifier, url, token, _, provider) {
-          const { sendVerificationRequest, maxAge } = provider
-
-          let expires = null
-
-          if (maxAge) {
-            const dateExpires = new Date()
-            dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
-
-            expires = dateExpires
-          }
-
-          // add to database
-          const newVerification = {
+          const verificationRequest = {
             identifier,
             token: hashToken(token),
-            expires,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            expires: new Date(Date.now() + provider.maxAge * 1000),
           }
-          const newVerificationRequestRef = await firestoreAdmin
+          // add to database
+          const { id } = await client
             .collection("verificationRequests")
-            .add(newVerification)
-
-          const newVerificationRequestSnapshot = await newVerificationRequestRef.get()
+            .add(verificationRequest)
 
           // With the verificationCallback on a provider, you can send an email, or queue
           // an email to be sent, or perform some other action (e.g. send a text message)
-          await sendVerificationRequest({
+          await provider.sendVerificationRequest({
             identifier,
             url,
             token,
@@ -336,33 +301,29 @@ export const FirebaseAdapter: Adapter<
             provider,
           })
 
-          // TODO: How to get typescript to recognize the types from newVerification(L506)
-          //       here when spread in? Same pattern in all other types too..
-          return {
-            ...newVerificationRequestSnapshot.data(),
-            id: newVerificationRequestSnapshot.id,
-          }
+          return { ...verificationRequest, id }
         },
 
         async getVerificationRequest(identifier, token) {
-          const snapshot = await firestoreAdmin
+          const snapshot = await client
             .collection("verificationRequests")
             .where("token", "==", hashToken(token))
             .where("identifier", "==", identifier)
             .limit(1)
             .get()
 
+          const data = snapshot.docs[0].data()
           const verificationRequest: any = {
-            ...snapshot.docs[0].data(),
+            ...data,
             id: snapshot.docs[0].id,
+            expires: data.expires.toDate(),
+            createdAt: snapshot.docs[0].createTime.toDate(),
+            updatedAt: snapshot.docs[0].updateTime.toDate(),
           }
 
-          if (
-            verificationRequest?.expires &&
-            new Date() > verificationRequest?.expires
-          ) {
+          if (verificationRequest.expires.toDate() < new Date()) {
             // Delete verification entry so it cannot be used again
-            await firestoreAdmin
+            await client
               .collection("verificationRequests")
               .doc(verificationRequest.id)
               .delete()
@@ -373,7 +334,7 @@ export const FirebaseAdapter: Adapter<
         },
 
         async deleteVerificationRequest(identifier, token) {
-          const snapshot = await firestoreAdmin
+          const snapshot = await client
             .collection("verificationRequests")
             .where("token", "==", hashToken(token))
             .where("identifier", "==", identifier)
@@ -382,7 +343,7 @@ export const FirebaseAdapter: Adapter<
 
           const verificationRequestId = snapshot.docs[0].id
 
-          await firestoreAdmin
+          await client
             .collection("verificationRequest")
             .doc(verificationRequestId)
             .delete()
