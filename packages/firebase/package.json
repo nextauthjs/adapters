@@ -32,11 +32,10 @@
     "test:db": "./tests/test.sh"
   },
   "peerDependencies": {
-    "firebase-admin": "^9.4.2",
+    "firebase-admin": "^9.8.0",
     "next-auth": "latest"
   },
   "devDependencies": {
-    "firebase-admin": "^9.4.2",
-    "ts-mock-firebase": "^2.3.0"
+    "firebase-admin": "^9.8.0"
   }
 }
