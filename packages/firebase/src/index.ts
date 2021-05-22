@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin"
 import { createHash, randomBytes } from "crypto"
 import type { AppOptions } from "next-auth/internals"
+import { Adapter } from "next-auth/adapters"
 
 interface IAdapterConfig {
   firestoreAdmin: admin.firestore.Firestore
@@ -10,20 +11,20 @@ interface IAdapterConfig {
   verificationRequestsCollection: "verificationRequests" | string
 }
 
-export interface IProfile {
+export interface FirebaseProfile {
   name: string
   email: string | null
   image: string | null
   emailVerified: boolean | undefined
 }
 
-export interface IUser extends IProfile {
+export interface FirebaseUser extends FirebaseProfile {
   id: string
   createdAt: admin.firestore.FieldValue
   updatedAt: admin.firestore.FieldValue
 }
 
-export interface IAccount {
+export interface FirebaseAccount {
   providerId: string
   providerAccountId: number | string
   userId: string
@@ -35,9 +36,9 @@ export interface IAccount {
   updatedAt: admin.firestore.FieldValue
 }
 
-export interface ISession {
+export interface FirebaseSession {
   id: string
-  userId: IUser["id"]
+  userId: FirebaseUser["id"]
   expires: Date
   sessionToken: string
   accessToken: string
@@ -45,7 +46,7 @@ export interface ISession {
   updatedAt: admin.firestore.FieldValue
 }
 
-export interface IVerificationRequest {
+export interface FirebaseVerificationRequest {
   id: string
   identifier: string
   token: string
@@ -54,7 +55,13 @@ export interface IVerificationRequest {
   updatedAt: admin.firestore.FieldValue
 }
 
-const Adapter = (config: IAdapterConfig, _options = {}) => {
+export const FirebaseAdapter: Adapter<
+  admin.firestore.Firestore,
+  never,
+  FirebaseUser,
+  FirebaseProfile,
+  FirebaseSession
+> = (firestoreAdmin) => {
   async function getAdapter(appOptions?: Partial<AppOptions>) {
     // Display debug output if debug option enabled
     function _debug(...args: any[]) {
@@ -78,10 +85,10 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       ? appOptions.session.updateAge * 1000
       : 0
 
-    async function createUser(profile: IProfile): Promise<IUser | null> {
+    async function createUser(
+      profile: FirebaseProfile
+    ): Promise<FirebaseUser | null> {
       _debug("createUser", profile)
-
-      const { firestoreAdmin, usersCollection } = config
 
       try {
         const newUserRef = await firestoreAdmin
@@ -114,7 +121,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     async function getUser(id: IUser["id"]): Promise<IUser> {
       _debug("getUser", id)
 
-      const { firestoreAdmin, usersCollection } = config
+      const { firestoreAdmin, usersCollection } = firebase
 
       try {
         const snapshot = await firestoreAdmin
@@ -135,7 +142,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
 
       if (!email) return await Promise.resolve(null)
 
-      const { firestoreAdmin, usersCollection } = config
+      const { firestoreAdmin, usersCollection } = firebase
 
       try {
         const snapshot = await firestoreAdmin
@@ -164,7 +171,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     ): Promise<IUser | null> {
       _debug("getUserByProviderAccountId", providerId, providerAccountId)
 
-      const { firestoreAdmin, accountsCollection, usersCollection } = config
+      const { firestoreAdmin, accountsCollection, usersCollection } = firebase
 
       try {
         const accountSnapshot = await firestoreAdmin
@@ -197,7 +204,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     async function updateUser(user: IUser): Promise<IUser> {
       _debug("updateUser", user)
 
-      const { firestoreAdmin, usersCollection } = config
+      const { firestoreAdmin, usersCollection } = firebase
 
       const updatedUser: IUser = {
         ...user,
@@ -220,7 +227,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     async function deleteUser(userId: IUser["id"]): Promise<void> {
       _debug("deleteUser", userId)
 
-      const { firestoreAdmin, usersCollection } = config
+      const { firestoreAdmin, usersCollection } = firebase
 
       try {
         await firestoreAdmin.collection(usersCollection).doc(userId).delete()
@@ -250,7 +257,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
         accessTokenExpires
       )
 
-      const { firestoreAdmin, accountsCollection } = config
+      const { firestoreAdmin, accountsCollection } = firebase
 
       const newAccountData: IAccount = removeUndefinedValues({
         userId,
@@ -272,7 +279,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
 
         const accountSnapshot = await accountRef.get()
 
-        return accountSnapshot.data() as IAccount
+        return accountSnapshot.data()
       } catch (error) {
         console.error("LINK_ACCOUNT", error.message)
         return await Promise.reject(new Error("LINK_ACCOUNT"))
@@ -286,7 +293,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     ): Promise<void> {
       _debug("unlinkAccount", userId, providerId, providerAccountId)
 
-      const { firestoreAdmin, accountsCollection } = config
+      const { firestoreAdmin, accountsCollection } = firebase
 
       try {
         const snapshot = await firestoreAdmin
@@ -312,7 +319,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     async function createSession(user: IUser): Promise<ISession> {
       _debug("createSession", user)
 
-      const { firestoreAdmin, sessionsCollection } = config
+      const { firestoreAdmin, sessionsCollection } = firebase
 
       let expires = null
 
@@ -350,7 +357,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     ): Promise<ISession | null> {
       _debug("getSession", sessionToken)
 
-      const { firestoreAdmin, sessionsCollection } = config
+      const { firestoreAdmin, sessionsCollection } = firebase
 
       try {
         const snapshot = await firestoreAdmin
@@ -392,7 +399,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     ): Promise<ISession | null> {
       _debug("updateSession", session)
 
-      const { firestoreAdmin, sessionsCollection } = config
+      const { firestoreAdmin, sessionsCollection } = firebase
 
       try {
         const shouldUpdate =
@@ -447,7 +454,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
     ): Promise<void> {
       _debug("deleteSession", sessionToken)
 
-      const { firestoreAdmin, sessionsCollection } = config
+      const { firestoreAdmin, sessionsCollection } = firebase
 
       try {
         const snapshot = await firestoreAdmin
@@ -481,7 +488,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       }
     ): Promise<IVerificationRequest> {
       _debug("createVerificationRequest", identifier)
-      const { firestoreAdmin, verificationRequestsCollection } = config
+      const { firestoreAdmin, verificationRequestsCollection } = firebase
       const baseUrl = appOptions?.baseUrl ?? ""
       const { sendVerificationRequest, maxAge } = provider
 
@@ -546,7 +553,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       _provider: any
     ): Promise<IVerificationRequest | null> {
       _debug("getVerificationRequest", identifier, token)
-      const { firestoreAdmin, verificationRequestsCollection } = config
+      const { firestoreAdmin, verificationRequestsCollection } = firebase
 
       const hashedToken = createHash("sha256")
         .update(`${token}${secret}`)
@@ -590,7 +597,7 @@ const Adapter = (config: IAdapterConfig, _options = {}) => {
       _provider: any
     ): Promise<void> {
       _debug("deleteVerification", identifier, token)
-      const { firestoreAdmin, verificationRequestsCollection } = config
+      const { firestoreAdmin, verificationRequestsCollection } = firebase
 
       try {
         // Delete verification entry so it cannot be used again
