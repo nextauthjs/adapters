@@ -53,8 +53,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
-      - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+      - uses: bahmutov/npm-install@v1
       - name: test ${{ matrix.adapter }}
         run: yarn test
   publish:
@@ -69,8 +68,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
-      - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+      - uses: bahmutov/npm-install@v1
       - name: Build
         run: yarn build
       - name: Authenticate with Registry
