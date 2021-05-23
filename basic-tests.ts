@@ -69,7 +69,7 @@ export function runBasicTests(options: {
       maxAge: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24,
     },
-    adapter: (null as unknown) as ReturnType<Adapter>, // TODO: Make it optional on AppOptions
+    adapter: null as unknown as ReturnType<Adapter>, // TODO: Make it optional on AppOptions
     ...options.mock?.appOptions,
   }
 
