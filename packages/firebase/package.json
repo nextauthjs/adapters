@@ -29,7 +29,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "FIRESTORE_EMULATOR_HOST=\"localhost:8080\" npx firebase emulators:exec --only firestore --project next-auth-test \"npx jest\""
+    "test": "FIRESTORE_EMULATOR_HOST=localhost:8080 firebase emulators:exec --only firestore --project next-auth-test jest"
   },
   "peerDependencies": {
     "firebase-admin": "^9.8.0",
