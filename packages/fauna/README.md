@@ -17,7 +17,7 @@
 
 This is the Fauna Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-You can find the Fauna schema and seed information in the docs at [next-auth.js.org/schemas/fauna](https://next-auth.js.org/schemas/fauna).
+You can find the Fauna schema and seed information in the docs at [next-auth.js.org/adapters/fauna](https://next-auth.js.org/adapters/fauna).
 
 ## Getting Started
 
