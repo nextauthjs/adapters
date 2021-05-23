@@ -12,16 +12,27 @@
    </p>
 </p>
 
-## Initial Setup
+## Overview
 
-You need a table with as partition key `pk` and as sort key `sk`. Your table also need a global secondary index names `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
+This is the AWS DynamoDB Adapter for next-auth. This package can only be used in conjunction with the primary next-auth package. It is not a standalone package.
 
-## Config
+You need a table with a partition key `pk` and a sort key `sk`. Your table also needs a global secondary index named `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
 
-You need to pass aws-sdk to the adapter in addition to the tablename.
+You can find the full schema in the table structure section below.
+
+## Getting Started
+
+1. Install `next-auth` and `@next-auth/dynamodb-adapter`
 
 ```js
-// /pages/api/auth/[...nextauth].js
+npm install next-auth @next-auth/dynamodb-adapter
+```
+
+2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
+
+You need to pass `aws-sdk` to the adapter in addition to the table name.
+
+```js
 import AWS from "aws-sdk";
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
@@ -58,14 +69,22 @@ export default NextAuth({
 
 ## Table structure
 
-The table respect the single table strucuture. This has many advantages :
+The table respects the single table design pattern. This has many advantages:
 
-- Only one table to manage, monitor and provisioned
-- Querying relation is faster than with multi table schema (if you want to retreive all sessions from an user for example)
-- Only one table need to be replicated if you want to be multi-regions
+- Only one table to manage, monitor and provision.
+- Querying relations is faster than with multi-table schemas (for eg. retreiving all sessions for a user).
+- Only one table needs to be replicated, if you want to go multi-region.
 
 Here is a schema of the table :
 
 <p align="center">
-    <img src="https://i.imgur.com/hGZtWDq.png" alt="Table schema">
+    <img src="https://i.imgur.com/hGZtWDq.png" alt="">
 </p>
+
+## Contributing
+
+We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
+
+## License
+
+ISC
