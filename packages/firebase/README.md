@@ -6,9 +6,9 @@
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/workflows/Build%20Test/badge.svg" alt="Build Test" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/firebase-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/github/v/release/nextauthjs/adapters?include_prereleases" alt="Github Release" />
+      <img src="https://img.shields.io/npm/v/@next-auth/firebase-adapter" alt="@next-auth/firebase-adapter Version" />
    </p>
 </p>
 

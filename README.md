@@ -19,12 +19,14 @@ This repository is a lerna mono-repo which is home to multiple next-auth adapter
 
 Currently, there are the following adapters ready for use
 
-- [typeorm-legacy](./packages/typeorm-legacy/README.md)
-- [prisma](./packages/prisma/README.md)
-- [prisma-legacy](./packages/prisma-legacy/README.md)
-- [faunadb](./packages/fauna/README.md)
-- [dynamodb](./packages/dynamodb/README.md)
-- [firebase](./packages/firebase/README.md)
+| Adapter        | Version                                                                                                                                                                   | Docs                                                                           | NPM                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| typeorm-legacy | [![npm](https://img.shields.io/npm/v/@next-auth/typeorm-legacy-adapter?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/typeorm-legacy-adapter) | [adapters/typeorm](https://next-auth.js.org/adapters/typeorm/typeorm-overview) | [@next-auth/typeorm-legacy-adapter](https://npm.im/@next-auth/typeorm-legacy-adapter) |
+| prisma         | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-adapter?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/prisma-adapter)                 | [adapters/prisma](https://next-auth.js.org/adapters/prisma)                    | [@next-auth/prisma-adapter](https://npm.im/@next-auth/prisma-adapter)                 |
+| prisma-legacy  | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-legacy-adapter?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/prisma-legacy-adapter)   | [adapters/prisma](https://next-auth.js.org/adapters/prisma)                    | [@next-auth/prisma-legacy-adapter](https://npm.im/@next-auth/prisma-legacy-adapter)   |
+| fauna          | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-adapter?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/fauna-adapter)                  | [adapters/fauna](https://next-auth.js.org/adapters/fauna)                      | [@next-auth/fauna-adapter](https://npm.im/@next-auth/fauna-adapter)                   |
+| dynamodb       | [![npm](https://img.shields.io/npm/v/@next-auth/dynamodb-adapter?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/dynamodb-adapter)             | [adapters/dynamodb](https://next-auth.js.org/adapters/dynamodb)                | [@next-auth/dynamodb-adapter](https://npm.im/@next-auth/dynamodb-adapter)             |
+| firebase       | [![npm](https://img.shields.io/npm/v/@next-auth/firebase-adapter?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/firebase-adapter)             | [adapters/firebase](https://next-auth.js.org/adapters/firebase)                | [@next-auth/firebase-adapter](https://npm.im/@next-auth/firebase-adapter)             |
 
 ## Contributing
 

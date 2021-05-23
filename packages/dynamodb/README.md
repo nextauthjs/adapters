@@ -6,9 +6,9 @@
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/workflows/Build%20Test/badge.svg" alt="Build Test" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/github/v/release/nextauthjs/adapters?include_prereleases" alt="Github Release" />
+      <img src="https://img.shields.io/npm/v/@next-auth/dynamodb-adapter" alt="@next-auth/dynamodb-adapter Version" />
    </p>
 </p>
 
