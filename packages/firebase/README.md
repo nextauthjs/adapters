@@ -29,7 +29,9 @@ npm install next-auth @next-auth/firebase-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import Adapter from "@next-auth/firebase-adapter"
+import { FirebaseAdapter } from "@next-auth/firebase-adapter"
+import firebase from "firebase-admin"
+const firestore = firebase.initializeApp({ /* your config */ }).firestore()
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -41,13 +43,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapter: Adapter({
-    firestoreAdmin: firebaseAdmin().firestore,
-    usersCollection: "users",
-    accountsCollection: "accounts",
-    sessionsCollection: "sessions",
-    verificationRequestsCollection: "verificationRequests",
-  }),
+  adapter: FirebaseAdapter(firestore),
   ...
 })
 ```
