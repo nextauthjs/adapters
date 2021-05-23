@@ -18,7 +18,7 @@ This is the AWS DynamoDB Adapter for next-auth. This package can only be used in
 
 You need a table with a partition key `pk` and a sort key `sk`. Your table also needs a global secondary index named `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
 
-You can find the full schema in the table structure section below.
+You can find the DynamoDB schema in the docs at [next-auth.js.org/adapters/dynamodb](https://next-auth.js.org/adapters/dynamodb).
 
 ## Getting Started
 

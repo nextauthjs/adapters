@@ -16,7 +16,7 @@
 
 This is the Prisma Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-You can find the Prisma schema in the docs at [next-auth.js.org/schemas/prisma](https://next-auth.js.org/schemas/prisma).
+You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma](https://next-auth.js.org/adapters/prisma).
 
 ## Getting Started
 

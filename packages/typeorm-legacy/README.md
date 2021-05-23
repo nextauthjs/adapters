@@ -16,6 +16,8 @@
 
 This is the TypeORM Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
+You can find more TypeORM information in the docs at [next-auth.js.org/adapters/typeorm/typeorm-overview](https://next-auth.js.org/adapters/typeorm/typeorm-overview).
+
 ## Getting Started
 
 1. Install `next-auth` and `@next-auth/typeorm-legacy-adapter`

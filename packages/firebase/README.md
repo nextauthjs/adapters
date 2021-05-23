@@ -17,6 +17,8 @@
 
 This is the Firebase Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
+You can find more Firebase information in the docs at [next-auth.js.org/adapters/firebase](https://next-auth.js.org/adapters/firebase).
+
 ## Getting Started
 
 1. Install `next-auth` and `@next-auth/firebase-adapter`
