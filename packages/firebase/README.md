@@ -1,6 +1,8 @@
 <p align="center">
    <br/>
-   <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
+   <a href="https://next-auth.js.org" target="_blank">
+    <img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /><img height="64px" src="./logo.svg" />
+   </a>
    <h3 align="center"><b>Firebase Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
