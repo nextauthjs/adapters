@@ -40,6 +40,12 @@ If you would like to also take on the maintenance of the adapter, let us know, a
 
 We have an official TypeScript [`Adapter` Interface](https://github.com/nextauthjs/next-auth/blob/main/types/adapters.d.ts), which should make complying with the existing adapter structure and the common tests, etc. much easier.
 
+## Testing
+
+We have developed a basic set of tests that apply to all adapters, i.e. to which all adapters should conform and pass. The code can be found in [`basic-tests.ts`](https://github.com/nextauthjs/adapters/blob/canary/basic-tests.ts), and specific implementations of which can be found in the `/tests` subdirectory of each currently available adapter.
+
+All adapter tests should also run against a local instance of the particular database / ORM being tested. For example, for TypeORM we spin up MySQL and PostgreSQL instances via docker, seed them, and execute the test suite separately against both backends.
+
 ## Publishing
 
 - [Lerna Independent Mode with Semver](https://samhogy.co.uk/2018/08/lerna-independent-mode-with-semver.html)
