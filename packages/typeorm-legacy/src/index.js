@@ -122,14 +122,7 @@ export function TypeORMLegacyAdapter(configOrString, options = {}) {
       return {
         displayName: "TYPEORM_LEGACY",
         createUser(profile) {
-          return manager.save(
-            new User(
-              profile.name,
-              profile.email,
-              profile.image,
-              profile.emailVerified
-            )
-          )
+          return manager.save(new User(profile))
         },
         getUser(id) {
           // In the very specific case of both using JWT for storing session data
