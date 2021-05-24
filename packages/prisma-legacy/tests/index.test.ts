@@ -3,7 +3,7 @@
 import * as Prisma from "@prisma/client"
 // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore
-import { PrismaLegacyAdapter } from "../src"
+import { PrismaLegacyAdapter, getCompoundId } from "../src"
 import { runBasicTests } from "../../../basic-tests"
 
 const prisma = new Prisma.PrismaClient()
@@ -24,15 +24,19 @@ runBasicTests({
         data: { expires },
       })
     },
-    user(id) {
+    user(id: any) {
       return prisma.user.findUnique({ where: { id } })
     },
-    account(id) {
-      return prisma.account.findUnique({ where: { id } })
+    account(providerId, providerAccountId) {
+      return prisma.account.findUnique({
+        where: {
+          compoundId: getCompoundId(providerId, providerAccountId),
+        },
+      })
     },
     verificationRequest(identifier, hashedToken) {
-      return prisma.verificationRequest.findUnique({
-        where: { identifier_token: { identifier, token: hashedToken } },
+      return prisma.verificationRequest.findFirst({
+        where: { identifier, token: hashedToken },
       })
     },
   },

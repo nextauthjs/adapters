@@ -1,5 +1,9 @@
 import { createHash, randomBytes } from "crypto"
 
+export function getCompoundId(a, b) {
+  return createHash("sha256").update(`${a}:${b}`).digest("hex")
+}
+
 /** @type {import("..").Adapter} */
 export function PrismaLegacyAdapter(config) {
   const {
@@ -13,12 +17,6 @@ export function PrismaLegacyAdapter(config) {
   } = config
 
   const { User, Account, Session, VerificationRequest } = modelMapping
-
-  function getCompoundId(providerId, providerAccountId) {
-    return createHash("sha256")
-      .update(`${providerId}:${providerAccountId}`)
-      .digest("hex")
-  }
 
   return {
     async getAdapter({

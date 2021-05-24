@@ -1,7 +1,7 @@
 import { Adapter, AdapterInstance } from "next-auth/adapters"
 import { AppOptions } from "next-auth/internals"
 import Providers, { EmailConfig } from "next-auth/providers"
-import { createHash } from "crypto"
+import { createHash, randomBytes } from "crypto"
 
 /**
  * A wrapper to run the most basic tests.
@@ -27,7 +27,7 @@ export function runBasicTests(options: {
     /** A simple query function that returns a user directly from the db. */
     user: (id: string) => any
     /** A simple query function that returns an account directly from the db. */
-    account: (id: string) => any
+    account: (providerId: string, providerAccountId: string) => any
     /**
      * A simple query function that returns an verification token directly from the db,
      * based on the user identifier and the verification token (hashed).
@@ -119,8 +119,6 @@ export function runBasicTests(options: {
       expect(userByEmail).toMatchObject(user)
     })
 
-    test.todo("getUserByProviderAccountId")
-
     test("updatedUser", async () => {
       user.email = "jane@example.com"
       const updatedUser = await adapter.updateUser(user)
@@ -198,7 +196,86 @@ export function runBasicTests(options: {
   })
 
   describe("Account", () => {
-    test.todo("linkAccount")
+    let user: any
+
+    beforeAll(async () => {
+      user = await adapter.createUser({
+        ...defaultUser,
+        email: "account@test.com",
+      })
+    })
+
+    test("linkAccount (OAuth provider)", async () => {
+      // Basic OAuth provider config
+      const provider = Providers.Auth0({})
+
+      // Roughly what is returned from a succesful OAuth login flow
+      const providerProfile = {
+        id: randomBytes(32).toString("hex"),
+        refreshToken: randomBytes(32).toString("hex"),
+        accessToken: randomBytes(32).toString("hex"),
+        accessTokenExpires: null,
+      }
+
+      const account = {
+        userId: user.id,
+        providerId: provider.id,
+        providerType: provider.type,
+        providerAccountId: providerProfile.id,
+        refreshToken: providerProfile.refreshToken,
+        accessToken: providerProfile.accessToken,
+        accessTokenExpires: providerProfile.accessTokenExpires,
+      }
+
+      // @ts-expect-error
+      await adapter.linkAccount(...Object.values(account))
+
+      const dbAccount = await options.db.account(
+        provider.id,
+        providerProfile.id
+      )
+
+      expect(dbAccount).toEqual(
+        expect.objectContaining({
+          ...account,
+          updatedAt: expect.any(Date),
+          createdAt: expect.any(Date),
+        })
+      )
+    })
+
+    test("getUserByProviderAccountId", async () => {
+      // Basic OAuth provider config
+      const provider = Providers.GitHub({})
+      // Roughly what is returned from a succesful OAuth login flow
+      const providerProfile = {
+        id: randomBytes(32).toString("hex"),
+        refreshToken: randomBytes(32).toString("hex"),
+        accessToken: randomBytes(32).toString("hex"),
+        accessTokenExpires: null,
+      }
+
+      const account = {
+        userId: user.id,
+        providerId: provider.id,
+        providerType: provider.type,
+        providerAccountId: providerProfile.id,
+        refreshToken: providerProfile.refreshToken,
+        accessToken: providerProfile.accessToken,
+        accessTokenExpires: providerProfile.accessTokenExpires,
+      }
+
+      // @ts-expect-error
+      await adapter.linkAccount(...Object.values(account))
+
+      const adapterUser = await adapter.getUserByProviderAccountId(
+        provider.id,
+        providerProfile.id
+      )
+
+      const dbUser = await options.db.user(user.id)
+      expect(dbUser).toEqual(expect.objectContaining(adapterUser))
+    })
 
     // (Currently unimplemented in core, so we don't require it yet)
     test.skip("unlinkAccount", async () => {
