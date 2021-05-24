@@ -1,6 +1,6 @@
 <p align="center">
    <br/>
-    <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" />&nbsp;&nbsp;&nbsp;&nbsp;</a><img height="64px" src="./logo.png" />
+    <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" />&nbsp;&nbsp;&nbsp;&nbsp;</a><img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/canary/packages/typeorm-legacy/logo.png" />
    <h3 align="center"><b>TypeORM (Legacy) Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
