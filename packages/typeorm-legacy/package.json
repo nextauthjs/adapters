@@ -10,7 +10,8 @@
   "author": "Iain Collins",
   "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "index.d.ts"
   ],
   "license": "ISC",
   "keywords": [
@@ -25,31 +26,24 @@
   },
   "scripts": {
     "build": "babel src --out-dir dist",
-    "test": "yarn run db:start && yarn run test:db && yarn run db:stop",
-    "test:db": "yarn run test:db:mysql && yarn run test:db:postgres && yarn run test:db:mongodb && yarn run test:db:mssql",
-    "test:db:mysql": "./tests/mysql.sh",
-    "test:db:postgres": "./tests/postgres.sh",
-    "test:db:mongodb": "node tests/mongodb.js",
-    "test:db:mssql": "node tests/mssql.js",
-    "db:start": "docker-compose -f tests/docker/databases.yml up -d",
-    "db:stop": "docker-compose -f tests/docker/databases.yml down --remove",
+    "test": "yarn mysql && yarn postgres",
+    "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
+    "mysql": "./tests/mysql/test.sh",
+    "postgres": "./tests/postgresql/test.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "crypto-js": "^4.0.0",
+    "@babel/runtime": "^7.14.0",
     "require_optional": "^1.0.1",
     "typeorm": "^0.2.30"
   },
   "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/preset-env": "^7.13.15",
     "assert": "^2.0.0",
     "jest": "^26.6.3",
     "mongodb": "^3.6.3",
     "mssql": "^6.3.1",
     "mysql": "^2.18.1",
-    "next-auth": "^3.1.0",
     "pg": "^8.5.1",
     "typeorm-adapter": "^1.2.0"
   },

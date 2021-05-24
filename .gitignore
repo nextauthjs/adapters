@@ -4,3 +4,4 @@ dist
 dev.db
 .eslintcache
 .devcontainer
+coverage

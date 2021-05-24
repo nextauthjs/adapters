@@ -1,20 +1,22 @@
 <p align="center">
    <br/>
-   <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
+    <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" />&nbsp;&nbsp;&nbsp;&nbsp;</a><img height="64px" src="./logo.png" />
    <h3 align="center"><b>TypeORM (Legacy) Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/workflows/Build%20Test/badge.svg" alt="Build Test" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Canary CI Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/typeorm-legacy-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/github/v/release/nextauthjs/adapters?include_prereleases" alt="Github Release" />
+      <img src="https://img.shields.io/npm/v/@next-auth/typeorm-legacy-adapter" alt="@next-auth/typeorm-legacy-adapter Version" />
    </p>
 </p>
 
 ## Overview
 
 This is the TypeORM Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
+
+You can find more TypeORM information in the docs at [next-auth.js.org/adapters/typeorm/typeorm-overview](https://next-auth.js.org/adapters/typeorm/typeorm-overview).
 
 ## Getting Started
 
@@ -29,7 +31,7 @@ npm install next-auth @next-auth/typeorm-legacy-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import Adapter from "@next-auth/typeorm-legacy-adapter"
+import { TypeORMLegacyAdapter } from "@next-auth/typeorm-legacy-adapter"
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -41,7 +43,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapters: Adapter({
+  adapter: TypeORMLegacyAdapter({
     type: 'sqlite',  // or mysql, postgresql, mssql
     database: ':memory:',
     synchronize: true
@@ -66,19 +68,19 @@ With sqlite, you have the option of using a file on disk as the database, or usi
 
 For MySQL, simply pass a valid connection string to the `database` option, such as `mysql://nextauth:password@127.0.0.1:3306/nextauth?synchronise=true`, and do not forget to set the `type` value to `mysql`.
 
-Schema: [next-auth.js.org/schemas/mysql](https://next-auth.js.org/schemas/mysql)
+Schema: [mysql/schema.sql](https://github.com/nextauthjs/adapters/tree/canary/packages/typeorm-legacy/tests/mysql/schema.sql)
 
 ### PostgreSQL
 
 For PostgreSQL, you also only need to pass a valid connection string to the `database` option, such as `postgres://nextauth:password@127.0.0.1:5432/nextauth`, and do not forget to set the `type` value to `postgres`.
 
-Schema: [next-auth.js.org/schemas/postgres](https://next-auth.js.org/schemas/postgres)
+Schema: [postgresql/schema.sql](https://github.com/nextauthjs/adapters/tree/canary/packages/typeorm-legacy/tests/postgresql/schema.sql)
 
 ### MsSQL
 
 For MsSQL, pass a valid connection string to the `database` option, such as `mssql://nextauth:password@127.0.0.1:1433/nextauth`, and do not forget to set the `type` value to `mssql`.
 
-Schema: [next-auth.js.org/schemas/mssql](https://next-auth.js.org/schemas/mssql)
+Schema: [mssql/schema.sql](https://github.com/nextauthjs/adapters/tree/canary/packages/typeorm-legacy/tests/mssql/schema.sql)
 
 ## Contributing
 
