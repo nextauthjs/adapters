@@ -22,7 +22,7 @@
   },
   "scripts": {
     "setup": "yarn reset && yarn build",
-    "reset": "prisma migrate reset --preview-feature -f",
+    "reset": "prisma migrate reset --preview-feature -f && prisma migrate dev",
     "test": "yarn setup && jest",
     "build": "tsc"
   },
