@@ -27,7 +27,6 @@ jobs:
       adapters: ${{ steps.filter.outputs.changes }}
     steps:
       - uses: actions/checkout@v2
-      # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -40,18 +39,11 @@ jobs:
             firebase: packages/firebase/**
   test-adapters:
     runs-on: ubuntu-latest
-    # needs: changes
-    # if: needs.changes.outputs.adapters != '[]'
+    needs: changes
+    if: needs.changes.outputs.adapters != '[]'
     strategy:
       matrix:
-        # adapter: ${{ fromJSON(needs.changes.outputs.adapters) }}
-        adapter:
-          - typeorm-legacy
-          - prisma-legacy
-          - prisma
-          - fauna
-          - dynamodb
-          - firebase
+        adapter: ${{ fromJSON(needs.changes.outputs.adapters) }}
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
