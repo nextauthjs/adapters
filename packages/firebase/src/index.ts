@@ -1,7 +1,11 @@
-import * as admin from "firebase-admin"
+import type firebase from "firebase"
 import { createHash, randomBytes } from "crypto"
 import { Adapter } from "next-auth/adapters"
-import { querySnapshotToObject, docSnapshotToObject } from "./utils"
+import {
+  querySnapshotToObject,
+  docSnapshotToObject,
+  stripUndefined,
+} from "./utils"
 import { Profile, Session, User } from "next-auth"
 
 interface FirebaseVerificationRequest {
@@ -9,8 +13,6 @@ interface FirebaseVerificationRequest {
   identifier: string
   token: string
   expires: Date
-  createdAt: Date
-  updatedAt: Date
 }
 
 export type FirebaseSession = Session & {
@@ -20,11 +22,9 @@ export type FirebaseSession = Session & {
 
 // @ts-expect-error
 export const FirebaseAdapter: Adapter<
-  admin.firestore.Firestore,
+  firebase.firestore.Firestore,
   never,
-  User & {
-    id: string
-  },
+  User & { id: string },
   Profile,
   FirebaseSession
 > = (client) => {
@@ -42,12 +42,14 @@ export const FirebaseAdapter: Adapter<
       return {
         displayName: "FIREBASE",
         async createUser(profile) {
-          const userRef = await client.collection("users").add({
-            name: profile.name,
-            email: profile.email,
-            image: profile.image,
-            emailVerified: profile.emailVerified ?? null,
-          })
+          const userRef = await client.collection("users").add(
+            stripUndefined({
+              name: profile.name,
+              email: profile.email,
+              image: profile.image,
+              emailVerified: profile.emailVerified ?? null,
+            })
+          )
           const snapshot = await userRef.get()
           const user = docSnapshotToObject(snapshot)
           return user
@@ -94,12 +96,12 @@ export const FirebaseAdapter: Adapter<
         },
 
         async updateUser(user) {
-          const snapshot = await client
+          await client
             .collection("users")
             .doc(user.id)
-            .update(user)
+            .update(stripUndefined(user))
 
-          return { ...user, updatedAt: snapshot.writeTime.toDate() }
+          return user
         },
 
         async deleteUser(userId) {
@@ -115,17 +117,17 @@ export const FirebaseAdapter: Adapter<
           accessToken,
           accessTokenExpires
         ) {
-          const accountRef = await client.collection("accounts").add({
-            userId,
-            providerId,
-            providerType,
-            providerAccountId,
-            refreshToken,
-            accessToken,
-            accessTokenExpires,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          })
+          const accountRef = await client.collection("accounts").add(
+            stripUndefined({
+              userId,
+              providerId,
+              providerType,
+              providerAccountId,
+              refreshToken,
+              accessToken,
+              accessTokenExpires,
+            })
+          )
 
           const accountSnapshot = await accountRef.get()
           const account = docSnapshotToObject(accountSnapshot)
@@ -188,17 +190,14 @@ export const FirebaseAdapter: Adapter<
           }
 
           // Update the item in the database
-          const { writeTime } = await client
+          await client
             .collection("sessions")
             .doc(session.id)
             .update({
               expires: new Date(Date.now() + sessionMaxAge),
             })
 
-          return {
-            ...session,
-            updatedAt: writeTime.toDate(),
-          }
+          return session
         },
 
         async deleteSession(sessionToken) {
