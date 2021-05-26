@@ -40,8 +40,8 @@ jobs:
             firebase: packages/firebase/**
   test-adapters:
     runs-on: ubuntu-latest
-    # needs: changes
-    # if: needs.changes.outputs.adapters != '[]'
+    needs: changes
+    if: needs.changes.outputs.adapters != '[]'
     strategy:
       matrix:
         # adapter: ${{ fromJSON(needs.changes.outputs.adapters) }}
