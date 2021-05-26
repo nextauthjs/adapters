@@ -9,8 +9,6 @@ interface FirebaseVerificationRequest {
   identifier: string
   token: string
   expires: Date
-  createdAt: Date
-  updatedAt: Date
 }
 
 export type FirebaseSession = Session & {
@@ -118,8 +116,6 @@ export const FirebaseAdapter: Adapter<
             refreshToken,
             accessToken,
             accessTokenExpires,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           })
 
           const accountSnapshot = await accountRef.get()
