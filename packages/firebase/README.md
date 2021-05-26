@@ -38,11 +38,7 @@ import firebase from "firebase/app"
 import "firebase/firestore"
 
 const firestore = (
-  firebase.apps[0] ??
-  firebase
-    .initializeApp
-    /* your config */
-    ()
+  firebase.apps[0] ?? firebase.initializeApp(/* your config */)
 ).firestore()
 
 // For more information on each option (and a full list of options) go to
