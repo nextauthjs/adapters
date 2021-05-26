@@ -24,7 +24,7 @@
     "setup": "yarn reset && yarn build",
     "reset": "prisma migrate reset --preview-feature -f && prisma migrate dev",
     "test": "yarn setup && jest",
-    "build": "tsc"
+    "build": "yarn reset && tsc"
   },
   "files": [
     "README.md",

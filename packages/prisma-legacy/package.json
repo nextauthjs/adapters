@@ -26,7 +26,7 @@
     "setup": "yarn reset",
     "reset": "prisma migrate reset --preview-feature -f",
     "test": "yarn setup && jest",
-    "build": "babel src --out-dir dist"
+    "build": "yarn reset && babel src --out-dir dist"
   },
   "contributors": [
     "Balázs Orbán <info@balazsorban.com>"
