@@ -44,14 +44,7 @@ jobs:
     if: needs.changes.outputs.adapters != '[]'
     strategy:
       matrix:
-        # adapter: ${{ fromJSON(needs.changes.outputs.adapters) }}
-        adapter:
-          - typeorm-legacy
-          - prisma-legacy
-          - prisma
-          - fauna
-          - dynamodb
-          - firebase
+        adapter: ${{ fromJSON(needs.changes.outputs.adapters) }}
     defaults:
       run:
         working-directory: ./packages/${{ matrix.adapter }}
