@@ -1,7 +1,11 @@
 import type firebase from "firebase"
 import { createHash, randomBytes } from "crypto"
 import { Adapter } from "next-auth/adapters"
-import { querySnapshotToObject, docSnapshotToObject } from "./utils"
+import {
+  querySnapshotToObject,
+  docSnapshotToObject,
+  stripUndefined,
+} from "./utils"
 import { Profile, Session, User } from "next-auth"
 
 interface FirebaseVerificationRequest {
@@ -38,12 +42,14 @@ export const FirebaseAdapter: Adapter<
       return {
         displayName: "FIREBASE",
         async createUser(profile) {
-          const userRef = await client.collection("users").add({
-            name: profile.name,
-            email: profile.email,
-            image: profile.image,
-            emailVerified: profile.emailVerified ?? null,
-          })
+          const userRef = await client.collection("users").add(
+            stripUndefined({
+              name: profile.name,
+              email: profile.email,
+              image: profile.image,
+              emailVerified: profile.emailVerified ?? null,
+            })
+          )
           const snapshot = await userRef.get()
           const user = docSnapshotToObject(snapshot)
           return user
@@ -90,7 +96,10 @@ export const FirebaseAdapter: Adapter<
         },
 
         async updateUser(user) {
-          await client.collection("users").doc(user.id).update(user)
+          await client
+            .collection("users")
+            .doc(user.id)
+            .update(stripUndefined(user))
 
           return user
         },
@@ -108,15 +117,17 @@ export const FirebaseAdapter: Adapter<
           accessToken,
           accessTokenExpires
         ) {
-          const accountRef = await client.collection("accounts").add({
-            userId,
-            providerId,
-            providerType,
-            providerAccountId,
-            refreshToken,
-            accessToken,
-            accessTokenExpires,
-          })
+          const accountRef = await client.collection("accounts").add(
+            stripUndefined({
+              userId,
+              providerId,
+              providerType,
+              providerAccountId,
+              refreshToken,
+              accessToken,
+              accessTokenExpires,
+            })
+          )
 
           const accountSnapshot = await accountRef.get()
           const account = docSnapshotToObject(accountSnapshot)
