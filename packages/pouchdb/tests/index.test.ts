@@ -63,9 +63,17 @@ runBasicTests({
       const res: any = await pouchdb.get(id)
       return res.data
     },
-    async account(id) {
-      const res: any = await pouchdb.get(id)
-      return res.data
+    async account(providerId, providerAccountId) {
+      const res = await pouchdb.find({
+        use_index: "nextAuthAccountByProviderId",
+        selector: {
+          "data.providerId": { $eq: providerId },
+          "data.providerAccountId": { $eq: providerAccountId },
+        },
+        limit: 1,
+      })
+      const doc: any = res.docs[0]
+      return doc?.data ?? null
     },
     async verificationRequest(identifier, token) {
       const res = await pouchdb.find({
@@ -180,30 +188,6 @@ describe("Additional tests", () => {
 
   afterEach(async () => await disconnect())
 
-  test("getUserByProviderAccountId", async () => {
-    const userId = ["User", ulid()].join("_")
-    const accountId = [
-      "ACCOUNT",
-      mock.account.providerId,
-      mock.account.providerAccountId,
-    ].join("_")
-    await pouchdb.put({ _id: userId, data: { id: userId, ...mock.user } })
-    await pouchdb.put({
-      _id: accountId,
-      data: {
-        ...mock.account,
-        userId,
-      },
-    })
-
-    const user = await adapter.getUserByProviderAccountId(
-      mock.account.providerId,
-      mock.account.providerAccountId
-    )
-
-    expect(user).toEqual({ id: userId, ...mock.user })
-  })
-
   test("deleteUser", async () => {
     const id = ["USER", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
@@ -212,37 +196,6 @@ describe("Additional tests", () => {
 
     const res = await pouchdb.get(id).catch((e) => e.status)
     expect(res).toBe(404)
-  })
-
-  test("linkAccount", async () => {
-    const id = ["USER", ulid()].join("_")
-    const adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
-
-    await adapter.linkAccount(
-      id,
-      mock.account.providerId,
-      mock.account.providerType,
-      mock.account.providerAccountId,
-      mock.account.refreshToken,
-      mock.account.accessToken,
-      mock.account.accessTokenExpires
-    )
-
-    const res: any = await pouchdb.find({
-      use_index: "nextAuthAccountByProviderId",
-      selector: {
-        "data.providerId": { $eq: mock.account.providerId },
-        "data.providerAccountId": { $eq: mock.account.providerAccountId },
-      },
-      limit: 1,
-    })
-    expect(res.docs[0].data).toEqual({
-      ...mock.account,
-      userId: id,
-      accessTokenExpires: new Date(
-        mock.account.accessTokenExpires
-      ).toISOString(),
-    })
   })
 
   test("unlinkAccount", async () => {
