@@ -71,7 +71,8 @@ jobs:
           node-version: "12"
       - uses: bahmutov/npm-install@v1
       - name: Build
-        run: yarn build
+        # Only run build for packages that changed since the last commit
+        run: lerna run build --since HEAD~
       - name: Authenticate with Registry
         run: |
           yarn logout
@@ -82,7 +83,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish Canary
         if: github.event_name == 'push'
-        run: yarn lerna publish --canary --preid canary --dist-tag canary --yes --no-verify-access
+        run: lerna publish --canary --preid canary --dist-tag canary --yes --no-verify-access
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
