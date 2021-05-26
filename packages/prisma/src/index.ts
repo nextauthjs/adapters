@@ -91,7 +91,10 @@ export const PrismaAdapter: Adapter<
               providerAccountId,
               refreshToken,
               accessToken,
-              accessTokenExpires,
+              accessTokenExpires:
+                accessTokenExpires != null
+                  ? new Date(accessTokenExpires)
+                  : null,
             },
           })
         },
@@ -165,10 +168,11 @@ export const PrismaAdapter: Adapter<
 
         async getVerificationRequest(identifier, token) {
           const hashedToken = hashToken(token)
-          const verificationRequest =
-            await prisma.verificationRequest.findUnique({
+          const verificationRequest = await prisma.verificationRequest.findUnique(
+            {
               where: { identifier_token: { identifier, token: hashedToken } },
-            })
+            }
+          )
           if (verificationRequest && verificationRequest.expires < new Date()) {
             await prisma.verificationRequest.delete({
               where: { identifier_token: { identifier, token: hashedToken } },

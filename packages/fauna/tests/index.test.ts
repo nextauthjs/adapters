@@ -31,16 +31,7 @@ runBasicTests({
   adapter,
   db: {
     async user(id) {
-      const response = await returnNullIfError(
-        q.Get(q.Ref(q.Collection("users"), id))
-      )
-      // @ts-expect-error
-      const user = response.data
-      user.createdAt = new Date(user.createdAt.value)
-      user.updatedAt = new Date(user.updatedAt.value)
-      // @ts-expect-error
-      user.id = response.ref.id
-      return user
+      return await returnNullIfError(q.Get(q.Ref(q.Collection("users"), id)))
     },
     async session(sessionToken) {
       return await returnNullIfError(
@@ -58,27 +49,8 @@ runBasicTests({
         )
       )
     },
-    async account(providerId, providerAccountId) {
-      const response = await returnNullIfError(
-        q.Get(
-          q.Match(q.Index("account_by_provider_account_id"), [
-            providerId,
-            providerAccountId,
-          ])
-        )
-      )
-
-      if (!response) {
-        return null
-      }
-
-      // @ts-expect-error
-      const account = response.data
-      account.createdAt = new Date(account.createdAt.value)
-      account.updatedAt = new Date(account.updatedAt.value)
-      account.accessTokenExpires = null
-
-      return account
+    async account(id) {
+      return await returnNullIfError(q.Get(q.Ref(q.Collection("accounts"), id)))
     },
     async verificationRequest(identifier, hashedToken) {
       const response: any = await returnNullIfError(

@@ -1,7 +1,6 @@
 import { runBasicTests } from "../../../basic-tests"
 import { FirebaseAdapter } from "../src"
 import firebase from "firebase-admin"
-import { docSnapshotToObject, querySnapshotToObject } from "../src/utils"
 
 const fb = firebase.initializeApp({ projectId: "next-auth-test" })
 const client = fb.firestore()
@@ -18,7 +17,18 @@ runBasicTests({
         .where("sessionToken", "==", sessionToken)
         .limit(1)
         .get()
-      return querySnapshotToObject(snapshot)
+      if (snapshot.empty) {
+        return null
+      }
+      const doc = snapshot.docs[0]
+      const data = doc.data()
+      return {
+        ...data,
+        id: doc.id,
+        expires: data.expires.toDate(),
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+      }
     },
     async expireSession(sessionToken, expires) {
       const snapshot = await client
@@ -38,18 +48,10 @@ runBasicTests({
         .update({ expires })
     },
     async user(id) {
-      const snapshot = await client.collection("users").doc(id).get()
-      return docSnapshotToObject(snapshot)
+      const { data } = await client.collection("users").doc(id).get()
+      return { ...data(), id }
     },
-    async account(providerId, providerAccountId) {
-      const snapshot = await client
-        .collection("accounts")
-        .where("providerId", "==", providerId)
-        .where("providerAccountId", "==", providerAccountId)
-        .limit(1)
-        .get()
-      return querySnapshotToObject(snapshot)
-    },
+    account(id) {},
     async verificationRequest(identifier, token) {
       const snapshot = await client
         .collection("verificationRequests")
@@ -57,7 +59,15 @@ runBasicTests({
         .where("token", "==", token)
         .limit(1)
         .get()
-      return querySnapshotToObject(snapshot)
+      if (snapshot.empty) {
+        return null
+      }
+      const verificationRequest = snapshot.docs[0]
+      return {
+        id: verificationRequest.id,
+        ...verificationRequest.data(),
+        expires: verificationRequest.data().expires.toDate(),
+      }
     },
   },
 })

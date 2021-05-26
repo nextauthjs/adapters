@@ -25,12 +25,8 @@ runBasicTests({
     user(id) {
       return prisma.user.findUnique({ where: { id } })
     },
-    account(providerId, providerAccountId) {
-      return prisma.account.findUnique({
-        where: {
-          providerId_providerAccountId: { providerId, providerAccountId },
-        },
-      })
+    account(id) {
+      return prisma.account.findUnique({ where: { id } })
     },
     verificationRequest(identifier, token) {
       return prisma.verificationRequest.findUnique({

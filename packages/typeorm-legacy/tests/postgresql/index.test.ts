@@ -9,10 +9,16 @@ import { TypeORMLegacyAdapter, Models as models } from "../../src"
 import adapterTransform from "../../src/lib/transform"
 // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore
-import { loadConfig, parseConnectionString } from "../../src/lib/config"
+import { loadConfig } from "../../src/lib/config"
 
-const connectionString = "postgres://nextauth:password@localhost:5432/nextauth"
-const config: ConnectionOptions = parseConnectionString(connectionString)
+const config: ConnectionOptions = {
+  type: "postgres",
+  host: "localhost",
+  port: 5432,
+  username: "nextauth",
+  password: "password",
+  database: "nextauth",
+}
 
 const adapter = new TypeORMLegacyAdapter(config)
 
@@ -59,12 +65,8 @@ runBasicTests({
         { expires }
       )
     },
-    async account(providerId, providerAccountId) {
-      const c = await connection()
-      return await c.manager.findOne(models.Account.model, {
-        providerId,
-        providerAccountId,
-      })
+    async account(id) {
+      // TODO:
     },
     async verificationRequest(identifier, hashedToken) {
       const c = await connection()

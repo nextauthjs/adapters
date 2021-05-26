@@ -82,7 +82,7 @@ export function Adapter(config, options = {}) {
           return user.data
         },
         async getUserByProviderAccountId(providerId, providerAccountId) {
-          const response = await faunaClient.query(
+          const user = await faunaClient.query(
             q.Let(
               {
                 ref: q.Match(q.Index(indexes.Account), [
@@ -103,16 +103,13 @@ export function Adapter(config, options = {}) {
             )
           )
 
-          if (!response) {
+          if (user == null) {
             return null
           }
 
-          const user = response.data
-          user.id = response.ref.id
-          user.createdAt = new Date(user.createdAt.value)
-          user.updatedAt = new Date(user.updatedAt.value)
+          user.data.id = user.ref.id
 
-          return user
+          return user.data
         },
         async updateUser(user) {
           const newUser = await faunaClient.query(

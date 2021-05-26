@@ -42,13 +42,13 @@ export const FirebaseAdapter: Adapter<
       return {
         displayName: "FIREBASE",
         async createUser(profile) {
-          const userRef = await client.collection("users").add({
+          const { id } = await client.collection("users").add({
             name: profile.name,
             email: profile.email,
             image: profile.image,
             emailVerified: profile.emailVerified ?? null,
           })
-          const snapshot = await userRef.get()
+          const snapshot = await client.collection("users").doc(id).get()
           const user = docSnapshotToObject(snapshot)
           return user
         },
@@ -123,13 +123,10 @@ export const FirebaseAdapter: Adapter<
             refreshToken,
             accessToken,
             accessTokenExpires,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           })
 
           const accountSnapshot = await accountRef.get()
-          const account = docSnapshotToObject(accountSnapshot)
-          return account
+          return accountSnapshot.data()
         },
 
         async unlinkAccount(userId, providerId, providerAccountId) {
@@ -147,13 +144,13 @@ export const FirebaseAdapter: Adapter<
         },
 
         async createSession(user) {
-          const sessionRef = await client.collection("sessions").add({
+          const { id } = await client.collection("sessions").add({
             userId: user.id,
             expires: new Date(Date.now() + sessionMaxAge),
             sessionToken: randomBytes(32).toString("hex"),
             accessToken: randomBytes(32).toString("hex"),
           })
-          const snapshot = await sessionRef.get()
+          const snapshot = await client.collection("sessions").doc(id).get()
           const session = docSnapshotToObject(snapshot)
           return session
         },
@@ -215,13 +212,11 @@ export const FirebaseAdapter: Adapter<
         },
 
         async createVerificationRequest(identifier, url, token, _, provider) {
-          const verificationRequestRef = await client
-            .collection("verificationRequests")
-            .add({
-              identifier,
-              token: hashToken(token),
-              expires: new Date(Date.now() + provider.maxAge * 1000),
-            })
+          const { id } = await client.collection("verificationRequests").add({
+            identifier,
+            token: hashToken(token),
+            expires: new Date(Date.now() + provider.maxAge * 1000),
+          })
 
           // With the verificationCallback on a provider, you can send an email, or queue
           // an email to be sent, or perform some other action (e.g. send a text message)
@@ -233,7 +228,10 @@ export const FirebaseAdapter: Adapter<
             provider,
           })
 
-          const snapshot = await verificationRequestRef.get()
+          const snapshot = await client
+            .collection("verificationRequests")
+            .doc(id)
+            .get()
           return docSnapshotToObject<FirebaseVerificationRequest>(snapshot)
         },
 

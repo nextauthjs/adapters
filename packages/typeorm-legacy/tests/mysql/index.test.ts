@@ -65,12 +65,8 @@ runBasicTests({
         { expires }
       )
     },
-    async account(providerId, providerAccountId) {
-      const c = await connection()
-      return await c.manager.findOne(models.Account.model, {
-        providerId,
-        providerAccountId,
-      })
+    async account(id) {
+      // TODO:
     },
     async verificationRequest(identifier, hashedToken) {
       const c = await connection()
