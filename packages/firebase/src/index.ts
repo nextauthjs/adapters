@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin"
+import type firebase from "firebase"
 import { createHash, randomBytes } from "crypto"
 import { Adapter } from "next-auth/adapters"
 import { querySnapshotToObject, docSnapshotToObject } from "./utils"
@@ -20,11 +20,9 @@ export type FirebaseSession = Session & {
 
 // @ts-expect-error
 export const FirebaseAdapter: Adapter<
-  admin.firestore.Firestore,
+  firebase.firestore.Firestore,
   never,
-  User & {
-    id: string
-  },
+  User & { id: string },
   Profile,
   FirebaseSession
 > = (client) => {
@@ -94,12 +92,9 @@ export const FirebaseAdapter: Adapter<
         },
 
         async updateUser(user) {
-          const snapshot = await client
-            .collection("users")
-            .doc(user.id)
-            .update(user)
+          await client.collection("users").doc(user.id).update(user)
 
-          return { ...user, updatedAt: snapshot.writeTime.toDate() }
+          return user
         },
 
         async deleteUser(userId) {
@@ -188,17 +183,14 @@ export const FirebaseAdapter: Adapter<
           }
 
           // Update the item in the database
-          const { writeTime } = await client
+          await client
             .collection("sessions")
             .doc(session.id)
             .update({
               expires: new Date(Date.now() + sessionMaxAge),
             })
 
-          return {
-            ...session,
-            updatedAt: writeTime.toDate(),
-          }
+          return session
         },
 
         async deleteSession(sessionToken) {

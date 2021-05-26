@@ -1,9 +1,11 @@
+import type firebase from "firebase"
+
 /**
  * Takes in a snapshot and returns all of its `data()`,
  * as well as `id` and `createdAt` and `updatedAt` `Date`
  */
 export function docSnapshotToObject<T>(
-  snapshot: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>
+  snapshot: firebase.firestore.DocumentSnapshot<firebase.firestore.DocumentData>
 ): T | null {
   if (!snapshot.exists) {
     return null
@@ -12,18 +14,11 @@ export function docSnapshotToObject<T>(
   if (data.expires) {
     data.expires = data.expires.toDate()
   }
-  return {
-    id: snapshot.id,
-    ...data,
-    // @ts-expect-error
-    createdAt: snapshot.createTime.toDate(),
-    // @ts-expect-error
-    updatedAt: snapshot.updateTime.toDate(),
-  }
+  return { id: snapshot.id, ...data }
 }
 
 export function querySnapshotToObject<T>(
-  snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>
+  snapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>
 ): T | null {
   if (snapshot.empty) {
     return null
@@ -34,10 +29,5 @@ export function querySnapshotToObject<T>(
   if (data.expires) {
     data.expires = data.expires.toDate()
   }
-  return {
-    id: doc.id,
-    ...data,
-    createdAt: doc.createTime.toDate(),
-    updatedAt: doc.updateTime.toDate(),
-  } as any
+  return { id: doc.id, ...data } as any
 }
