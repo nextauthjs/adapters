@@ -1,17 +1,101 @@
+import type { AppOptions } from "next-auth/internals"
+import { createHash } from "crypto"
 import PouchDB from "pouchdb"
 import memoryAdapter from "pouchdb-adapter-memory"
 import find from "pouchdb-find"
 import { ulid } from "ulid"
-import { PouchDBAdapter } from "../src"
-import type { AppOptions } from "next-auth/internals"
 import Providers from "next-auth/providers"
-import { createHash } from "crypto"
+import { PouchDBAdapter } from "../src"
+import { runBasicTests } from "../../../basic-tests"
 
 // pouchdb setup
 PouchDB.plugin(memoryAdapter).plugin(find)
 let pouchdb: PouchDB.Database
+let pouchdbIsDestroyed: boolean = false
+let pouchdbAdapter: any
+let adapter: any
+PouchDB.on("created", function () {
+  pouchdbIsDestroyed = false
+})
+PouchDB.on("destroyed", function () {
+  pouchdbIsDestroyed = true
+})
+const disconnect = async () => {
+  if (!pouchdbIsDestroyed) await pouchdb.destroy()
+}
 
-// jest setup
+// Basic tests
+pouchdb = new PouchDB(ulid(), { adapter: "memory" })
+pouchdbAdapter = PouchDBAdapter(pouchdb)
+
+runBasicTests({
+  adapter: pouchdbAdapter,
+  db: {
+    disconnect,
+    async session(sessionToken) {
+      const res = await pouchdb.find({
+        use_index: "nextAuthSessionByToken",
+        selector: {
+          "data.sessionToken": { $eq: sessionToken },
+        },
+        limit: 1,
+      })
+      const doc: any = res.docs[0]
+      return doc?.data ?? null
+    },
+    async expireSession(sessionToken, expires) {
+      const res = await pouchdb.find({
+        use_index: "nextAuthSessionByToken",
+        selector: {
+          "data.sessionToken": { $eq: sessionToken },
+        },
+        limit: 1,
+      })
+      const doc: any = res.docs[0]
+      doc.data.expires = expires.toISOString()
+      await pouchdb.put({
+        ...doc,
+      })
+      doc.data.expires = expires
+      return doc?.data ?? null
+    },
+    async user(id) {
+      const res: any = await pouchdb.get(id)
+      return res.data
+    },
+    async account(id) {
+      const res: any = await pouchdb.get(id)
+      return res.data
+    },
+    async verificationRequest(identifier, token) {
+      const res = await pouchdb.find({
+        use_index: "nextAuthVerificationRequestByToken",
+        selector: {
+          "data.identifier": { $eq: identifier },
+          "data.token": { $eq: token },
+        },
+        limit: 1,
+      })
+      const doc: any = res.docs[0]
+      const verificationRequest = doc?.data ?? null
+      if (verificationRequest?.expires) {
+        return {
+          ...verificationRequest,
+          expires: new Date(verificationRequest.expires),
+        }
+      }
+      return null
+    },
+  },
+  mock: {
+    user: {
+      emailVerified: new Date("2017-01-01"),
+    },
+  },
+})
+
+// Custom tests
+
 // Prevent "ReferenceError: You are trying to import a file after the Jest environment has been torn down" https://stackoverflow.com/questions/50793885/referenceerror-you-are-trying-to-import-a-file-after-the-jest-environment-has#50793993
 jest.useFakeTimers()
 
@@ -21,11 +105,8 @@ const emailProvider = {
   ...Providers.Email({
     sendVerificationRequest: sendVerificationRequestMock,
   }),
-} as any
+}
 
-// nextauth-pouchdb setup
-let pouchdbAdapter: any
-let adapter: any
 const appOptions: AppOptions = {
   action: "signin",
   basePath: "",
@@ -44,11 +125,14 @@ const appOptions: AppOptions = {
   pages: {},
   providers: [],
   secret: "",
-  session: {},
+  session: {
+    jwt: false,
+    maxAge: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24,
+  },
   adapter: pouchdbAdapter,
 }
 
-// data for testing
 const mock = {
   user: {
     email: "EMAIL",
@@ -74,7 +158,7 @@ const mock = {
     expires: new Date(Date.now() + 10000).toISOString(),
   },
   verificationRequest: {
-    identifier: "any",
+    identifier: "IDENTIFIER",
     url: "URL",
     token: createHash("sha256").update(`${"TOKEN"}${"SECRET"}`).digest("hex"),
     baseUrl: appOptions.baseUrl,
@@ -83,51 +167,18 @@ const mock = {
   TOKEN: "TOKEN",
   SECRET: "SECRET",
 }
-
-describe("adapter functions", () => {
+describe("Additional tests", () => {
   beforeEach(async () => {
     try {
       pouchdb = new PouchDB(ulid(), { adapter: "memory" })
-      pouchdbAdapter = PouchDBAdapter({ pouchdb })
+      pouchdbAdapter = PouchDBAdapter(pouchdb)
       adapter = await pouchdbAdapter.getAdapter({ ...appOptions })
     } catch (error) {
       console.log(error)
     }
   })
 
-  afterEach(async () => {
-    try {
-      // destroy test database
-      await pouchdb.destroy()
-    } catch (error) {
-      console.log(error)
-    }
-  })
-
-  test("createUser", async () => {
-    const res = await adapter.createUser(mock.user)
-
-    expect(res.id).not.toBeUndefined()
-    expect(res).toEqual(expect.objectContaining(mock.user))
-  })
-
-  test("getUser", async () => {
-    const id = ["USER", ulid()].join("_")
-    await pouchdb.put({ _id: id, data: { id, ...mock.user } })
-
-    const res = await adapter.getUser(id)
-
-    expect(res).toEqual({ id, ...mock.user })
-  })
-
-  test("getUserByEmail", async () => {
-    const id = ["USER", ulid()].join("_")
-    await pouchdb.put({ _id: id, data: { id, ...mock.user } })
-
-    const res = await adapter.getUserByEmail(mock.user.email)
-
-    expect(res).toEqual({ id, ...mock.user })
-  })
+  afterEach(async () => await disconnect())
 
   test("getUserByProviderAccountId", async () => {
     const userId = ["User", ulid()].join("_")
@@ -151,16 +202,6 @@ describe("adapter functions", () => {
     )
 
     expect(user).toEqual({ id: userId, ...mock.user })
-  })
-
-  test("updateUser", async () => {
-    const id = ["USER", ulid()].join("_")
-    await pouchdb.put({ _id: id, data: { id, ...mock.user } })
-
-    const updated = await adapter.updateUser({ id, ...mock.updatedUser })
-
-    const res: any = await pouchdb.get(id)
-    expect(updated).toEqual(res.data)
   })
 
   test("deleteUser", async () => {
@@ -228,144 +269,6 @@ describe("adapter functions", () => {
       selector: {
         "data.providerId": { $eq: mock.account.providerId },
         "data.providerAccountId": { $eq: mock.account.providerAccountId },
-      },
-      limit: 1,
-    })
-    expect(res.docs).toHaveLength(0)
-  })
-
-  test("createSession", async () => {
-    const id = ["USER", ulid()].join("_")
-    const res = await adapter.createSession({ id, ...mock.user })
-
-    expect(res).toEqual(expect.objectContaining({ userId: id }))
-    expect(res).toHaveProperty("expires")
-    expect(res).toHaveProperty("sessionToken")
-    expect(res).toHaveProperty("accessToken")
-  })
-
-  test("getSession", async () => {
-    const userId = ["USER", ulid()].join("_")
-    const sessionId = ["SESSION", ulid()].join("_")
-    const data = {
-      ...mock.session,
-      userId,
-    }
-    await pouchdb.put({ _id: sessionId, data })
-
-    const session = await adapter.getSession(data.sessionToken)
-
-    expect(session).toEqual(data)
-  })
-
-  test("updateSession", async () => {
-    const userId = ["USER", ulid()].join("_")
-    const sessionId = ["SESSION", ulid()].join("_")
-    const data = {
-      ...mock.session,
-      userId,
-    }
-    await pouchdb.put({ _id: sessionId, data })
-
-    const expires = new Date(2070, 1)
-    const session = await adapter.updateSession(
-      {
-        ...data,
-        userId: "userId",
-        expires,
-      },
-      true
-    )
-
-    // Using default maxAge, which is 30 days
-    const thirtyDaysFromNow = new Date()
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
-    expect(
-      Math.abs(
-        new Date(session.expires).getTime() - thirtyDaysFromNow.getTime()
-      )
-    ).toBeLessThan(1000)
-  })
-
-  test("deleteSession", async () => {
-    const userId = ["USER", ulid()].join("_")
-    const sessionId = ["SESSION", ulid()].join("_")
-    const data = {
-      ...mock.session,
-      userId,
-    }
-    await pouchdb.put({ _id: sessionId, data })
-
-    await adapter.deleteSession(data.sessionToken)
-
-    // Using default maxAge, which is 30 days
-    const res: any = await pouchdb.find({
-      use_index: "nextAuthSessionByToken",
-      selector: {
-        "data.sessionToken": { $eq: data.sessionToken },
-      },
-      limit: 1,
-    })
-    expect(res.docs).toHaveLength(0)
-  })
-
-  test("createVerificationRequest", async () => {
-    await adapter.createVerificationRequest(
-      mock.verificationRequest.identifier,
-      mock.verificationRequest.url,
-      mock.TOKEN,
-      mock.SECRET,
-      emailProvider
-    )
-
-    const res: any = await pouchdb.find({
-      use_index: "nextAuthVerificationRequestByToken",
-      selector: {
-        "data.identifier": { $eq: mock.verificationRequest.identifier },
-      },
-      limit: 1,
-    })
-
-    expect(res.docs?.[0].data.identifier).toEqual(
-      mock.verificationRequest.identifier
-    )
-    expect(sendVerificationRequestMock).toBeCalledTimes(1)
-  })
-
-  test("getVerificationRequest", async () => {
-    const verificationRequestId = ["VERIFICATION-REQUEST", ulid()].join("_")
-    await pouchdb.put({
-      _id: verificationRequestId,
-      data: { ...mock.verificationRequest },
-    })
-
-    const result = await adapter.getVerificationRequest(
-      mock.verificationRequest.identifier,
-      mock.TOKEN,
-      mock.SECRET
-    )
-
-    expect(result?.token).toEqual(mock.verificationRequest.token)
-  })
-
-  test("deleteVerificationRequest", async () => {
-    const verificationRequestId = ["VERIFICATION-REQUEST", ulid()].join("_")
-    await pouchdb.put({
-      _id: verificationRequestId,
-      data: { ...mock.verificationRequest },
-    })
-
-    await adapter.deleteVerificationRequest(
-      mock.verificationRequest.identifier,
-      mock.TOKEN,
-      mock.SECRET,
-      emailProvider
-    )
-    const res: any = await pouchdb.find({
-      use_index: "nextAuthVerificationRequestByToken",
-      selector: {
-        "data.identifier": { $eq: mock.verificationRequest.identifier },
-        "data.token": { $eq: mock.verificationRequest.token },
       },
       limit: 1,
     })

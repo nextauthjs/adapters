@@ -1,78 +1,49 @@
 import type { Adapter } from "next-auth/adapters"
 import { createHash, randomBytes } from "crypto"
-import { User, Account, Profile, Session } from "next-auth"
+import { Profile } from "next-auth"
 import { ulid } from "ulid"
 
-interface VerificationRequest extends Object {
+type PouchdbDocument<T> = PouchDB.Core.ExistingDocument<{ data: T }>
+type PouchdbFindResponse = PouchDB.Find.FindResponse<any>
+
+interface PouchdbUser {
   id: string
-  identifier: string
-  token: string
+  name?: string
+  email?: string
+  emailVerified?: Date | string
+  image?: string
+}
+
+interface PouchdbSession {
+  userId: string
   expires: Date
+  sessionToken: string
+  accessToken: string
 }
 
-interface UserDoc extends PouchDB.Core.Document<any> {
-  data?: User
-}
-
-interface AccountDoc extends PouchDB.Core.Document<any> {
-  data?: Account & { userId?: string }
-}
-
-interface SessionDoc extends PouchDB.Core.Document<any> {
-  data?: Session
-}
-
-interface VerificationRequestDoc extends PouchDB.Core.Document<any> {
-  data?: VerificationRequest
-}
-
-function verificationRequestToken({
-  token,
-  secret,
-}: {
-  token: string
-  secret: string
-}) {
-  // TODO: Use bcrypt or a more secure method
-  return createHash("sha256").update(`${token}${secret}`).digest("hex")
+interface PouchdbAccount {
+  id: string
+  userId: string
+  providerType: string
+  providerId: string
+  providerAccountId: string
+  refreshToken: string | null
+  accessToken: string | null
+  accessTokenExpires: Date | null
 }
 
 export const PouchDBAdapter: Adapter<
-  { pouchdb: PouchDB.Database },
+  PouchDB.Database,
   never,
-  User,
+  PouchdbUser,
   Profile & { emailVerified?: Date },
-  Session
-> = ({ pouchdb }) => {
+  PouchdbSession
+> = (pouchdb) => {
   return {
-    async getAdapter({ logger, session, ...appOptions }) {
-      function debug(debugCode: string, ...args: unknown[]) {
-        logger.debug(`POUCHDB_${debugCode}`, ...args)
-      }
-
-      if (!session.maxAge) {
-        debug(
-          "GET_ADAPTER",
-          "Session expiry not configured (defaulting to 30 days)"
-        )
-      }
-      if (!session.updateAge) {
-        debug(
-          "GET_ADAPTER",
-          "Session update age not configured (defaulting to 1 day)"
-        )
-      }
-      const {
-        maxAge = 30 * 24 * 60 * 60, // 30 days
-        updateAge = 24 * 60 * 60, // 1 day
-      } = session
-      const sessionMaxAgeMs = maxAge * 1000
-      const sessionUpdateAgeMs = updateAge * 1000
-
-      // create indexes if they don't exist
+    async getAdapter({ session, secret, ...appOptions }) {
+      // create PoucDB indexes if they don't exist
       const res = await pouchdb.getIndexes()
       const indexes = res.indexes.map((index) => index.name, [])
-      // nextAuthUserByEmail
       if (!indexes.includes("nextAuthUserByEmail")) {
         await pouchdb.createIndex({
           index: {
@@ -82,7 +53,6 @@ export const PouchDBAdapter: Adapter<
           },
         })
       }
-      // nextAuthAccountByProviderId
       if (!indexes.includes("nextAuthAccountByProviderId")) {
         await pouchdb.createIndex({
           index: {
@@ -92,7 +62,6 @@ export const PouchDBAdapter: Adapter<
           },
         })
       }
-      // nextAuthSessionByToken
       if (!indexes.includes("nextAuthSessionByToken")) {
         await pouchdb.createIndex({
           index: {
@@ -102,7 +71,6 @@ export const PouchDBAdapter: Adapter<
           },
         })
       }
-      // nextAuthVerificationRequestByToken
       if (!indexes.includes("nextAuthVerificationRequestByToken")) {
         await pouchdb.createIndex({
           index: {
@@ -113,43 +81,59 @@ export const PouchDBAdapter: Adapter<
         })
       }
 
+      const sessionMaxAge = session.maxAge * 1000 // default is 30 days
+      const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
+
+      const hashToken = (token: string) =>
+        createHash("sha256").update(`${token}${secret}`).digest("hex")
+
       return {
+        displayName: "POUCHDB",
+
         async createUser(profile) {
           const data = {
             id: ["USER", ulid()].join("_"),
             name: profile.name,
             email: profile.email,
             image: profile.image,
-            emailVerified: profile.emailVerified
-              ? profile.emailVerified.toISOString()
-              : null,
+            emailVerified: profile.emailVerified?.toISOString() ?? null,
           }
 
           await pouchdb.put({
             _id: data.id,
             data,
           })
-          return data
+          return { ...data, emailVerified: profile.emailVerified }
         },
 
         async getUser(id) {
-          const res: PouchDB.Core.Document<UserDoc> = await pouchdb.get(id)
+          const res: PouchdbDocument<PouchdbUser> = await pouchdb.get(id)
+          if (typeof res.data?.emailVerified === "string") {
+            res.data.emailVerified = new Date(res.data.emailVerified)
+          }
+
           return res?.data ?? null
         },
 
         async getUserByEmail(email) {
           if (!email) return null
-          const res = await pouchdb.find({
+          const res: PouchdbFindResponse = await pouchdb.find({
             use_index: "nextAuthUserByEmail",
             selector: { "data.email": { $eq: email } },
             limit: 1,
           })
-          const user: UserDoc = res.docs[0]
-          return user?.data ?? null
+          const userDoc: PouchdbDocument<PouchdbUser> = res.docs[0]
+          if (userDoc) {
+            const user = userDoc.data
+            if (typeof user.emailVerified === "string")
+              user.emailVerified = new Date(user.emailVerified)
+            return user
+          }
+          return null
         },
 
         async getUserByProviderAccountId(providerId, providerAccountId) {
-          const res = await pouchdb.find({
+          const res: PouchdbFindResponse = await pouchdb.find({
             use_index: "nextAuthAccountByProviderId",
             selector: {
               "data.providerId": { $eq: providerId },
@@ -157,25 +141,28 @@ export const PouchDBAdapter: Adapter<
             },
             limit: 1,
           })
-          const accountDoc: AccountDoc = res.docs[0]
-          const userDoc: PouchDB.Core.Document<UserDoc> = await pouchdb.get(
-            accountDoc.data?.userId ?? ""
+          const accountDoc: PouchdbDocument<PouchdbAccount> = res.docs[0]
+          const userDoc: PouchdbDocument<PouchdbUser> = await pouchdb.get(
+            accountDoc.data.userId
           )
-          return userDoc?.data ?? null
+          return userDoc.data || null
         },
 
-        async updateUser(user: User & { id: string }) {
-          const doc: PouchDB.Core.Document<UserDoc> = await pouchdb.get(user.id)
+        async updateUser(user: PouchdbUser & { id: string }) {
+          const update = { ...user }
+          const doc: PouchdbDocument<PouchdbUser> = await pouchdb.get(user.id)
+          if (update.emailVerified instanceof Date)
+            update.emailVerified.toISOString()
           doc.data = {
             ...doc.data,
-            ...user,
+            ...update,
           }
           await pouchdb.put(doc)
           return doc.data
         },
 
         async deleteUser(id) {
-          const doc: PouchDB.Core.Document<UserDoc> = await pouchdb.get(id)
+          const doc: PouchdbDocument<PouchdbUser> = await pouchdb.get(id)
           await pouchdb.put({
             ...doc,
             _deleted: true,
@@ -223,57 +210,61 @@ export const PouchDBAdapter: Adapter<
           })
         },
 
-        async createSession(user) {
+        async createSession(user: PouchdbUser & { id: string }) {
           const data = {
             userId: user.id,
-            expires: new Date(Date.now() + sessionMaxAgeMs).toISOString(),
             sessionToken: randomBytes(32).toString("hex"),
             accessToken: randomBytes(32).toString("hex"),
+            expires: new Date(Date.now() + sessionMaxAge),
           }
           await pouchdb.put({
             _id: ["SESSION", ulid()].join("_"),
-            data,
+            data: { ...data, expires: data.expires.toISOString() },
           })
           return data
         },
 
         async getSession(sessionToken) {
-          const res = await pouchdb.find({
+          const res: PouchdbFindResponse = await pouchdb.find({
             use_index: "nextAuthSessionByToken",
             selector: {
               "data.sessionToken": { $eq: sessionToken },
             },
             limit: 1,
           })
-          const sessionDoc: SessionDoc = res.docs[0]
-          if (new Date(sessionDoc?.data?.expires ?? Infinity) < new Date()) {
-            await pouchdb.put({ ...sessionDoc, _deleted: true })
-            return null
+          const sessionDoc: PouchdbDocument<PouchdbSession> = res.docs[0]
+          if (sessionDoc) {
+            const session = sessionDoc.data
+            if (new Date(session?.expires ?? Infinity) < new Date()) {
+              await pouchdb.put({ ...sessionDoc, _deleted: true })
+              return null
+            }
+            return { ...session, expires: new Date(session?.expires ?? "") }
           }
-          return sessionDoc.data ?? null
+          return null
         },
 
         async updateSession(session, force) {
           if (
             !force &&
-            Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
+            Number(session.expires) - sessionMaxAge + sessionUpdateAge >
               Date.now()
           ) {
             return null
           }
-          const res = await pouchdb.find({
+          const res: PouchdbFindResponse = await pouchdb.find({
             use_index: "nextAuthSessionByToken",
             selector: {
               "data.sessionToken": { $eq: session.sessionToken },
             },
             limit: 1,
           })
-          const previousSessionDoc: SessionDoc = res.docs[0]
+          const previousSessionDoc = res.docs[0]
           const currentSessionDoc = {
             ...previousSessionDoc,
             data: {
               ...previousSessionDoc.data,
-              expires: new Date(Date.now() + sessionMaxAgeMs).toISOString(),
+              expires: new Date(Date.now() + sessionMaxAge).toISOString(),
             },
           }
           await pouchdb.put(currentSessionDoc)
@@ -288,21 +279,15 @@ export const PouchDBAdapter: Adapter<
             },
             limit: 1,
           })
-          const sessionDoc: SessionDoc = res.docs[0]
+          const sessionDoc = res.docs[0]
           await pouchdb.put({
             ...sessionDoc,
             _deleted: true,
           })
         },
 
-        async createVerificationRequest(
-          identifier,
-          url,
-          token,
-          secret,
-          provider
-        ) {
-          const hashedToken = verificationRequestToken({ token, secret })
+        async createVerificationRequest(identifier, url, token, _, provider) {
+          const hashedToken = hashToken(token)
           const data = {
             identifier,
             token: hashedToken,
@@ -310,7 +295,7 @@ export const PouchDBAdapter: Adapter<
           }
           await pouchdb.put({
             _id: ["VERIFICATION-REQUEST", ulid()].join("_"),
-            data,
+            data: { ...data, expires: data.expires.toISOString() },
           })
           await provider.sendVerificationRequest({
             identifier,
@@ -321,9 +306,9 @@ export const PouchDBAdapter: Adapter<
           })
         },
 
-        async getVerificationRequest(identifier, token, secret) {
-          const hashedToken = verificationRequestToken({ token, secret })
-          const res = await pouchdb.find({
+        async getVerificationRequest(identifier, token) {
+          const hashedToken = hashToken(token)
+          const res: PouchdbFindResponse = await pouchdb.find({
             use_index: "nextAuthVerificationRequestByToken",
             selector: {
               "data.identifier": { $eq: identifier },
@@ -331,22 +316,28 @@ export const PouchDBAdapter: Adapter<
             },
             limit: 1,
           })
-          const verificationRequestDoc: VerificationRequestDoc = res.docs[0]
-          if (
-            new Date(verificationRequestDoc?.data?.expires ?? Infinity) <
-            new Date()
-          ) {
-            await pouchdb.put({
-              ...verificationRequestDoc,
-              _deleted: true,
-            })
-            return null
+          const verificationRequestDoc = res.docs[0]
+          if (verificationRequestDoc) {
+            const verificationRequest = verificationRequestDoc.data
+            if (
+              new Date(verificationRequest?.expires ?? Infinity) < new Date()
+            ) {
+              await pouchdb.put({
+                ...verificationRequestDoc,
+                _deleted: true,
+              })
+              return null
+            }
+            return {
+              ...verificationRequest,
+              expires: new Date(verificationRequest?.expires ?? ""),
+            }
           }
-          return verificationRequestDoc.data ?? null
+          return null
         },
 
-        async deleteVerificationRequest(identifier, token, secret) {
-          const hashedToken = verificationRequestToken({ token, secret })
+        async deleteVerificationRequest(identifier, token) {
+          const hashedToken = hashToken(token)
           const res = await pouchdb.find({
             use_index: "nextAuthVerificationRequestByToken",
             selector: {
@@ -355,7 +346,7 @@ export const PouchDBAdapter: Adapter<
             },
             limit: 1,
           })
-          const verificationRequestDoc: VerificationRequestDoc = res.docs[0]
+          const verificationRequestDoc = res.docs[0]
           await pouchdb.put({
             ...verificationRequestDoc,
             _deleted: true,
