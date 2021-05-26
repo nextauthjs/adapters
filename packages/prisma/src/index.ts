@@ -91,10 +91,7 @@ export const PrismaAdapter: Adapter<
               providerAccountId,
               refreshToken,
               accessToken,
-              accessTokenExpires:
-                accessTokenExpires != null
-                  ? new Date(accessTokenExpires)
-                  : null,
+              accessTokenExpires,
             },
           })
         },
