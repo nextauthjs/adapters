@@ -16,7 +16,7 @@ interface PouchdbUser {
 
 interface PouchdbSession {
   userId: string
-  expires: Date
+  expires: Date | string
   sessionToken: string
   accessToken: string
 }
@@ -92,18 +92,15 @@ export const PouchDBAdapter: Adapter<
 
         async createUser(profile) {
           const data = {
+            ...profile,
             id: ["USER", ulid()].join("_"),
-            name: profile.name,
-            email: profile.email,
-            image: profile.image,
-            emailVerified: profile.emailVerified?.toISOString() ?? null,
           }
 
           await pouchdb.put({
             _id: data.id,
             data,
           })
-          return { ...data, emailVerified: profile.emailVerified }
+          return data
         },
 
         async getUser(id) {
@@ -116,14 +113,13 @@ export const PouchDBAdapter: Adapter<
         },
 
         async getUserByEmail(email) {
-          if (!email) return null
           const res: PouchdbFindResponse = await pouchdb.find({
             use_index: "nextAuthUserByEmail",
             selector: { "data.email": { $eq: email } },
             limit: 1,
           })
           const userDoc: PouchdbDocument<PouchdbUser> = res.docs[0]
-          if (userDoc) {
+          if (userDoc?.data) {
             const user = userDoc.data
             if (typeof user.emailVerified === "string")
               user.emailVerified = new Date(user.emailVerified)
@@ -142,17 +138,18 @@ export const PouchDBAdapter: Adapter<
             limit: 1,
           })
           const accountDoc: PouchdbDocument<PouchdbAccount> = res.docs[0]
-          const userDoc: PouchdbDocument<PouchdbUser> = await pouchdb.get(
-            accountDoc.data.userId
-          )
-          return userDoc.data || null
+          if (accountDoc?.data) {
+            const userDoc: PouchdbDocument<PouchdbUser> = await pouchdb.get(
+              accountDoc.data.userId
+            )
+            return userDoc?.data ?? null
+          }
+          return null
         },
 
         async updateUser(user: PouchdbUser & { id: string }) {
           const update = { ...user }
           const doc: PouchdbDocument<PouchdbUser> = await pouchdb.get(user.id)
-          if (update.emailVerified instanceof Date)
-            update.emailVerified.toISOString()
           doc.data = {
             ...doc.data,
             ...update,
@@ -219,7 +216,7 @@ export const PouchDBAdapter: Adapter<
           }
           await pouchdb.put({
             _id: ["SESSION", ulid()].join("_"),
-            data: { ...data, expires: data.expires.toISOString() },
+            data,
           })
           return data
         },
@@ -233,7 +230,7 @@ export const PouchDBAdapter: Adapter<
             limit: 1,
           })
           const sessionDoc: PouchdbDocument<PouchdbSession> = res.docs[0]
-          if (sessionDoc) {
+          if (sessionDoc.data) {
             const session = sessionDoc.data
             if (new Date(session?.expires ?? Infinity) < new Date()) {
               await pouchdb.put({ ...sessionDoc, _deleted: true })
@@ -259,16 +256,20 @@ export const PouchDBAdapter: Adapter<
             },
             limit: 1,
           })
-          const previousSessionDoc = res.docs[0]
-          const currentSessionDoc = {
-            ...previousSessionDoc,
-            data: {
-              ...previousSessionDoc.data,
-              expires: new Date(Date.now() + sessionMaxAge).toISOString(),
-            },
+          const previousSessionDoc: PouchdbDocument<PouchdbSession> =
+            res.docs[0]
+          if (previousSessionDoc?.data) {
+            const currentSessionDoc: PouchdbDocument<PouchdbSession> = {
+              ...previousSessionDoc,
+              data: {
+                ...previousSessionDoc.data,
+                expires: new Date(Date.now() + sessionMaxAge),
+              },
+            }
+            await pouchdb.put(currentSessionDoc)
+            return currentSessionDoc.data
           }
-          await pouchdb.put(currentSessionDoc)
-          return currentSessionDoc.data
+          return null
         },
 
         async deleteSession(sessionToken) {
@@ -295,7 +296,7 @@ export const PouchDBAdapter: Adapter<
           }
           await pouchdb.put({
             _id: ["VERIFICATION-REQUEST", ulid()].join("_"),
-            data: { ...data, expires: data.expires.toISOString() },
+            data,
           })
           await provider.sendVerificationRequest({
             identifier,
@@ -317,7 +318,7 @@ export const PouchDBAdapter: Adapter<
             limit: 1,
           })
           const verificationRequestDoc = res.docs[0]
-          if (verificationRequestDoc) {
+          if (verificationRequestDoc?.data) {
             const verificationRequest = verificationRequestDoc.data
             if (
               new Date(verificationRequest?.expires ?? Infinity) < new Date()
