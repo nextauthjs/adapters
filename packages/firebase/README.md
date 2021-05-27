@@ -8,8 +8,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/firebase-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/firebase-adapter" alt="@next-auth/firebase-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/firebase-adapter/canary" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/firebase-adapter/canary" alt="@next-auth/firebase-adapter Version" />
    </p>
 </p>
 
@@ -58,7 +58,28 @@ export default NextAuth({
 
 ## Options
 
-// TODO
+When initializing the firestore adapter, you must pass in the firebase config object with the details from your project. More details on how to obtain that config object can be found [here](https://support.google.com/firebase/answer/7015592).
+
+An example firebase config looks like this:
+
+```js
+const firebaseConfig = {
+  apiKey: "AIzaSyDOCAbC123dEf456GhI789jKl01-MnO",
+  authDomain: "myapp-project-123.firebaseapp.com",
+  databaseURL: "https://myapp-project-123.firebaseio.com",
+  projectId: "myapp-project-123",
+  storageBucket: "myapp-project-123.appspot.com",
+  messagingSenderId: "65211879809",
+  appId: "1:65211879909:web:3ae38ef1cdcb2e01fe5f0c",
+  measurementId: "G-8GSGZQ44ST",
+}
+```
+
+See [firebase.google.com/docs/web/setup](https://firebase.google.com/docs/web/setup) for more details.
+
+> **From Firebase - Caution**: We do not recommend manually modifying an app's Firebase config file or object. If you initialize an app with invalid or missing values for any of these required "Firebase options", then your end users may experience serious issues.
+>
+> For open source projects, we generally do not recommend including the app's Firebase config file or object in source control because, in most cases, your users should create their own Firebase projects and point their apps to their own Firebase resources (via their own Firebase config file or object).
 
 ## Contributing
 
