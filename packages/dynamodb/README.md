@@ -7,8 +7,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/dynamodb-adapter" alt="@next-auth/dynamodb-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter/canary" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/dynamodb-adapter/canary" alt="@next-auth/dynamodb-adapter Version" />
    </p>
 </p>
 
