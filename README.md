@@ -17,7 +17,7 @@ This repository is a lerna mono-repo which is home to multiple next-auth adapter
 
 ### Adapters
 
-Currently, there are the following adapters ready for use
+Currently, these are experimental adapters and we would appreciate feedback on them! The two adapters labelled "legacy" here are the adapters that ship with `next-auth` currently, but will also be 1) removed from the core package in the short-term and 2) replaced with their more up-to-date versions in the medium-term.
 
 | Adapter        | Version                                                                                                                                                                          | Docs                                                                           | NPM                                                                                   |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
