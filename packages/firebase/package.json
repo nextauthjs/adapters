@@ -32,11 +32,11 @@
     "test": "FIRESTORE_EMULATOR_HOST=localhost:8080 firebase emulators:exec --only firestore --project next-auth-test jest"
   },
   "peerDependencies": {
-    "firebase-admin": "^9.8.0",
+    "firebase": "^8.6.2",
     "next-auth": "latest"
   },
   "devDependencies": {
-    "firebase-admin": "^9.8.0",
+    "firebase": "^8.6.2",
     "firebase-tools": "^9.11.0"
   }
 }

@@ -5,3 +5,4 @@ dev.db
 .eslintcache
 .devcontainer
 coverage
+dev.db-journal 

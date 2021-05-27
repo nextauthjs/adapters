@@ -14,6 +14,9 @@ typeorm:
 firebase:
   - packages/firebase/**/*
 
+pouchdb:
+  - packages/pouchdb/**/*
+
 documentation:
   - ./**/*.md
 
