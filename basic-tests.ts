@@ -235,13 +235,7 @@ export function runBasicTests(options: {
         providerProfile.id
       )
 
-      expect(dbAccount).toEqual(
-        expect.objectContaining({
-          ...account,
-          updatedAt: expect.any(Date),
-          createdAt: expect.any(Date),
-        })
-      )
+      expect(dbAccount).toEqual(expect.objectContaining(account))
     })
 
     test("getUserByProviderAccountId", async () => {
