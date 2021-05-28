@@ -1,7 +1,11 @@
-import neo4j from "neo4j-driver"
-import { Neo4jAdapter } from "../src"
+// import neo4j from "neo4j-driver"
+// import { Neo4jAdapter } from "../src"
 
-import { runBasicTests } from "../../../basic-tests"
+// import { runBasicTests } from "../../../basic-tests"
+
+const neo4j = require("neo4j-driver")
+const { Neo4jAdapter } = require("../src")
+const { runBasicTests } = require("../../../basic-tests")
 
 const driver: typeof neo4j.Driver = neo4j.driver("bolt://localhost")
 const neo4jSession: typeof neo4j.Session = driver.session()

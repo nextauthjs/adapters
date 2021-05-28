@@ -3,7 +3,39 @@ import { createHash, randomBytes } from "crypto"
 import type { Profile } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 
-export const Neo4jAdapter: Adapter = (neo4jSession: typeof neo4j.Session) => {
+interface Neo4jUser {
+  id?: string // TODO: change me
+  name?: string
+  email?: string
+  emailVerified?: Date | null
+  image?: string
+}
+
+interface Neo4jSession {
+  userId: string
+  expires: Date | string
+  sessionToken: string
+  accessToken: string
+}
+
+interface Neo4jAccount {
+  id: string
+  userId: string
+  providerType: string
+  providerId: string
+  providerAccountId: string
+  refreshToken: string | null
+  accessToken: string | null
+  accessTokenExpires: Date | null
+}
+
+export const Neo4jAdapter: Adapter<
+  typeof neo4j.Session,
+  never,
+  Neo4jUser,
+  Profile & { emailVerified?: Date },
+  Neo4jSession
+> = (neo4jSession: typeof neo4j.Session) => {
   return {
     async getAdapter({ session, secret, ...appOptions }) {
       const sessionMaxAge = session.maxAge * 1000 // default is 30 days
@@ -40,16 +72,21 @@ export const Neo4jAdapter: Adapter = (neo4jSession: typeof neo4j.Session) => {
         },
 
         getUser(id) {
-          return neo4jSession.run(
+          // TODO: handle emailVerified date
+          const result = neo4jSession.run(
             `
             MATCH (u:User { id: $id })
-            RETURN u
+            RETURN u AS user
             `,
             { id }
           )
+          return {
+            id: "a",
+          }
         },
 
         getUserByEmail(email) {
+          // TODO: handle emailVerified date
           return neo4jSession.run(
             `
             MATCH (u:User { email: $email })
@@ -70,8 +107,8 @@ export const Neo4jAdapter: Adapter = (neo4jSession: typeof neo4j.Session) => {
           )
         },
 
-        updateUser(user) {
-          return neo4jSession.run(
+        updateUser(user: Neo4jUser & { id: string }) {
+          const result = neo4jSession.run(
             `
             MATCH (u:User { id: $id })
             SET 
@@ -79,7 +116,7 @@ export const Neo4jAdapter: Adapter = (neo4jSession: typeof neo4j.Session) => {
               u.email         = $email,
               u.image         = $image,
               u.emailVerified = datetime($emailVerified)
-            RETURN u
+            RETURN u AS user
             `,
             {
               id: user.id,
@@ -89,6 +126,9 @@ export const Neo4jAdapter: Adapter = (neo4jSession: typeof neo4j.Session) => {
               emailVerified: user.emailVerified?.toISOString() ?? null,
             }
           )
+          return {
+            id: "a",
+          }
         },
 
         async deleteUser(id) {
@@ -103,13 +143,13 @@ export const Neo4jAdapter: Adapter = (neo4jSession: typeof neo4j.Session) => {
         },
 
         async linkAccount(
-          userId,
-          providerId,
-          providerType,
-          providerAccountId,
-          refreshToken,
-          accessToken,
-          accessTokenExpires
+          userId: Neo4jAccount["userId"],
+          providerId: Neo4jAccount["providerId"],
+          providerType: Neo4jAccount["providerType"],
+          providerAccountId: Neo4jAccount["providerAccountId"],
+          refreshToken: Neo4jAccount["refreshToken"],
+          accessToken: Neo4jAccount["accessToken"],
+          accessTokenExpires: Neo4jAccount["accessTokenExpires"]
         ) {
           return await neo4jSession.run(
             `
@@ -158,7 +198,7 @@ export const Neo4jAdapter: Adapter = (neo4jSession: typeof neo4j.Session) => {
           )
         },
 
-        createSession(user) {
+        createSession(user: Neo4jUser & { id: string }) {
           return neo4jSession.run(
             `
             MATCH (u:User { id: $userId })
