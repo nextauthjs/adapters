@@ -17,13 +17,20 @@ This repository is a lerna mono-repo which is home to multiple next-auth adapter
 
 ### Adapters
 
-Currently, these are experimental adapters and we would appreciate feedback on them! The two adapters labelled "legacy" here are the adapters that ship with `next-auth` currently, but will also be 1) removed from the core package in the short-term and 2) replaced with their more up-to-date versions in the medium-term.
+Currently, these are experimental adapters and we would appreciate feedback on them!
+
+The two adapters with the "legacy" suffix are the adapters that currently ship with the core `next-auth` package. In the future, we will be doing the following two things though:
+
+1. Removing them from the core package in the short-term
+2. Replacing them with their more up-to-date versions in the medium-term.
+
+Of course, we will announce and document any such changes thoroughly before taking any action.
 
 | Adapter        | Version                                                                                                                                                                          | Docs                                                                           | NPM                                                                                   |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | typeorm-legacy | [![npm](https://img.shields.io/npm/v/@next-auth/typeorm-legacy-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/typeorm-legacy-adapter) | [adapters/typeorm](https://next-auth.js.org/adapters/typeorm/typeorm-overview) | [@next-auth/typeorm-legacy-adapter](https://npm.im/@next-auth/typeorm-legacy-adapter) |
 | prisma         | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/prisma-adapter)                 | [adapters/prisma](https://next-auth.js.org/adapters/prisma)                    | [@next-auth/prisma-adapter](https://npm.im/@next-auth/prisma-adapter)                 |
-| prisma-legacy  | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-legacy-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/prisma-legacy-adapter)   | [adapters/prisma](https://next-auth.js.org/adapters/prisma)                    | [@next-auth/prisma-legacy-adapter](https://npm.im/@next-auth/prisma-legacy-adapter)   |
+| prisma-legacy  | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-legacy-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/prisma-legacy-adapter)   | [adapters/prisma-legacy](https://next-auth.js.org/adapters/prisma-legacy)      | [@next-auth/prisma-legacy-adapter](https://npm.im/@next-auth/prisma-legacy-adapter)   |
 | fauna          | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/fauna-adapter)                  | [adapters/fauna](https://next-auth.js.org/adapters/fauna)                      | [@next-auth/fauna-adapter](https://npm.im/@next-auth/fauna-adapter)                   |
 | dynamodb       | [![npm](https://img.shields.io/npm/v/@next-auth/dynamodb-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/dynamodb-adapter)             | [adapters/dynamodb](https://next-auth.js.org/adapters/dynamodb)                | [@next-auth/dynamodb-adapter](https://npm.im/@next-auth/dynamodb-adapter)             |
 | firebase       | [![npm](https://img.shields.io/npm/v/@next-auth/firebase-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/firebase-adapter)             | [adapters/firebase](https://next-auth.js.org/adapters/firebase)                | [@next-auth/firebase-adapter](https://npm.im/@next-auth/firebase-adapter)             |
