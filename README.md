@@ -24,7 +24,7 @@ The two adapters with the "legacy" suffix are the adapters that currently ship w
 1. Removing them from the core package in the short-term
 2. Replacing them with their more up-to-date versions in the medium-term.
 
-Of course, we will announce and document any such changes thoroughly before taking any action.
+Of course, we will announce and document any such changes thoroughly before taking any action. This changes are tenatively slated for `v4.0.0`.
 
 | Adapter        | Version                                                                                                                                                                          | Docs                                                                           | NPM                                                                                   |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
