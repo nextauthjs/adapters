@@ -2,7 +2,7 @@
 
 This is kept for backwards compatibility reasons.
 
-If you start a new project, we recommend testing out `@next-auth/prisma-adapter` instead.
+If you start a new project, we recommend testing out `@next-auth/prisma-adapter@canary` instead.
 
 Check it out at https://github.com/nextauthjs/adapters/tree/canary/packages/prisma
 

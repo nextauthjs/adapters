@@ -21,10 +21,10 @@ You can find more Firebase information in the docs at [next-auth.js.org/adapters
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/firebase-adapter`
+1. Install `next-auth` and `@next-auth/firebase-adapter@canary`
 
 ```js
-npm install next-auth @next-auth/firebase-adapter
+npm install next-auth @next-auth/firebase-adapter@canary
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
