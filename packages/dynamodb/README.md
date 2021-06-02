@@ -22,10 +22,10 @@ You can find the DynamoDB schema in the docs at [next-auth.js.org/adapters/dynam
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/dynamodb-adapter`
+1. Install `next-auth` and `@next-auth/dynamodb-adapter@canary`
 
 ```js
-npm install next-auth @next-auth/dynamodb-adapter
+npm install next-auth @next-auth/dynamodb-adapter@canary
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
