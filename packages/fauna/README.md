@@ -8,8 +8,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/fauna-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/fauna-adapter" alt="@next-auth/fauna-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/fauna-adapter/canary" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/fauna-adapter/canary" alt="@next-auth/fauna-adapter Version" />
    </p>
 </p>
 
@@ -21,10 +21,10 @@ You can find the Fauna schema and seed information in the docs at [next-auth.js.
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/fauna-adapter`
+1. Install `next-auth` and `@next-auth/fauna-adapter@canary`
 
 ```js
-npm install next-auth @next-auth/fauna-adapter
+npm install next-auth @next-auth/fauna-adapter@canary
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.

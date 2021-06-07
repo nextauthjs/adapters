@@ -7,8 +7,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/dynamodb-adapter" alt="@next-auth/dynamodb-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter/canary" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/dynamodb-adapter/canary" alt="@next-auth/dynamodb-adapter Version" />
    </p>
 </p>
 
@@ -22,15 +22,16 @@ You can find the DynamoDB schema in the docs at [next-auth.js.org/adapters/dynam
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/dynamodb-adapter`
+1. Install `next-auth` and `@next-auth/dynamodb-adapter@canary`
 
 ```js
-npm install next-auth @next-auth/dynamodb-adapter
+npm install next-auth @next-auth/dynamodb-adapter@canary
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
-You need to pass `aws-sdk` to the adapter in addition to the table name.
+You need to pass `DocumentClient` instance from `aws-sdk` to the adapter.
+The default table name is `next-auth`, but you can customise that by passing `{ tableName: 'your-table-name' }` as the second parameter in the adapter.
 
 ```js
 import AWS from "aws-sdk";
@@ -57,10 +58,9 @@ export default NextAuth({
     }),
     // ...add more providers here
   ],
-  adapter: DynamoDBAdapter({
-    AWS,
-    tableName: "next-auth-test",
-  }),
+  adapter: DynamoDBAdapter(
+    new AWS.DynamoDB.DocumentClient()
+  ),
   ...
 });
 ```
