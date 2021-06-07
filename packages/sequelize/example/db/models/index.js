@@ -3,7 +3,7 @@
 import Sequelize, { Model } from 'sequelize';
 import { 
   userModel, accountModel, sessionModel, verificationRequestModel 
-} from 'next-auth-sequelize-adapter/models';
+} from '@next-auth/sequelize-adapter';
 
 const path = require('path');
 const basename = path.basename(__filename);
