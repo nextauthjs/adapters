@@ -76,8 +76,8 @@ export const DynamoDBAdapter: Adapter<
                 "#gsi1sk": "GSI1SK",
               },
               ExpressionAttributeValues: {
-                ":gsi1pk": `USER#${email}`,
-                ":gsi1sk": `USER#${email}`,
+                ":gsi1pk": `USER#${email ?? ""}`,
+                ":gsi1sk": `USER#${email ?? ""}`,
               },
             })
             .promise()
