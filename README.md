@@ -34,6 +34,7 @@ Of course, we will announce and document any such changes thoroughly before taki
 | fauna          | [![npm](https://img.shields.io/npm/v/@next-auth/prisma-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/fauna-adapter)                  | [adapters/fauna](https://next-auth.js.org/adapters/fauna)                      | [@next-auth/fauna-adapter](https://npm.im/@next-auth/fauna-adapter)                   |
 | dynamodb       | [![npm](https://img.shields.io/npm/v/@next-auth/dynamodb-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/dynamodb-adapter)             | [adapters/dynamodb](https://next-auth.js.org/adapters/dynamodb)                | [@next-auth/dynamodb-adapter](https://npm.im/@next-auth/dynamodb-adapter)             |
 | firebase       | [![npm](https://img.shields.io/npm/v/@next-auth/firebase-adapter/canary?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/firebase-adapter)             | [adapters/firebase](https://next-auth.js.org/adapters/firebase)                | [@next-auth/firebase-adapter](https://npm.im/@next-auth/firebase-adapter)             |
+| pouchdb        | [![npm](https://img.shields.io/npm/v/@next-auth/pouchdb-adapter?label=version&style=flat-square)](https://www.npmjs.com/package/@next-auth/pouchdb-adapter)                      | [adapters/pouchdb](https://next-auth.js.org/adapters/pouchdb)                  | [@next-auth/pouchdb-adapter](https://npm.im/@next-auth/pouchdb-adapter)               |
 
 ## Contributing
 
