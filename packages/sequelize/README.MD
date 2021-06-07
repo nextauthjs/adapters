@@ -9,16 +9,6 @@ To get started, either clone the example or use `$ npx create-next-app my-app` w
 
 You must install sequelize in your Next-JS/Next-Auth project to use this adapter. Learn More about using custom adapters with Next-Auth [here](https://next-auth.js.org/schemas/adapters).
 
-### Installation
-
-Install the package using npm:
-
-`$ npm install next-auth-sequelize-adapter --save`
-
-If you are using yarn, then type:
-
-`$ yarn add next-auth-sequelize-adapter`
-
 ### Usage
 
 Now cd into the db folder, open the **models/index.js** and replace all code with:
