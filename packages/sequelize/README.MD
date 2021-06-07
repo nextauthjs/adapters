@@ -22,7 +22,7 @@ import {
   accountModel,
   sessionModel,
   verificationRequestModel,
-} from "next-auth-sequelize-adapter";
+} from "@next-auth/sequelize-adapter";
 
 const path = require("path");
 const basename = path.basename(__filename);
