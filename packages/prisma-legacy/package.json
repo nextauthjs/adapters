@@ -15,15 +15,18 @@
   },
   "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "index.d.ts"
   ],
   "private": false,
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "test": "echo \"TODO: Add tests...\"; exit 0",
-    "build": "babel src --out-dir dist"
+    "setup": "yarn reset",
+    "reset": "prisma migrate reset --preview-feature -f",
+    "test": "yarn setup && jest",
+    "build": "yarn reset && babel src --out-dir dist"
   },
   "contributors": [
     "Balázs Orbán <info@balazsorban.com>"
@@ -34,8 +37,11 @@
     "@prisma/client": "^2.16.1",
     "next-auth": "^3.17.2"
   },
+  "dependencies": {
+    "@babel/runtime": "^7.14.0"
+  },
   "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/preset-env": "^7.13.15"
+    "@prisma/client": "^2.16.0",
+    "prisma": "^2.16.0"
   }
 }

@@ -3,3 +3,5 @@ lerna-debug.log
 dist
 dev.db
 .eslintcache
+coverage
+dev.db-journal 

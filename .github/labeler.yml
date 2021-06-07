@@ -1,0 +1,22 @@
+fauna:
+  - packages/fauna/**/*
+
+dynamodb:
+  - packages/dynamodb/**/*
+
+prisma:
+  - packages/prisma/**/*
+  - packages/prisma-legacy/**/*
+
+typeorm:
+  - packages/typeorm-legacy/**/*
+
+firebase:
+  - packages/firebase/**/*
+
+documentation:
+  - ./**/*.md
+
+tests:
+  - jest.config.js
+  - packages/**/tests/*
