@@ -1,7 +1,7 @@
 "use strict";
 
 // import the schema for the model you want to extend
-import { userSchema } from "next-auth-sequelize-adapter";
+import { userSchema } from "@next-auth/sequelize-adapter";
 
 const extendedUserModel = (Model, sequelize, Sequelize) => {
   class User extends Model {
