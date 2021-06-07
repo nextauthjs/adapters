@@ -20,10 +20,10 @@ You can find more TypeORM information in the docs at [next-auth.js.org/adapters/
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/typeorm-legacy-adapter`
+1. Install `next-auth` and `@next-auth/typeorm-legacy-adapter@canary`
 
 ```js
-npm install next-auth @next-auth/typeorm-legacy-adapter
+npm install next-auth @next-auth/typeorm-legacy-adapter@canary
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
