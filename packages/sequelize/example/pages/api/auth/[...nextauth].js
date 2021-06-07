@@ -3,7 +3,7 @@ import Providers from "next-auth/providers";
 
 // import the local db object and the SequelizeAdapter
 import db from "../../../db/models";
-import { SequelizeAdapter } from "next-auth-sequelize-adapter";
+import { SequelizeAdapter } from "@next-auth/sequelize-adapter";
 
 const options = {
   // specify all the OAuth providers here
