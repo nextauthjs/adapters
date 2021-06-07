@@ -34,6 +34,7 @@ jobs:
             typeorm-legacy: packages/typeorm-legacy/**
             prisma-legacy: packages/prisma-legacy/**
             firebase: packages/firebase/**
+            pouchdb: packages/pouchdb/**
             neo4j: packages/neo4j/**
   test-adapters:
     runs-on: ubuntu-latest
