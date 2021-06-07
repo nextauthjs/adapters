@@ -4,7 +4,7 @@
   "description": "Next-Auth adapter for Sequelize ORM.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "babel src -d dist"
+    "build": "tsc"
   },
   "repository": "https://github.com/nextauthjs/adapters",
   "bugs": {
@@ -18,11 +18,11 @@
   "author": "Rafay Khan",
   "license": "MIT",
   "homepage": "https://github.com/nextauthjs/adapters/tree/canary/packages/sequelize",
-  "dependencies": {
+  "peerDependencies": {
+    "sequelize": "^6.6.2",
+    "next-auth": "^3.20.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.12.10",
-    "@babel/core": "^7.12.10",
-    "@babel/preset-env": "^7.12.11"
+    "prettier": "^2.3.1"
   }
 }

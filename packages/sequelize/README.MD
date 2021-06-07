@@ -1,6 +1,5 @@
 # Sequelize Adapter For Next-Auth
 
-
 ## Getting Started
 
 To get started, either clone the example or use `$ npx create-next-app my-app` with the [sequelize-cli's](https://www.npmjs.com/package/sequelize-cli) `$ sequelize init` command and generate all the necessary files.
@@ -16,48 +15,46 @@ Now cd into the db folder, open the **models/index.js** and replace all code wit
 #### models/index.js
 
 ```javascript
-import Sequelize, { Model } from "sequelize";
+import Sequelize, { Model } from "sequelize"
 import {
   userModel,
   accountModel,
   sessionModel,
   verificationRequestModel,
-} from "@next-auth/sequelize-adapter";
+} from "@next-auth/sequelize-adapter"
 
-const path = require("path");
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || "development";
-const config = require(__dirname + "/../config/config.json")[env];
-const db = {};
+const env = process.env.NODE_ENV || "development"
+const config = require(__dirname + "/../config/config.json")[env]
+const db = {}
 
-let sequelize;
+let sequelize
 
 if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+  sequelize = new Sequelize(process.env[config.use_env_variable], config)
 } else {
   sequelize = new Sequelize(
     config.database,
     config.username,
     config.password,
     config
-  );
+  )
 }
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+db.sequelize = sequelize
+db.Sequelize = Sequelize
 
-db.User = userModel(Model, sequelize, Sequelize);
-db.Account = accountModel(Model, sequelize, Sequelize);
-db.Session = sessionModel(Model, sequelize, Sequelize);
-db.VerificationRequest = verificationRequestModel(Model, sequelize, Sequelize);
+db.User = userModel(Model, sequelize, Sequelize)
+db.Account = accountModel(Model, sequelize, Sequelize)
+db.Session = sessionModel(Model, sequelize, Sequelize)
+db.VerificationRequest = verificationRequestModel(Model, sequelize, Sequelize)
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
-    db[modelName].associate(db);
+    db[modelName].associate(db)
   }
-});
+})
 
-export default db;
+export default db
 ```
 
 Then edit the **pages/api/auth/[...nextauth].js** and specify that NextAuth should now use the sequelize adapter.
@@ -65,12 +62,12 @@ Then edit the **pages/api/auth/[...nextauth].js** and specify that NextAuth shou
 #### pages/api/auth/[...nextauth].js
 
 ```javascript
-import NextAuth from "next-auth";
-import Providers from "next-auth/providers";
+import NextAuth from "next-auth"
+import Providers from "next-auth/providers"
 
 // import the local db object and the SequelizeAdapter
-import db from "../../../db/models";
-import { SequelizeAdapter } from "@next-auth/sequelize-adapter";
+import db from "../../../db/models"
+import { SequelizeAdapter } from "@next-auth/sequelize-adapter"
 
 const options = {
   // specify all the OAuth providers here
@@ -85,10 +82,10 @@ const options = {
   database: process.env.DATABASE_CONNECTION_STRING,
 
   // specify the sequelize adapter and pass the db instance as models
-  adapter: SequelizeAdapter.Adapter({ models: db }),
-};
+  adapter: SequelizeAdapter({ models: db }),
+}
 
-export default (req, res) => NextAuth(req, res, options);
+export default (req, res) => NextAuth(req, res, options)
 ```
 
 Now, these were the minimum requirements to get next-auth working with sequelize ORM, but you might want to extend the default models such as the user model with a **phone number** field or add a relationship to another model such as **posts**.
@@ -101,7 +98,7 @@ To extend a default model, first, generate a new model either manually or with s
 
 ```javascript
 // import the schema for the model you want to extend
-import { userSchema } from "next-auth-sequelize-adapter";
+import { userSchema } from "@next-auth/sequelize-adapter"
 
 const extendedUserModel = (Model, sequelize, Sequelize) => {
   class User extends Model {
@@ -126,12 +123,12 @@ const extendedUserModel = (Model, sequelize, Sequelize) => {
       tableName: "users",
       modelName: "User",
     }
-  );
+  )
 
-  return User;
-};
+  return User
+}
 
-export default extendedUserModel;
+export default extendedUserModel
 ```
 
 Then edit the **models/index.js** and tell sequelize to use the custom model and not the default model:
@@ -139,55 +136,53 @@ Then edit the **models/index.js** and tell sequelize to use the custom model and
 #### models/index.js
 
 ```javascript
-import Sequelize, { Model } from "sequelize";
+import Sequelize, { Model } from "sequelize"
 import {
   userModel,
   accountModel,
   sessionModel,
   verificationRequestModel,
-} from "next-auth-sequelize-adapter";
+} from "@next-auth/sequelize-adapter"
 
 // import your extended model
-import userModelExtended from "./user_extended";
+import userModelExtended from "./user_extended"
 
-const path = require("path");
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || "development";
-const config = require(__dirname + "/../config/config.json")[env];
-const db = {};
+const env = process.env.NODE_ENV || "development"
+const config = require(__dirname + "/../config/config.json")[env]
+const db = {}
 
-let sequelize;
+let sequelize
 
 if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+  sequelize = new Sequelize(process.env[config.use_env_variable], config)
 } else {
   sequelize = new Sequelize(
     config.database,
     config.username,
     config.password,
     config
-  );
+  )
 }
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+db.sequelize = sequelize
+db.Sequelize = Sequelize
 
 // Comment out or remove the default model
 // db.User = userModel(Model, sequelize, Sequelize);
 
 // Initialize the extended model and use it in your project
-db.User = userModelExtended(Model, sequelize, Sequelize);
-db.Account = accountModel(Model, sequelize, Sequelize);
-db.Session = sessionModel(Model, sequelize, Sequelize);
-db.VerificationRequest = verificationRequestModel(Model, sequelize, Sequelize);
+db.User = userModelExtended(Model, sequelize, Sequelize)
+db.Account = accountModel(Model, sequelize, Sequelize)
+db.Session = sessionModel(Model, sequelize, Sequelize)
+db.VerificationRequest = verificationRequestModel(Model, sequelize, Sequelize)
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
-    db[modelName].associate(db);
+    db[modelName].associate(db)
   }
-});
+})
 
-export default db;
+export default db
 ```
 
 ### Creating New Models

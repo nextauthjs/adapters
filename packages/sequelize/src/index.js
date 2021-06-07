@@ -1,3 +1,3 @@
-export { default as SequelizeAdapter } from "./adapter";
-export * from "./models";
-export * from "./schemas";
+export * from "./adapter"
+export * from "./models"
+export * from "./schemas"

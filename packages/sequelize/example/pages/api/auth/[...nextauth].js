@@ -1,9 +1,9 @@
-import NextAuth from "next-auth";
-import Providers from "next-auth/providers";
+import NextAuth from "next-auth"
+import Providers from "next-auth/providers"
 
 // import the local db object and the SequelizeAdapter
-import db from "../../../db/models";
-import { SequelizeAdapter } from "@next-auth/sequelize-adapter";
+import db from "../../../db/models"
+import { SequelizeAdapter } from "@next-auth/sequelize-adapter"
 
 const options = {
   // specify all the OAuth providers here
@@ -18,7 +18,7 @@ const options = {
   database: process.env.DATABASE_CONNECTION_STRING,
 
   // specify the sequelize adapter and pass the db instance as models
-  adapter: SequelizeAdapter.Adapter({ models: db }),
-};
+  adapter: SequelizeAdapter({ models: db }),
+}
 
-export default (req, res) => NextAuth(req, res, options);
+export default (req, res) => NextAuth(req, res, options)
