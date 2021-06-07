@@ -1,6 +1,5 @@
 # Sequelize Adapter For Next-Auth
 
-[![GitHub issues](https://img.shields.io/github/issues/EXIT-ALAMERY/next-auth-sequelize-adapter)](https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter/issues) [![GitHub forks](https://img.shields.io/github/forks/EXIT-ALAMERY/next-auth-sequelize-adapter)](https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter/network) [![GitHub stars](https://img.shields.io/github/stars/EXIT-ALAMERY/next-auth-sequelize-adapter)](https://github.com/EXIT-ALAMERY/next-auth-sequelize-adapter/stargazers)
 
 ## Getting Started
 
