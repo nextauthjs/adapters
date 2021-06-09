@@ -1,4 +1,3 @@
-"use strict";
 import {
   accountSchema,
   sessionSchema,
@@ -6,7 +5,7 @@ import {
   verificationRequestSchema,
 } from "../schemas";
 
-export const accountModel = (Model, sequelize, Sequelize) => {
+export const accountModel: any = (Model, sequelize, Sequelize) => {
   class Account extends Model {
     static associate(models) {
       // Define association here
@@ -38,9 +37,9 @@ export const accountModel = (Model, sequelize, Sequelize) => {
   return Account;
 };
 
-export const sessionModel = (Model, sequelize, Sequelize) => {
+export const sessionModel: any = (Model, sequelize, Sequelize) => {
   class Session extends Model {
-    static associate({ userModel }) {
+    static associate(models) {
       // Define association here
     }
   }
@@ -53,9 +52,9 @@ export const sessionModel = (Model, sequelize, Sequelize) => {
   return Session;
 };
 
-export const userModel = (Model, sequelize, Sequelize) => {
+export const userModel: any = (Model, sequelize, Sequelize) => {
   class User extends Model {
-    static associate({ Account, Session }) {
+    static associate(models) {
       // Define association here
     }
   }
@@ -68,7 +67,7 @@ export const userModel = (Model, sequelize, Sequelize) => {
   return User;
 };
 
-export const verificationRequestModel = (Model, sequelize, Sequelize) => {
+export const verificationRequestModel: any = (Model, sequelize, Sequelize) => {
   class VerificationRequest extends Model {
     static associate(models) {
       // Define association here

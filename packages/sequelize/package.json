@@ -4,7 +4,8 @@
   "description": "Next-Auth adapter for Sequelize ORM.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "jest"
   },
   "repository": "https://github.com/nextauthjs/adapters",
   "bugs": {
@@ -21,8 +22,5 @@
   "peerDependencies": {
     "sequelize": "^6.6.2",
     "next-auth": "^3.20.0"
-  },
-  "devDependencies": {
-    "prettier": "^2.3.1"
   }
 }

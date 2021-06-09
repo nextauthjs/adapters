@@ -1,23 +1,32 @@
-"use strict"
+"use strict";
 
 module.exports = {
   up: async (queryInterface, DataTypes) => {
-    await queryInterface.createTable("verification_requests", {
+    await queryInterface.createTable("users", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: DataTypes.INTEGER,
       },
-      identifier: {
+      name: {
         type: DataTypes.STRING,
       },
-      token: {
+      email: {
         type: DataTypes.STRING,
         unique: true,
       },
-      expires: {
+      phoneNumber: {
+        type: DataTypes.STRING,
+        unique: true,
+        field: "phone_number",
+      },
+      emailVerified: {
         type: DataTypes.DATE,
+        field: "email_verified",
+      },
+      image: {
+        type: DataTypes.STRING,
       },
       createdAt: {
         allowNull: false,
@@ -29,9 +38,9 @@ module.exports = {
         type: DataTypes.DATE,
         field: "updated_at",
       },
-    })
+    });
   },
   down: async (queryInterface, DataTypes) => {
-    await queryInterface.dropTable("verification_requests")
+    await queryInterface.dropTable("users");
   },
-}
+};

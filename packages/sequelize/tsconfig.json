@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": false,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+
+  "exclude": ["tests", "dist"]
+}

@@ -2,21 +2,8 @@ import { createHash, randomBytes } from "crypto"
 import type { User, Profile, Session } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 
-type SequelizeAPI = {
-  create: (...args: any) => any
-  find: (...args: any) => any
-  findOne: (...args: any) => any
-  update: (...args: any) => any
-  destroy: (...args: any) => any
-}
-
 interface SequelizeModels {
-  models: {
-    User: SequelizeAPI
-    Account: SequelizeAPI
-    Session: SequelizeAPI
-    VerificationRequest: SequelizeAPI
-  }
+  [index: string]: any
 }
 
 export const SequelizeAdapter: Adapter<
@@ -24,7 +11,12 @@ export const SequelizeAdapter: Adapter<
   never,
   User & { emailVerified?: Date },
   Profile & { emailVerified?: Date },
-  Session
+  Session & {
+    userId: string
+    expires: Date
+    sessionToken: string
+    accessToken: string
+  }
 > = ({ models }) => {
   return {
     async getAdapter({ session, secret, ...appOptions }) {
@@ -37,8 +29,8 @@ export const SequelizeAdapter: Adapter<
       return {
         displayName: "SEQUELIZE",
 
-        createUser(profile) {
-          return models.User.create({
+        async createUser(profile) {
+          await models.User.create({
             name: profile.name,
             email: profile.email,
             image: profile.image,
@@ -46,6 +38,8 @@ export const SequelizeAdapter: Adapter<
               ? profile.emailVerified.toISOString()
               : null,
           })
+
+          return await models.User.findOne({ where: { name: profile.name } })
         },
 
         getUser(id) {
@@ -64,9 +58,21 @@ export const SequelizeAdapter: Adapter<
           return account?.user ?? null
         },
 
-        updateUser(user) {
-          const { id, name, email, image, emailVerified } = user
-          return models.User.update({ name, email, image }, { where: { id } })
+        async updateUser(user) {
+          await models.User.update(
+            {
+              name: user.name,
+              email: user.email,
+              image: user.image,
+              emailVerified: user.emailVerified?.toISOString() ?? null,
+            },
+            {
+              where: {
+                id: user.id,
+              },
+            }
+          )
+          return models.User.findOne({ where: { id: user.id } })
         },
 
         async deleteUser(userId) {
@@ -99,13 +105,15 @@ export const SequelizeAdapter: Adapter<
           })
         },
 
-        createSession(user) {
-          return models.Session.create({
+        async createSession(user) {
+          await models.Session.create({
             userId: user.id,
             expires: new Date(Date.now() + sessionMaxAge),
             sessionToken: randomBytes(32).toString("hex"),
             accessToken: randomBytes(32).toString("hex"),
           })
+
+          return await models.Session.findOne({ where: { userId: user.id } })
         },
 
         async getSession(sessionToken) {
@@ -128,12 +136,16 @@ export const SequelizeAdapter: Adapter<
             return null
           }
 
-          return await models.Session.update(
+          await models.Session.update(
             { expires: new Date(Date.now() + sessionMaxAge) },
             {
               where: { id },
             }
           )
+
+          return await models.Session.findOne({
+            where: { id },
+          })
         },
 
         async deleteSession(sessionToken) {

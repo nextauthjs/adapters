@@ -1,5 +1,3 @@
-"use strict";
-
 export const accountSchema = (DataTypes) => ({
   compoundId: {
     type: DataTypes.STRING,
@@ -42,7 +40,7 @@ export const accountSchema = (DataTypes) => ({
     type: DataTypes.DATE,
     field: "updated_at",
   },
-});
+})
 
 export const sessionSchema = (DataTypes) => ({
   userId: {
@@ -70,7 +68,7 @@ export const sessionSchema = (DataTypes) => ({
     type: DataTypes.DATE,
     field: "updated_at",
   },
-});
+})
 
 export const userSchema = (DataTypes) => ({
   name: DataTypes.STRING,
@@ -91,10 +89,10 @@ export const userSchema = (DataTypes) => ({
     type: DataTypes.DATE,
     field: "updated_at",
   },
-});
+})
 
 export const verificationRequestSchema = (DataTypes) => ({
-  identitifer: DataTypes.STRING,
+  identifier: DataTypes.STRING,
   token: {
     type: DataTypes.STRING,
     unique: true,
@@ -108,4 +106,4 @@ export const verificationRequestSchema = (DataTypes) => ({
     type: DataTypes.DATE,
     field: "updated_at",
   },
-});
+})
