@@ -6,7 +6,7 @@ import {
   accountModel,
   sessionModel,
   verificationRequestModel,
-} from "../../../src/models"
+} from "../../../../src/models"
 
 interface SequelizeModels {
   [index: string]: any
