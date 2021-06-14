@@ -1,0 +1,49 @@
+{
+  "npmScope": "adapters",
+  "implicitDependencies": {
+    "workspace.json": "*",
+    "package.json": {
+      "dependencies": "*",
+      "devDependencies": "*"
+    },
+    "nx.json": "*"
+  },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "@nrwl/nx-cloud",
+      "options": {
+        "cacheableOperations": ["build", "test", "lint", "package", "prepare"],
+        "strictlyOrderedTargets": ["build", "package", "prepare"],
+        "accessToken": "NDE4ODExNmMtODNlMS00YWNjLTlhYWUtMTMyNTBmNDQxOGJmfHJlYWQtd3JpdGU=",
+        "canTrackAnalytics": false,
+        "showUsageWarnings": true
+      }
+    }
+  },
+  "projects": {
+    "@next-auth/dynamodb-adapter": {
+      "implicitDependencies": []
+    },
+    "@next-auth/fauna-adapter": {
+      "implicitDependencies": []
+    },
+    "@next-auth/firebase-adapter": {
+      "implicitDependencies": []
+    },
+    "@next-auth/pouchdb-adapter": {
+      "implicitDependencies": []
+    },
+    "@next-auth/prisma-adapter": {
+      "implicitDependencies": []
+    },
+    "@next-auth/prisma-legacy-adapter": {
+      "implicitDependencies": []
+    },
+    "@next-auth/typeorm-legacy-adapter": {
+      "implicitDependencies": []
+    }
+  },
+  "affected": {
+    "defaultBase": "ndom91/test-nx"
+  }
+}

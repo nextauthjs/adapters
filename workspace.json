@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "projects": {
+    "@next-auth/dynamodb-adapter": {
+      "root": "packages/dynamodb",
+      "type": "library"
+    },
+    "@next-auth/fauna-adapter": {
+      "root": "packages/fauna",
+      "type": "library"
+    },
+    "@next-auth/firebase-adapter": {
+      "root": "packages/firebase",
+      "type": "library"
+    },
+    "@next-auth/pouchdb-adapter": {
+      "root": "packages/pouchdb",
+      "type": "library"
+    },
+    "@next-auth/prisma-adapter": {
+      "root": "packages/prisma",
+      "type": "library"
+    },
+    "@next-auth/prisma-legacy-adapter": {
+      "root": "packages/prisma-legacy",
+      "type": "library"
+    },
+    "@next-auth/typeorm-legacy-adapter": {
+      "root": "packages/typeorm-legacy",
+      "type": "library"
+    }
+  }
+}
