@@ -31,9 +31,9 @@ jobs:
           node-version: "12"
       - run: git fetch --no-tags --prune --depth=5 origin main
       - uses: bahmutov/npm-install@v1
-      - run: yarn nx affected:libs --base=origin/main # prints affected libs
+      - run: yarn affected:libs --base=origin/main # prints affected libs
       - name: test affected libraries
-        run: yarn nx affected:test --base=origin/main
+        run: yarn affected:test --base=origin/main
   publish:
     needs: test-adapters
     runs-on: ubuntu-latest

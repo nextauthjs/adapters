@@ -15,7 +15,10 @@
     "prepare": "husky install",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && prettier --write",
-    "nx": "nx"
+    "affected:libs": "nx affected:libs",
+    "affected:test": "nx affected:test",
+    "affected:build": "nx affected:build",
+    "affected": "nx affected"
   },
   "workspaces": [
     "packages/*"
