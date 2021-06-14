@@ -31,6 +31,7 @@ export const PrismaAdapter: Adapter<
               email: profile.email,
               image: profile.image,
               emailVerified: profile.emailVerified?.toISOString() ?? null,
+              ...profile,
             },
           })
         },
