@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
-      - run: git fetch --no-tags --prune --depth=5 origin master
+      - run: git fetch --no-tags --prune --depth=5 origin canary
       - uses: bahmutov/npm-install@v1
       - run: yarn nx affected:libs --base=origin/canary # prints affected libs
       - name: test affected libraries
