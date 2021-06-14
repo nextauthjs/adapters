@@ -18,7 +18,7 @@ postgres:13.3
 echo \"Waiting 20 sec for db to start...\" && sleep 20
 
 # Always stop container, but exit with 1 when tests are failing
-if npx -y jest tests/postgresql --detectOpenHandles --forceExit;then
+if npx jest tests/postgresql --detectOpenHandles --forceExit;then
     docker stop "${CONTAINER_NAME}"
 else
     docker stop "${CONTAINER_NAME}" && exit 1
