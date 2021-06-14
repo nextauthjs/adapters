@@ -14,7 +14,8 @@
     "canary": "lerna publish --canary",
     "prepare": "husky install",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix && prettier --write"
+    "lint:fix": "eslint . --fix && prettier --write",
+    "nx": "nx"
   },
   "workspaces": [
     "packages/*"
@@ -23,6 +24,11 @@
     "@babel/cli": "^7.14.3",
     "@babel/plugin-transform-runtime": "^7.14.3",
     "@babel/preset-env": "^7.14.2",
+    "@jscutlery/semver": "^2.3.1",
+    "@nrwl/cli": "latest",
+    "@nrwl/nx-cloud": "latest",
+    "@nrwl/tao": "latest",
+    "@nrwl/workspace": "latest",
     "@types/jest": "^26.0.23",
     "@typescript-eslint/eslint-plugin": "^4.24.0",
     "@typescript-eslint/parser": "^4.24.0",
