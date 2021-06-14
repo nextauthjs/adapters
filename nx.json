@@ -44,6 +44,6 @@
     }
   },
   "affected": {
-    "defaultBase": "ndom91/test-nx"
+    "defaultBase": "canary"
   }
 }
