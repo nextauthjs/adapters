@@ -23,7 +23,7 @@ sh -c 'exec mysql -uroot -p${MYSQL_ROOT_PASSWORD} ${MYSQL_DATABASE}' < ./tests/m
 
 
 # Always stop container, but exit with 1 when tests are failing
-if npx -y jest tests/mysql --detectOpenHandles --forceExit;then
+if npx jest tests/mysql --detectOpenHandles --forceExit;then
     docker stop "${CONTAINER_NAME}"
 else
     docker stop "${CONTAINER_NAME}" && exit 1
