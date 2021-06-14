@@ -20,7 +20,7 @@ sleep 10
 npx fauna-schema-migrate apply all
 
 # Always stop container, but exit with 1 when tests are failing
-if npx jest;then
+if npx -y jest;then
     docker stop ${CONTAINER_NAME}
 else
     docker stop ${CONTAINER_NAME} && exit 1
