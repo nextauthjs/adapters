@@ -27,7 +27,8 @@ jobs:
         with:
           node-version: "12"
       - uses: bahmutov/npm-install@v1
-      - name: test affected
+      - run: yarn nx affected:libs # prints affected libs
+      - name: test affected libraries
         run: yarn nx affected:test
   publish:
     needs: test-adapters
