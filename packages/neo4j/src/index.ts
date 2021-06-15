@@ -1,4 +1,11 @@
 import neo4j from "neo4j-driver"
+import {
+  neo4jEpochToDate,
+  userReturn,
+  sessionReturn,
+  accountReturn,
+  verificationRequestReturn,
+} from "./utils"
 
 import { createHash, randomBytes } from "crypto"
 import type { Profile } from "next-auth"
@@ -13,6 +20,7 @@ interface Neo4jUser {
 }
 
 interface Neo4jSession {
+  id: string
   userId: string
   expires: Date | string
   sessionToken: string
@@ -28,16 +36,6 @@ interface Neo4jAccount {
   refreshToken: string | null | undefined
   accessToken: string | null | undefined
   accessTokenExpires: Date | null | undefined
-}
-function neo4jToSafeNumber(x: typeof neo4j.Integer) {
-  if (!neo4j.isInt(x)) {
-    return x
-  }
-  if (neo4j.integer.inSafeRange(x)) {
-    return x.toNumber()
-  } else {
-    return x.toString()
-  }
 }
 
 export const Neo4jAdapter: Adapter<
@@ -65,19 +63,13 @@ export const Neo4jAdapter: Adapter<
         async createUser(profile) {
           const result = await neo4jSession.run(
             `
-            CREATE (u:User  {
-              id: apoc.create.uuid(),
-              name: $name,
-              email: $email,
-              image: $image,
-              emailVerified: datetime($emailVerified)
-            })
-            RETURN { 
-              name: u.name,
-              email: u.email,
-              image: u.image,
-              emailVerified: u.emailVerified.epochMillis
-            } AS user 
+            MERGE (u:User { email: $email })
+            ON CREATE SET u.id = apoc.create.uuid() 
+            SET
+              u.name= $name,
+              u.image= $image,
+              u.emailVerified= datetime($emailVerified)
+            RETURN ${userReturn} 
             `,
             {
               name: profile.name,
@@ -90,49 +82,68 @@ export const Neo4jAdapter: Adapter<
           if (!result?.records[0]) return null
 
           const user = result.records[0].get("user")
-          const emailVerified = neo4jToSafeNumber(user.emailVerified)
 
-          if (typeof emailVerified !== "number") return null
-
-          return { ...user, emailVerified: new Date(emailVerified) }
+          return {
+            ...user,
+            emailVerified: neo4jEpochToDate(user.emailVerified),
+          }
         },
 
         async getUser(id) {
-          console.log({ id })
-
-          // TODO: handle emailVerified date
           const result = await neo4jSession.run(
             `
             MATCH (u:User { id: $id })
-            RETURN u AS user
+            RETURN ${userReturn} 
             `,
             { id }
           )
-          return result?.records[0]?.get("user").properties ?? null
+          if (!result?.records[0]) return null
+
+          const user = result.records[0].get("user")
+
+          return {
+            ...user,
+            emailVerified: neo4jEpochToDate(user.emailVerified),
+          }
         },
 
         async getUserByEmail(email) {
-          // TODO: handle emailVerified date
           const result = await neo4jSession.run(
             `
             MATCH (u:User { email: $email })
-            RETURN u AS user
+            RETURN ${userReturn} 
             `,
             { email }
           )
-          return result?.records[0]?.get("user").properties ?? null
+          if (!result?.records[0]) return null
+
+          const user = result.records[0].get("user")
+
+          return {
+            ...user,
+            emailVerified: neo4jEpochToDate(user.emailVerified),
+          }
         },
 
         async getUserByProviderAccountId(providerId, providerAccountId) {
           const result = await neo4jSession.run(
             `
-            MATCH (a:Account { providerId: $providerId, providerAccountId, $providerAccountId })
-            MATCH (u:User)-[:HAS_ACCOUNT]->(a)
-            RETURN u
+            MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
+              providerId: $providerId, 
+              providerAccountId: $providerAccountId
+            })
+            RETURN ${userReturn} 
             `,
             { providerId, providerAccountId }
           )
-          return result?.records[0]?.get("user") ?? null
+          if (!result?.records[0]) return null
+
+          const user = result.records[0].get("user")
+
+          return {
+            ...user,
+            emailVerified: neo4jEpochToDate(user.emailVerified),
+          }
         },
 
         async updateUser(user: Neo4jUser & { id: string }) {
@@ -144,7 +155,7 @@ export const Neo4jAdapter: Adapter<
               u.email         = $email,
               u.image         = $image,
               u.emailVerified = datetime($emailVerified)
-            RETURN u AS user
+            RETURN ${userReturn}
             `,
             {
               id: user.id,
@@ -154,7 +165,14 @@ export const Neo4jAdapter: Adapter<
               emailVerified: user.emailVerified?.toISOString() ?? null,
             }
           )
-          return result?.records[0]?.get("user")
+          if (!result?.records[0]) return null
+
+          const updatedUser = result.records[0].get("user")
+
+          return {
+            ...updatedUser,
+            emailVerified: neo4jEpochToDate(updatedUser.emailVerified),
+          }
         },
 
         async deleteUser(id) {
@@ -162,7 +180,7 @@ export const Neo4jAdapter: Adapter<
             `
             MATCH (u:User { id: $id })
             DETACH DELETE u
-            RETURN u
+            RETURN count(u)
             `,
             { id }
           )
@@ -177,9 +195,11 @@ export const Neo4jAdapter: Adapter<
           accessToken: Neo4jAccount["accessToken"],
           accessTokenExpires: Neo4jAccount["accessTokenExpires"]
         ) {
-          await neo4jSession.run(
+          const result = await neo4jSession.run(
             `
             MATCH (u:User { id: $userId })
+            // Use merge here because composite of
+            // providerId + providerAccountId is unique
             MERGE (a:Account { 
               providerId: $providerId, 
               providerAccountId: $providerAccountId 
@@ -188,12 +208,11 @@ export const Neo4jAdapter: Adapter<
               a.providerType       = $providerType,
               a.refreshToken       = $refreshToken,
               a.accessToken        = $accessToken,
-              a.accessTokenExpires = datetime(providerType)
+              a.accessTokenExpires = datetime($accessTokenExpires)
             
-            // TODO: with
             MERGE (u)-[:HAS_ACCOUNT]->(a)
 
-            RETURN a
+            RETURN ${accountReturn}
             `,
             {
               userId,
@@ -205,6 +224,14 @@ export const Neo4jAdapter: Adapter<
               accessTokenExpires: accessTokenExpires?.toISOString() ?? null,
             }
           )
+          if (!result?.records[0]) return null
+
+          const account = result.records[0].get("account")
+
+          return {
+            ...account,
+            accessTokenExpires: neo4jEpochToDate(account.accessTokenExpires),
+          }
         },
 
         async unlinkAccount(_, providerId, providerAccountId) {
@@ -224,7 +251,7 @@ export const Neo4jAdapter: Adapter<
           )
         },
 
-        async createSession(user: Neo4jUser & { id: string }) {
+        async createSession(user: Neo4jUser) {
           const result = await neo4jSession.run(
             `
             MATCH (u:User { id: $userId })
@@ -235,27 +262,55 @@ export const Neo4jAdapter: Adapter<
               accessToken : $accessToken
             })
             CREATE (u)-[:HAS_SESSION]->(s)
-            RETURN s AS session
+            RETURN ${sessionReturn}
             `,
             {
               userId: user.id,
-              expires: new Date(Date.now() + sessionMaxAge),
+              expires: new Date(Date.now() + sessionMaxAge)?.toISOString(),
               sessionToken: randomBytes(32).toString("hex"),
               accessToken: randomBytes(32).toString("hex"),
             }
           )
-          return result?.records[0]?.get("session")
+
+          const session = result?.records[0]?.get("session")
+
+          return {
+            ...session,
+            expires: neo4jEpochToDate(session.expires),
+          }
         },
 
         async getSession(sessionToken) {
           const result = await neo4jSession.run(
             `
-            MATCH (s:Session { sessionToken: $sessionToken })
-            RETURN s AS session
+            MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+            RETURN ${sessionReturn}
             `,
             { sessionToken }
           )
-          return result?.records[0]?.get("session") ?? null
+
+          if (!result?.records[0]) return null
+
+          let session = result?.records[0]?.get("session")
+
+          session = {
+            ...session,
+            expires: neo4jEpochToDate(session.expires),
+          }
+
+          if (session.expires < new Date()) {
+            await neo4jSession.run(
+              `
+            MATCH (s:Session { id: $id })
+            DETACH DELETE s
+            RETURN s 
+            `,
+              { id: session.id }
+            )
+            return null
+          }
+
+          return session
         },
 
         async updateSession(session, force) {
@@ -266,15 +321,16 @@ export const Neo4jAdapter: Adapter<
           ) {
             return null
           }
+
           const result = await neo4jSession.run(
             `
-            MATCH (s:Session { id: $id })
-            SET
-              s.expires = datetime($expires)
-            RETURN s AS session
+            MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+            SET s.expires = datetime($expires)
+            RETURN ${sessionReturn}
             `,
             {
-              expires: new Date(Date.now() + sessionMaxAge),
+              sessionToken: session.sessionToken,
+              expires: new Date(Date.now() + sessionMaxAge).toISOString(),
             }
           )
           return result?.records[0]?.get("session") ?? null
@@ -285,7 +341,7 @@ export const Neo4jAdapter: Adapter<
             `
             MATCH (s:Session { sessionToken: $sessionToken })
             DETACH DELETE s
-            RETURN s 
+            RETURN count(s)
             `,
             { sessionToken }
           )
@@ -295,18 +351,22 @@ export const Neo4jAdapter: Adapter<
           const hashedToken = hashToken(token)
           await neo4jSession.run(
             `
-            CREATE (v:VerificationRequest {
-              id: apoc.create.uuid(),
-              token: $token
-              expires: datetime($expires)
-              accessToken: $accessToken
+            MERGE (v:VerificationRequest {
+              identifier: $identifier,
+              token: $token 
             })
-            RETURN v AS verificationRequest
+            SET 
+              v.expires = datetime($expires),
+              v.token   = $token
+
+            RETURN ${verificationRequestReturn}
             `,
             {
               identifier,
               token: hashedToken,
-              expires: new Date(Date.now() + provider.maxAge * 1000),
+              expires: new Date(
+                Date.now() + provider.maxAge * 1000
+              ).toISOString(),
             }
           )
           await provider.sendVerificationRequest({
@@ -322,22 +382,37 @@ export const Neo4jAdapter: Adapter<
           const hashedToken = hashToken(token)
           const result = await neo4jSession.run(
             `
-            MATCH (v:VerificationRequest { identifier: $identifier, token, $token })
-            RETURN v AS verificationRequest
+            MATCH (v:VerificationRequest {
+              identifier: $identifier,
+              token: $token 
+            })
+
+            RETURN ${verificationRequestReturn}
             `,
-            { identifier, token: hashedToken }
+            {
+              identifier,
+              token: hashedToken,
+            }
           )
-          // TODO: delete if expired?
-          return result?.records[0]?.get("verificationRequest") ?? null
+          if (!result?.records[0]) return null
+
+          const verificationRequest = result.records[0].get(
+            "verificationRequest"
+          )
+
+          return {
+            ...verificationRequest,
+            expires: neo4jEpochToDate(verificationRequest.expires),
+          }
         },
 
         async deleteVerificationRequest(identifier, token) {
           const hashedToken = hashToken(token)
           await neo4jSession.run(
             `
-            MATCH (v:VerificationRequest { identifier: $identifier, token, $token })
+            MATCH (v:VerificationRequest { identifier: $identifier, token: $token })
             DETACH DELETE v
-            RETURN v AS verificationRequest
+            RETURN count(v)
             `,
             { identifier, token: hashedToken }
           )
