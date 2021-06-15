@@ -49,7 +49,10 @@ export const PrismaAdapter: Adapter<
         async getUserByProviderAccountId(providerId, providerAccountId) {
           const account = await prisma.account.findUnique({
             where: {
-              providerId_providerAccountId: { providerId, providerAccountId },
+              providerId_providerAccountId: {
+                providerId: providerId,
+                providerAccountId: String(providerAccountId),
+              },
             },
             select: { user: true },
           })
@@ -88,7 +91,7 @@ export const PrismaAdapter: Adapter<
               userId,
               providerId,
               providerType,
-              providerAccountId,
+              providerAccountId: String(providerAccountId),
               refreshToken,
               accessToken,
               accessTokenExpires,
@@ -99,7 +102,10 @@ export const PrismaAdapter: Adapter<
         async unlinkAccount(_, providerId, providerAccountId) {
           await prisma.account.delete({
             where: {
-              providerId_providerAccountId: { providerId, providerAccountId },
+              providerId_providerAccountId: {
+                providerId,
+                providerAccountId: String(providerAccountId),
+              },
             },
           })
         },
