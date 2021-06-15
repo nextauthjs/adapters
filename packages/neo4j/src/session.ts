@@ -1,5 +1,6 @@
 import neo4j from "neo4j-driver"
 import { randomBytes } from "crypto"
+import { v4 as uuid } from "uuid"
 
 import { neo4jEpochToDate } from "./utils"
 
@@ -35,16 +36,17 @@ export const createSession = async (
         `
         MATCH (u:User { id: $userId })
         CREATE (s:Session  {
-          id : apoc.create.uuid(),
-          expires : datetime($expires),
+          id           : $sessionId,
+          expires      : datetime($expires),
           sessionToken : $sessionToken,
-          accessToken : $accessToken
+          accessToken  : $accessToken
         })
         CREATE (u)-[:HAS_SESSION]->(s)
         RETURN ${sessionReturn}
         `,
         {
           userId: user.id,
+          sessionId: uuid(),
           expires: new Date(Date.now() + sessionMaxAge)?.toISOString(),
           sessionToken: randomBytes(32).toString("hex"),
           accessToken: randomBytes(32).toString("hex"),

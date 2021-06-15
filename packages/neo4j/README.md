@@ -18,8 +18,6 @@ This is the Neo4j Adapter for [`next-auth`](https://next-auth.js.org). This pack
 
 ## Getting Started
 
-> **Prerequesite**: TODO: apoc?
-
 1. Install `next-auth` and `@next-auth/pouchdb-adapter`
 
 ```js

@@ -1,5 +1,6 @@
 import neo4j from "neo4j-driver"
 import type { Profile } from "next-auth"
+import { v4 as uuid } from "uuid"
 
 import { neo4jEpochToDate } from "./utils"
 
@@ -31,7 +32,7 @@ export const createUser = async (
       tx.run(
         `
         MERGE (u:User { email: $email })
-        ON CREATE SET u.id = apoc.create.uuid()
+        ON CREATE SET u.id = $id
         SET
           u.name= $name,
           u.image= $image,
@@ -39,6 +40,7 @@ export const createUser = async (
         RETURN ${userReturn}
         `,
         {
+          id: uuid(),
           name: profile.name,
           email: profile.email,
           image: profile.image,
