@@ -28,25 +28,33 @@ export const createSession = async (
   user: Neo4jUser,
   sessionMaxAge: number
 ) => {
-  const result = await neo4jSession.run(
-    `
-    MATCH (u:User { id: $userId })
-    CREATE (s:Session  {
-      id : apoc.create.uuid(),
-      expires : datetime($expires),
-      sessionToken : $sessionToken,
-      accessToken : $accessToken
-    })
-    CREATE (u)-[:HAS_SESSION]->(s)
-    RETURN ${sessionReturn}
-    `,
-    {
-      userId: user.id,
-      expires: new Date(Date.now() + sessionMaxAge)?.toISOString(),
-      sessionToken: randomBytes(32).toString("hex"),
-      accessToken: randomBytes(32).toString("hex"),
-    }
-  )
+  let result
+  try {
+    result = await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
+        MATCH (u:User { id: $userId })
+        CREATE (s:Session  {
+          id : apoc.create.uuid(),
+          expires : datetime($expires),
+          sessionToken : $sessionToken,
+          accessToken : $accessToken
+        })
+        CREATE (u)-[:HAS_SESSION]->(s)
+        RETURN ${sessionReturn}
+        `,
+        {
+          userId: user.id,
+          expires: new Date(Date.now() + sessionMaxAge)?.toISOString(),
+          sessionToken: randomBytes(32).toString("hex"),
+          accessToken: randomBytes(32).toString("hex"),
+        }
+      )
+    )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
   const session = result?.records[0]?.get("session")
 
@@ -62,12 +70,14 @@ export const getSession = async (
   neo4jSession: typeof neo4j.Session,
   sessionToken: string
 ) => {
-  const result = await neo4jSession.run(
-    `
-    MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-    RETURN ${sessionReturn}
-    `,
-    { sessionToken }
+  const result = await neo4jSession.readTransaction((tx) =>
+    tx.run(
+      `
+      MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+      RETURN ${sessionReturn}
+      `,
+      { sessionToken }
+    )
   )
 
   let session = result?.records[0]?.get("session")
@@ -80,13 +90,15 @@ export const getSession = async (
   }
 
   if (session.expires < new Date()) {
-    await neo4jSession.run(
-      `
+    await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
       MATCH (s:Session { id: $id })
       DETACH DELETE s
       RETURN count(s) 
       `,
-      { id: session.id }
+        { id: session.id }
+      )
     )
     return null
   }
@@ -108,16 +120,18 @@ export const updateSession = async (
     return null
   }
 
-  const result = await neo4jSession.run(
-    `
+  const result = await neo4jSession.writeTransaction((tx) =>
+    tx.run(
+      `
     MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
     SET s.expires = datetime($expires)
     RETURN ${sessionReturn}
     `,
-    {
-      sessionToken: session.sessionToken,
-      expires: new Date(Date.now() + sessionMaxAge).toISOString(),
-    }
+      {
+        sessionToken: session.sessionToken,
+        expires: new Date(Date.now() + sessionMaxAge).toISOString(),
+      }
+    )
   )
 
   const updatedSession = result?.records[0]?.get("session")
@@ -134,12 +148,14 @@ export const deleteSession = async (
   neo4jSession: typeof neo4j.Session,
   sessionToken: string
 ) => {
-  await neo4jSession.run(
-    `
+  await neo4jSession.writeTransaction((tx) =>
+    tx.run(
+      `
     MATCH (s:Session { sessionToken: $sessionToken })
     DETACH DELETE s
     RETURN count(s)
     `,
-    { sessionToken }
+      { sessionToken }
+    )
   )
 }

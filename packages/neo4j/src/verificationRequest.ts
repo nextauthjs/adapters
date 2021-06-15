@@ -25,8 +25,11 @@ export const createVerificationRequest = async (
   baseUrl: string // TODO: should I import just this or all of appOptions for future proofing?
 ) => {
   const hashedToken = hashToken(token)
-  await neo4jSession.run(
-    `
+  await neo4jSession.writeTransaction((tx) =>
+    tx.run(
+      `
+    // Use merge here because composite of
+    // identifier + token is unique
     MERGE (v:VerificationRequest {
       identifier: $identifier,
       token: $token 
@@ -37,11 +40,12 @@ export const createVerificationRequest = async (
 
     RETURN ${verificationRequestReturn}
     `,
-    {
-      identifier,
-      token: hashedToken,
-      expires: new Date(Date.now() + provider.maxAge * 1000).toISOString(),
-    }
+      {
+        identifier,
+        token: hashedToken,
+        expires: new Date(Date.now() + provider.maxAge * 1000).toISOString(),
+      }
+    )
   )
 
   // TODO: should we check it created ok?
@@ -63,18 +67,20 @@ export const getVerificationRequest = async (
   hashToken: any // TODO: correct type
 ) => {
   const hashedToken = hashToken(token)
-  const result = await neo4jSession.run(
-    `
+  const result = await neo4jSession.readTransaction((tx) =>
+    tx.run(
+      `
     MATCH (v:VerificationRequest {
       identifier: $identifier,
       token: $token 
     })
     RETURN ${verificationRequestReturn}
     `,
-    {
-      identifier,
-      token: hashedToken,
-    }
+      {
+        identifier,
+        token: hashedToken,
+      }
+    )
   )
 
   const verificationRequest = result?.records[0]?.get("verificationRequest")
@@ -94,12 +100,14 @@ export const deleteVerificationRequest = async (
   hashToken: any // TODO: correct type
 ) => {
   const hashedToken = hashToken(token)
-  await neo4jSession.run(
-    `
+  await neo4jSession.writeTransaction((tx) =>
+    tx.run(
+      `
     MATCH (v:VerificationRequest { identifier: $identifier, token: $token })
     DETACH DELETE v
     RETURN count(v)
     `,
-    { identifier, token: hashedToken }
+      { identifier, token: hashedToken }
+    )
   )
 }

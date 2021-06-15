@@ -23,17 +23,28 @@ runBasicTests({
   adapter: neo4jAdapter,
   db: {
     async disconnect() {
+      await neo4jSession.writeTransaction((tx) =>
+        tx.run(
+          `
+          MATCH (n)
+          DETACH DELETE n
+          RETURN count(n)
+          `
+        )
+      )
       await neo4jSession.close()
     },
     async session(sessionToken: any) {
-      const result = await neo4jSession.run(
-        `
-            MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-            RETURN ${sessionReturn}
-            `,
-        {
-          sessionToken,
-        }
+      const result = await neo4jSession.readTransaction((tx) =>
+        tx.run(
+          `
+          MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+          RETURN ${sessionReturn}
+          `,
+          {
+            sessionToken,
+          }
+        )
       )
       if (!result?.records[0]) return null
 
@@ -45,16 +56,18 @@ runBasicTests({
       }
     },
     async expireSession(sessionToken, expires) {
-      const result = await neo4jSession.run(
-        `
-            MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-            SET s.expires = datetime($expires)
-            RETURN ${sessionReturn}
-            `,
-        {
-          sessionToken,
-          expires: new Date(expires)?.toISOString(),
-        }
+      const result = await neo4jSession.writeTransaction((tx) =>
+        tx.run(
+          `
+          MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+          SET s.expires = datetime($expires)
+          RETURN ${sessionReturn}
+          `,
+          {
+            sessionToken,
+            expires: new Date(expires)?.toISOString(),
+          }
+        )
       )
       if (!result?.records[0]) {
         console.error(sessionToken, expires)
@@ -67,14 +80,16 @@ runBasicTests({
       }
     },
     async user(id) {
-      const result = await neo4jSession.run(
-        `
-        MATCH (u:User { id: $id })
-        RETURN ${userReturn}
-        `,
-        {
-          id,
-        }
+      const result = await neo4jSession.readTransaction((tx) =>
+        tx.run(
+          `
+          MATCH (u:User { id: $id })
+          RETURN ${userReturn}
+          `,
+          {
+            id,
+          }
+        )
       )
       if (!result?.records[0]) return null
 
@@ -86,18 +101,20 @@ runBasicTests({
       }
     },
     async account(providerId: any, providerAccountId: any) {
-      const result = await neo4jSession.run(
-        `
-            MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account { 
-              providerId: $providerId, 
-              providerAccountId: $providerAccountId 
-            })
-            RETURN ${accountReturn}
-            `,
-        {
-          providerId,
-          providerAccountId,
-        }
+      const result = await neo4jSession.readTransaction((tx) =>
+        tx.run(
+          `
+          MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account { 
+            providerId: $providerId, 
+            providerAccountId: $providerAccountId 
+          })
+          RETURN ${accountReturn}
+          `,
+          {
+            providerId,
+            providerAccountId,
+          }
+        )
       )
       if (!result?.records[0]) return null
 
@@ -109,8 +126,9 @@ runBasicTests({
       }
     },
     async verificationRequest(identifier: any, token: any) {
-      const result = await neo4jSession.run(
-        `
+      const result = await neo4jSession.readTransaction((tx) =>
+        tx.run(
+          `
         MATCH (v:VerificationRequest {
           identifier: $identifier,
           token: $token 
@@ -118,10 +136,11 @@ runBasicTests({
 
         RETURN ${verificationRequestReturn}
         `,
-        {
-          identifier,
-          token,
-        }
+          {
+            identifier,
+            token,
+          }
+        )
       )
       if (!result?.records[0]) return null
 

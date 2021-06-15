@@ -25,25 +25,32 @@ export const createUser = async (
   neo4jSession: typeof neo4j.Session,
   profile: Profile & { emailVerified?: Date }
 ) => {
-  const result = await neo4jSession.run(
-    `
-    MERGE (u:User { email: $email })
-    ON CREATE SET u.id = apoc.create.uuid()  
-    SET
-      u.name= $name,
-      u.image= $image,
-      u.emailVerified= datetime($emailVerified)
-    RETURN ${userReturn} 
-    `,
-    {
-      name: profile.name,
-      email: profile.email,
-      image: profile.image,
-      emailVerified: profile.emailVerified?.toISOString() ?? null,
-    }
-  )
-
-  const user = result?.records[0]?.get("user")
+  let user
+  try {
+    const result = await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
+        MERGE (u:User { email: $email })
+        ON CREATE SET u.id = apoc.create.uuid()
+        SET
+          u.name= $name,
+          u.image= $image,
+          u.emailVerified= datetime($emailVerified)
+        RETURN ${userReturn}
+        `,
+        {
+          name: profile.name,
+          email: profile.email,
+          image: profile.image,
+          emailVerified: profile.emailVerified?.toISOString() ?? null,
+        }
+      )
+    )
+    user = result?.records[0]?.get("user")
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
   return user
     ? {
@@ -57,13 +64,16 @@ export const getUser = async (
   neo4jSession: typeof neo4j.Session,
   id: String
 ) => {
-  const result = await neo4jSession.run(
-    `
+  const result = await neo4jSession.readTransaction((tx) =>
+    tx.run(
+      `
     MATCH (u:User { id: $id })
     RETURN ${userReturn} 
     `,
-    { id }
+      { id }
+    )
   )
+
   const user = result?.records[0]?.get("user")
 
   return user
@@ -80,12 +90,14 @@ export const getUserByEmail = async (
 ) => {
   if (!email) return null
 
-  const result = await neo4jSession.run(
-    `
+  const result = await neo4jSession.readTransaction((tx) =>
+    tx.run(
+      `
     MATCH (u:User { email: $email })
     RETURN ${userReturn} 
     `,
-    { email }
+      { email }
+    )
   )
 
   const user = result?.records[0]?.get("user")
@@ -103,15 +115,17 @@ export const getUserByProviderAccountId = async (
   providerId: string,
   providerAccountId: string
 ) => {
-  const result = await neo4jSession.run(
-    `
-  MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
-    providerId: $providerId, 
-    providerAccountId: $providerAccountId
-  })
-  RETURN ${userReturn} 
-  `,
-    { providerId, providerAccountId }
+  const result = await neo4jSession.readTransaction((tx) =>
+    tx.run(
+      `
+      MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
+        providerId: $providerId, 
+        providerAccountId: $providerAccountId
+      })
+      RETURN ${userReturn} 
+      `,
+      { providerId, providerAccountId }
+    )
   )
   const user = result?.records[0]?.get("user")
 
@@ -127,24 +141,32 @@ export const updateUser = async (
   neo4jSession: typeof neo4j.Session,
   user: Neo4jUser & { id: string }
 ) => {
-  const result = await neo4jSession.run(
-    `
-    MATCH (u:User { id: $id })
-    SET 
-      u.name          = $name,
-      u.email         = $email,
-      u.image         = $image,
-      u.emailVerified = datetime($emailVerified)
-    RETURN ${userReturn}
-    `,
-    {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      emailVerified: user.emailVerified?.toISOString() ?? null,
-    }
-  )
+  let result
+  try {
+    result = await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
+        MATCH (u:User { id: $id })
+        SET 
+        u.name          = $name,
+        u.email         = $email,
+        u.image         = $image,
+        u.emailVerified = datetime($emailVerified)
+        RETURN ${userReturn}
+        `,
+        {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          emailVerified: user.emailVerified?.toISOString() ?? null,
+        }
+      )
+    )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
   const updatedUser = result?.records[0]?.get("user")
 
@@ -160,12 +182,14 @@ export const deleteUser = async (
   neo4jSession: typeof neo4j.Session,
   id: string
 ) => {
-  await neo4jSession.run(
-    `
-    MATCH (u:User { id: $id })
-    DETACH DELETE u
-    RETURN count(u)
+  await neo4jSession.writeTransaction((tx) =>
+    tx.run(
+      `
+      MATCH (u:User { id: $id })
+      DETACH DELETE u
+      RETURN count(u)
     `,
-    { id }
+      { id }
+    )
   )
 }

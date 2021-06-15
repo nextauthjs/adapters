@@ -5,17 +5,20 @@ NEO4J_USER=neo4j
 NEO4J_PASS=password
 CONTAINER_NAME=next-auth-neo4j-test
 
+# TODO: discuss, should use apoc here or generate uuid in nodejs
+
 # Start db
 docker run -d --rm \
   -e NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASS} \
   -e NEO4J_USER=${NEO4J_USER} \
   -e NEO4J_PASS=${NEO4J_PASS} \
+  -e NEO4JLABS_PLUGINS=[\"apoc\"] \
   --name "${CONTAINER_NAME}" \
   -p7474:7474 -p7687:7687 \
   -v=$SCRIPT_DIR/resources:/var/lib/neo4j/resources \
   neo4j:4.2.0
 
-echo \"Waiting 10 sec for db to start...\" && sleep 10
+echo \"Waiting 20 sec for db to start...\" && sleep 20
 
 # Create constraints
 docker exec \

@@ -35,34 +35,36 @@ export const linkAccount = async (
   accessToken: Neo4jAccount["accessToken"],
   accessTokenExpires: Neo4jAccount["accessTokenExpires"]
 ) => {
-  const result = await neo4jSession.run(
-    `
-    MATCH (u:User { id: $userId })
-    // Use merge here because composite of
-    // providerId + providerAccountId is unique
-    MERGE (a:Account { 
-      providerId: $providerId, 
-      providerAccountId: $providerAccountId 
-    })
-    SET 
-      a.providerType       = $providerType,
-      a.refreshToken       = $refreshToken,
-      a.accessToken        = $accessToken,
-      a.accessTokenExpires = datetime($accessTokenExpires)
-    
-    MERGE (u)-[:HAS_ACCOUNT]->(a)
+  const result = await neo4jSession.writeTransaction((tx) =>
+    tx.run(
+      `
+      MATCH (u:User { id: $userId })
+      // Use merge here because composite of
+      // providerId + providerAccountId is unique
+      MERGE (a:Account { 
+        providerId: $providerId, 
+        providerAccountId: $providerAccountId 
+      })
+      SET 
+        a.providerType       = $providerType,
+        a.refreshToken       = $refreshToken,
+        a.accessToken        = $accessToken,
+        a.accessTokenExpires = datetime($accessTokenExpires)
+      
+      MERGE (u)-[:HAS_ACCOUNT]->(a)
 
-    RETURN ${accountReturn}
-    `,
-    {
-      userId,
-      providerId,
-      providerType,
-      providerAccountId,
-      refreshToken,
-      accessToken,
-      accessTokenExpires: accessTokenExpires?.toISOString() ?? null,
-    }
+      RETURN ${accountReturn}
+      `,
+      {
+        userId,
+        providerId,
+        providerType,
+        providerAccountId,
+        refreshToken,
+        accessToken,
+        accessTokenExpires: accessTokenExpires?.toISOString() ?? null,
+      }
+    )
   )
 
   const account = result?.records[0]?.get("account")
@@ -81,18 +83,20 @@ export const unlinkAccount = async (
   providerId: string,
   providerAccountId: string
 ) => {
-  await neo4jSession.run(
-    `
-    MATCH (a:Account { 
-      providerId: $providerId, 
-      providerAccountId: $providerAccountId 
-    })
-    DETACH DELETE a
-    RETURN count(a)
-    `,
-    {
-      providerId,
-      providerAccountId,
-    }
+  await neo4jSession.writeTransaction((tx) =>
+    tx.run(
+      `
+      MATCH (a:Account { 
+        providerId: $providerId, 
+        providerAccountId: $providerAccountId 
+      })
+      DETACH DELETE a
+      RETURN count(a)
+      `,
+      {
+        providerId,
+        providerAccountId,
+      }
+    )
   )
 }
