@@ -33,6 +33,7 @@ runBasicTests({
         )
       )
       await neo4jSession.close()
+      await driver.close()
     },
     async session(sessionToken: any) {
       const result = await neo4jSession.readTransaction((tx) =>
