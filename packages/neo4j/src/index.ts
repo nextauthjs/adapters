@@ -1,42 +1,33 @@
 import neo4j from "neo4j-driver"
-import {
-  neo4jEpochToDate,
-  userReturn,
-  sessionReturn,
-  accountReturn,
-  verificationRequestReturn,
-} from "./utils"
-
-import { createHash, randomBytes } from "crypto"
+import { createHash } from "crypto"
 import type { Profile } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 
-interface Neo4jUser {
-  id: string
-  name?: string
-  email?: string
-  emailVerified?: Date | null
-  image?: string
-}
+import {
+  Neo4jUser,
+  createUser,
+  getUser,
+  getUserByEmail,
+  getUserByProviderAccountId,
+  updateUser,
+  deleteUser,
+} from "./user"
 
-interface Neo4jSession {
-  id: string
-  userId: string
-  expires: Date | string
-  sessionToken: string
-  accessToken: string
-}
+import { linkAccount, unlinkAccount } from "./account"
 
-interface Neo4jAccount {
-  id: string
-  userId: string
-  providerType: string
-  providerId: string
-  providerAccountId: string
-  refreshToken: string | null | undefined
-  accessToken: string | null | undefined
-  accessTokenExpires: Date | null | undefined
-}
+import {
+  Neo4jSession,
+  createSession,
+  getSession,
+  updateSession,
+  deleteSession,
+} from "./session"
+
+import {
+  createVerificationRequest,
+  getVerificationRequest,
+  deleteVerificationRequest,
+} from "./verificationRequest"
 
 export const Neo4jAdapter: Adapter<
   typeof neo4j.Session,
@@ -61,360 +52,113 @@ export const Neo4jAdapter: Adapter<
         displayName: "NEO4J",
 
         async createUser(profile) {
-          const result = await neo4jSession.run(
-            `
-            MERGE (u:User { email: $email })
-            ON CREATE SET u.id = apoc.create.uuid() 
-            SET
-              u.name= $name,
-              u.image= $image,
-              u.emailVerified= datetime($emailVerified)
-            RETURN ${userReturn} 
-            `,
-            {
-              name: profile.name,
-              email: profile.email,
-              image: profile.image,
-              emailVerified: profile.emailVerified?.toISOString() ?? null,
-            }
-          )
-
-          if (!result?.records[0]) return null
-
-          const user = result.records[0].get("user")
-
-          return {
-            ...user,
-            emailVerified: neo4jEpochToDate(user.emailVerified),
-          }
+          return await createUser(neo4jSession, profile)
         },
 
         async getUser(id) {
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User { id: $id })
-            RETURN ${userReturn} 
-            `,
-            { id }
-          )
-          if (!result?.records[0]) return null
-
-          const user = result.records[0].get("user")
-
-          return {
-            ...user,
-            emailVerified: neo4jEpochToDate(user.emailVerified),
-          }
+          return await getUser(neo4jSession, id)
         },
 
         async getUserByEmail(email) {
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User { email: $email })
-            RETURN ${userReturn} 
-            `,
-            { email }
-          )
-          if (!result?.records[0]) return null
-
-          const user = result.records[0].get("user")
-
-          return {
-            ...user,
-            emailVerified: neo4jEpochToDate(user.emailVerified),
-          }
+          return await getUserByEmail(neo4jSession, email)
         },
 
         async getUserByProviderAccountId(providerId, providerAccountId) {
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
-              providerId: $providerId, 
-              providerAccountId: $providerAccountId
-            })
-            RETURN ${userReturn} 
-            `,
-            { providerId, providerAccountId }
+          return await getUserByProviderAccountId(
+            neo4jSession,
+            providerId,
+            providerAccountId
           )
-          if (!result?.records[0]) return null
-
-          const user = result.records[0].get("user")
-
-          return {
-            ...user,
-            emailVerified: neo4jEpochToDate(user.emailVerified),
-          }
         },
 
-        async updateUser(user: Neo4jUser & { id: string }) {
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User { id: $id })
-            SET 
-              u.name          = $name,
-              u.email         = $email,
-              u.image         = $image,
-              u.emailVerified = datetime($emailVerified)
-            RETURN ${userReturn}
-            `,
-            {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              image: user.image,
-              emailVerified: user.emailVerified?.toISOString() ?? null,
-            }
-          )
-          if (!result?.records[0]) return null
-
-          const updatedUser = result.records[0].get("user")
-
-          return {
-            ...updatedUser,
-            emailVerified: neo4jEpochToDate(updatedUser.emailVerified),
-          }
+        async updateUser(user) {
+          return await updateUser(neo4jSession, user)
         },
 
         async deleteUser(id) {
-          await neo4jSession.run(
-            `
-            MATCH (u:User { id: $id })
-            DETACH DELETE u
-            RETURN count(u)
-            `,
-            { id }
-          )
+          return await deleteUser(neo4jSession, id)
         },
 
         async linkAccount(
-          userId: Neo4jAccount["userId"],
-          providerId: Neo4jAccount["providerId"],
-          providerType: Neo4jAccount["providerType"],
-          providerAccountId: Neo4jAccount["providerAccountId"],
-          refreshToken: Neo4jAccount["refreshToken"],
-          accessToken: Neo4jAccount["accessToken"],
-          accessTokenExpires: Neo4jAccount["accessTokenExpires"]
+          userId,
+          providerId,
+          providerType,
+          providerAccountId,
+          refreshToken,
+          accessToken,
+          accessTokenExpires
         ) {
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User { id: $userId })
-            // Use merge here because composite of
-            // providerId + providerAccountId is unique
-            MERGE (a:Account { 
-              providerId: $providerId, 
-              providerAccountId: $providerAccountId 
-            })
-            SET 
-              a.providerType       = $providerType,
-              a.refreshToken       = $refreshToken,
-              a.accessToken        = $accessToken,
-              a.accessTokenExpires = datetime($accessTokenExpires)
-            
-            MERGE (u)-[:HAS_ACCOUNT]->(a)
-
-            RETURN ${accountReturn}
-            `,
-            {
-              userId,
-              providerId,
-              providerType,
-              providerAccountId,
-              refreshToken,
-              accessToken,
-              accessTokenExpires: accessTokenExpires?.toISOString() ?? null,
-            }
+          return await linkAccount(
+            neo4jSession,
+            userId,
+            providerId,
+            providerType,
+            providerAccountId,
+            refreshToken,
+            accessToken,
+            accessTokenExpires
           )
-          if (!result?.records[0]) return null
-
-          const account = result.records[0].get("account")
-
-          return {
-            ...account,
-            accessTokenExpires: neo4jEpochToDate(account.accessTokenExpires),
-          }
         },
 
         async unlinkAccount(_, providerId, providerAccountId) {
-          await neo4jSession.run(
-            `
-            MATCH (a:Account { 
-              providerId: $providerId, 
-              providerAccountId: $providerAccountId 
-            })
-            DETACH DELETE a
-            RETURN a
-            `,
-            {
-              providerId,
-              providerAccountId,
-            }
+          return await unlinkAccount(
+            neo4jSession,
+            _,
+            providerId,
+            providerAccountId
           )
         },
 
         async createSession(user: Neo4jUser) {
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User { id: $userId })
-            CREATE (s:Session  {
-              id : apoc.create.uuid(),
-              expires : datetime($expires),
-              sessionToken : $sessionToken,
-              accessToken : $accessToken
-            })
-            CREATE (u)-[:HAS_SESSION]->(s)
-            RETURN ${sessionReturn}
-            `,
-            {
-              userId: user.id,
-              expires: new Date(Date.now() + sessionMaxAge)?.toISOString(),
-              sessionToken: randomBytes(32).toString("hex"),
-              accessToken: randomBytes(32).toString("hex"),
-            }
-          )
-
-          const session = result?.records[0]?.get("session")
-
-          return {
-            ...session,
-            expires: neo4jEpochToDate(session.expires),
-          }
+          return await createSession(neo4jSession, user, sessionMaxAge)
         },
 
         async getSession(sessionToken) {
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-            RETURN ${sessionReturn}
-            `,
-            { sessionToken }
-          )
-
-          if (!result?.records[0]) return null
-
-          let session = result?.records[0]?.get("session")
-
-          session = {
-            ...session,
-            expires: neo4jEpochToDate(session.expires),
-          }
-
-          if (session.expires < new Date()) {
-            await neo4jSession.run(
-              `
-            MATCH (s:Session { id: $id })
-            DETACH DELETE s
-            RETURN s 
-            `,
-              { id: session.id }
-            )
-            return null
-          }
-
-          return session
+          return await getSession(neo4jSession, sessionToken)
         },
 
         async updateSession(session, force) {
-          if (
-            !force &&
-            Number(session.expires) - sessionMaxAge + sessionUpdateAge >
-              Date.now()
-          ) {
-            return null
-          }
-
-          const result = await neo4jSession.run(
-            `
-            MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-            SET s.expires = datetime($expires)
-            RETURN ${sessionReturn}
-            `,
-            {
-              sessionToken: session.sessionToken,
-              expires: new Date(Date.now() + sessionMaxAge).toISOString(),
-            }
+          return await updateSession(
+            neo4jSession,
+            session,
+            force,
+            sessionMaxAge,
+            sessionUpdateAge
           )
-          return result?.records[0]?.get("session") ?? null
         },
 
         async deleteSession(sessionToken) {
-          await neo4jSession.run(
-            `
-            MATCH (s:Session { sessionToken: $sessionToken })
-            DETACH DELETE s
-            RETURN count(s)
-            `,
-            { sessionToken }
-          )
+          return await deleteSession(neo4jSession, sessionToken)
         },
 
         async createVerificationRequest(identifier, url, token, _, provider) {
-          const hashedToken = hashToken(token)
-          await neo4jSession.run(
-            `
-            MERGE (v:VerificationRequest {
-              identifier: $identifier,
-              token: $token 
-            })
-            SET 
-              v.expires = datetime($expires),
-              v.token   = $token
-
-            RETURN ${verificationRequestReturn}
-            `,
-            {
-              identifier,
-              token: hashedToken,
-              expires: new Date(
-                Date.now() + provider.maxAge * 1000
-              ).toISOString(),
-            }
-          )
-          await provider.sendVerificationRequest({
+          return await createVerificationRequest(
+            neo4jSession,
             identifier,
             url,
             token,
-            baseUrl: appOptions.baseUrl,
+            _,
             provider,
-          })
+            hashToken,
+            appOptions.baseUrl
+          )
         },
 
         async getVerificationRequest(identifier, token) {
-          const hashedToken = hashToken(token)
-          const result = await neo4jSession.run(
-            `
-            MATCH (v:VerificationRequest {
-              identifier: $identifier,
-              token: $token 
-            })
-
-            RETURN ${verificationRequestReturn}
-            `,
-            {
-              identifier,
-              token: hashedToken,
-            }
+          return await getVerificationRequest(
+            neo4jSession,
+            identifier,
+            token,
+            hashToken
           )
-          if (!result?.records[0]) return null
-
-          const verificationRequest = result.records[0].get(
-            "verificationRequest"
-          )
-
-          return {
-            ...verificationRequest,
-            expires: neo4jEpochToDate(verificationRequest.expires),
-          }
         },
 
         async deleteVerificationRequest(identifier, token) {
-          const hashedToken = hashToken(token)
-          await neo4jSession.run(
-            `
-            MATCH (v:VerificationRequest { identifier: $identifier, token: $token })
-            DETACH DELETE v
-            RETURN count(v)
-            `,
-            { identifier, token: hashedToken }
+          return await deleteVerificationRequest(
+            neo4jSession,
+            identifier,
+            token,
+            hashToken
           )
         },
       }

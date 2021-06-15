@@ -2,13 +2,12 @@ import neo4j from "neo4j-driver"
 
 import { Neo4jAdapter } from "../src"
 
-import {
-  neo4jEpochToDate,
-  userReturn,
-  sessionReturn,
-  accountReturn,
-  verificationRequestReturn,
-} from "../src/utils"
+import { neo4jEpochToDate } from "../src/utils"
+
+import { userReturn } from "../src/user"
+import { accountReturn } from "../src/account"
+import { sessionReturn } from "../src/session"
+import { verificationRequestReturn } from "../src/verificationRequest"
 
 import { runBasicTests } from "../../../basic-tests"
 
