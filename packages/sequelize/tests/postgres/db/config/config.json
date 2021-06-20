@@ -1,22 +1,22 @@
 {
   "development": {
-    "username": "postgres",
-    "password": "secretpw123",
-    "database": "database_development",
+    "username": "nextauth",
+    "password": null,
+    "database": "nextauth",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "test": {
-    "username": "postgres",
-    "password": "secretpw123",
-    "database": "database_development",
+    "username": "nextauth",
+    "password": null,
+    "database": "nextauth",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "production": {
-    "username": "root",
+    "username": "nextauth",
     "password": null,
-    "database": "database_production",
+    "database": "nextauth",
     "host": "127.0.0.1",
     "dialect": "mysql"
   }

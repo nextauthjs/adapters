@@ -5,7 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "yarn test:mysql && yarn test:postgres",
+    "test:mysql": "./tests/mysql/test.sh",
+    "test:postgres": "./tests/postgres/test.sh"
   },
   "repository": "https://github.com/nextauthjs/adapters",
   "bugs": {
@@ -20,7 +22,21 @@
   "license": "MIT",
   "homepage": "https://github.com/nextauthjs/adapters/tree/canary/packages/sequelize",
   "peerDependencies": {
-    "sequelize": "^6.6.2",
-    "next-auth": "^3.20.0"
+    "mysql2": "^2.2.5",
+    "next-auth": "^3.20.0",
+    "pg": "^8.6.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.6.2"
+  },
+  "peerDependenciesMeta": {
+    "mysql2": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "pg-hstore": {
+      "optional": true
+    }
   }
 }
