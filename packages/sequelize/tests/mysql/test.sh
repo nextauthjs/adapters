@@ -4,7 +4,6 @@ MYSQL_DATABASE=next-auth
 MYSQL_ROOT_PASSWORD=password
 CONTAINER_NAME=next-auth-mysql-test
 
-
 # Start db
 docker run -d --rm \
 -e MYSQL_DATABASE=${MYSQL_DATABASE} \
@@ -16,11 +15,7 @@ mysql:8 \
 
 echo \"Waiting 20 sec for db to start...\" && sleep 20
 
-# Create tables and indeces
-# docker exec \
-# -i "${CONTAINER_NAME}" \
-# sh -c 'exec mysql -uroot -p${MYSQL_ROOT_PASSWORD} ${MYSQL_DATABASE}' # < ./tests/mysql/schema.sql
-
+# Run sequelize migrations
 npx sequelize-cli db:migrate --config ./tests/mysql/db/config/config.json --migrations-path ./tests/mysql/db/migrations --models-path ./tests/mysql/db/models
 
 # Always stop container, but exit with 1 when tests are failing
