@@ -1,13 +1,11 @@
 "use strict"
 
-declare module "sequelize"
-
 import Sequelize, { Model } from "sequelize"
 import {
   userModel,
   accountModel,
   sessionModel,
-  verificationRequestModel,
+  verificationRequestModel
 } from "../../../../src/models"
 
 interface SequelizeModels {
@@ -40,7 +38,7 @@ db.Account = accountModel(Model, sequelize, Sequelize)
 db.Session = sessionModel(Model, sequelize, Sequelize)
 db.VerificationRequest = verificationRequestModel(Model, sequelize, Sequelize)
 
-Object.keys(db).forEach((modelName) => {
+Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
     db[modelName].associate(db)
   }
