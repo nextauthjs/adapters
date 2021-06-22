@@ -1,5 +1,7 @@
 "use strict"
 
+declare module "sequelize"
+
 import Sequelize, { Model } from "sequelize"
 import {
   userModel,
