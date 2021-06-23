@@ -12,6 +12,10 @@ export const DynamoDBAdapter: Adapter<
   Session
 > = (client, options) => {
   const TableName = options?.tableName ?? "next-auth"
+  
+  function secondsFromNow(milliseconds: number): number {
+    return Math.round((Date.now() + milliseconds) / 1000);
+  }
 
   return {
     async getAdapter({ logger, session, secret, ...appOptions }) {
@@ -212,9 +216,7 @@ export const DynamoDBAdapter: Adapter<
         async createSession(user) {
           let expires = null
           if (sessionMaxAge) {
-            const dateExpires = new Date()
-            dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
-            expires = dateExpires.toISOString()
+            expires = secondsFromNow(sessionMaxAge);
           }
 
           const sessionToken = randomBytes(32).toString("hex")
@@ -258,7 +260,7 @@ export const DynamoDBAdapter: Adapter<
 
           const session = data.Items[0] || null
 
-          if (session?.expires && new Date() > session.expires) {
+          if (session?.expires && secondsFromNow(0) > session.expires) {
             return null
           }
 
@@ -297,8 +299,7 @@ export const DynamoDBAdapter: Adapter<
             return null
           }
 
-          const newExpiryDate = new Date()
-          newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
+          const newExpiryDate = secondsFromNow(sessionMaxAge);
 
           const data = await client
             .update({
@@ -314,7 +315,7 @@ export const DynamoDBAdapter: Adapter<
                 "#updatedAt": "updatedAt",
               },
               ExpressionAttributeValues: {
-                ":expires": newExpiryDate.toISOString(),
+                ":expires": newExpiryDate,
                 ":updatedAt": new Date().toISOString(),
               },
               ReturnValues: "UPDATED_NEW",
@@ -368,10 +369,7 @@ export const DynamoDBAdapter: Adapter<
 
           let expires = null
           if (maxAge) {
-            const dateExpires = new Date()
-            dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
-
-            expires = dateExpires.toISOString()
+            expires = secondsFromNow(maxAge * 1000);
           }
 
           const now = new Date()
@@ -412,7 +410,7 @@ export const DynamoDBAdapter: Adapter<
             })
             .promise()
 
-          if (data.Item?.expires && data.Item.expires < Date.now()) {
+          if (data.Item?.expires && data.Item.expires < secondsFromNow(0)) {
             // Delete the expired request so it cannot be used
             await client
               .delete({
