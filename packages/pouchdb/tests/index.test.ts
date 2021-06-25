@@ -105,7 +105,7 @@ runBasicTests({
 // Custom tests
 
 // Prevent "ReferenceError: You are trying to import a file after the Jest environment has been torn down" https://stackoverflow.com/questions/50793885/referenceerror-you-are-trying-to-import-a-file-after-the-jest-environment-has#50793993
-jest.useFakeTimers()
+// jest.useFakeTimers()
 
 const sendVerificationRequestMock = jest.fn()
 
@@ -188,7 +188,7 @@ describe("Additional tests", () => {
 
   afterEach(async () => await disconnect())
 
-  test("deleteUser", async () => {
+  test.skip("deleteUser", async () => {
     const id = ["USER", ulid()].join("_")
     await pouchdb.put({ _id: id, data: { id, ...mock.user } })
 
@@ -198,7 +198,7 @@ describe("Additional tests", () => {
     expect(res).toBe(404)
   })
 
-  test("unlinkAccount", async () => {
+  test.skip("unlinkAccount", async () => {
     const userId = ["USER", ulid()].join("_")
     const accountId = ["ACCOUNT", ulid()].join("_")
     await pouchdb.put({ _id: userId, data: { id: userId, ...mock.user } })
