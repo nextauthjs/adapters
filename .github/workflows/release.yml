@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
-      - canary
+      - next
   pull_request:
     branches:
-      - canary
+      - main
 
 jobs:
   changes:
@@ -63,12 +63,12 @@ jobs:
         run: lerna run build --since HEAD~
       - name: Authenticate with NPM
         run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-      - name: Publish to @canary
-        if: ${{github.event_name == 'push' && github.ref == 'refs/heads/canary'}}
-        run: lerna publish --canary --preid canary --dist-tag canary --yes --no-verify-access
+      - name: Publish to @next
+        if: ${{github.event_name == 'push' && github.ref == 'refs/heads/next'}}
+        run: lerna publish --canary --preid next --dist-tag next --yes --no-verify-access
       - name: Publish to @pr
-        if: ${{github.event_name == 'pull_request' && github.base_ref	 == 'refs/heads/canary'}}
+        if: ${{github.event_name == 'pull_request' && github.base_ref	 == 'refs/heads/main'}}
         run: lerna publish --canary --preid pr.${{github.event.number}} --dist-tag pr-${{github.event.number}} --yes --no-verify-access
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: lerna publish --dist-tag latest --yes --no-verify-access -m "publish [skip ci]"
+        run: "lerna publish --dist-tag latest --yes --no-verify-access -m 'chore(release): publish [skip ci]'"
