@@ -51,6 +51,29 @@ export default NextAuth({
 })
 ```
 
+## Custom Fields
+
+In order to add custom fields to the database, you must first add them to your Prisma schema file, for example.
+
+```diff
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+> twitter       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+}
+```
+
+When running `prisma migrate`, Prisma will create the User table with the above schema in your specified underlying database.
+
+Then, during the first sign-in NextAuth.js will return the simpler prototype user object, but after the first sign-in, NextAuth.js will return the full custom User object, including your custom field and userId, in callbacks such as [`signIn`](https://next-auth.js.org/configuration/callbacks#sign-in-callback).
+
 ## Contributing
 
 We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
