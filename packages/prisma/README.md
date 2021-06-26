@@ -72,7 +72,7 @@ model User {
 
 When running `prisma migrate`, Prisma will create the User table with the above schema in your specified underlying database.
 
-Then, during the first sign-in NextAuth.js will return the simpler prototype user object, but after the first signin, NextAuth.js will return the full custom User object, including your custom field and userId, in callbacks such as [`signIn`](https://next-auth.js.org/configuration/callbacks#sign-in-callback).
+Then, during the first sign-in NextAuth.js will return the simpler prototype user object, but after the first signin, NextAuth.js will return the full custom User object, including your custom field and userId, in callbacks such as [sign-in](https://next-auth.js.org/configuration/callbacks#sign-in-callback).
 
 ## Contributing
 
