@@ -1,14 +1,14 @@
 <p align="center">
    <br/>
-   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/canary/packages/dynamodb/logo.png" />
+   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/main/packages/dynamodb/logo.png" />
    <h3 align="center"><b>DynamoDB Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter/canary" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/dynamodb-adapter/canary" alt="@next-auth/dynamodb-adapter Version" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="Build Test" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/dynamodb-adapter/latest" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/dynamodb-adapter" alt="@next-auth/dynamodb-adapter Version" />
    </p>
 </p>
 
@@ -22,10 +22,10 @@ You can find the DynamoDB schema in the docs at [next-auth.js.org/adapters/dynam
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/dynamodb-adapter@canary`
+1. Install `next-auth` and `@next-auth/dynamodb-adapter`
 
 ```js
-npm install next-auth @next-auth/dynamodb-adapter@canary
+npm install next-auth @next-auth/dynamodb-adapter
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
@@ -83,7 +83,7 @@ Here is a schema of the table :
 
 ## Contributing
 
-We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
+We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/main/CONTRIBUTING.md).
 
 ## License
 
