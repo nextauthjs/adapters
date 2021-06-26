@@ -62,7 +62,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-> twitter       String?
+> google        String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
