@@ -1,0 +1,70 @@
+{
+  "name": "@next-auth/typeorm-legacy-adapter",
+  "version": "0.0.1",
+  "description": "TypeORM (legacy) adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/adapters/issues"
+  },
+  "author": "Iain Collins",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "index.d.ts"
+  ],
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "typeorm"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "babel src --out-dir dist",
+    "test": "yarn mysql && yarn postgres",
+    "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
+    "mysql": "./tests/mysql/test.sh",
+    "postgres": "./tests/postgresql/test.sh",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.14.0",
+    "require_optional": "^1.0.1",
+    "typeorm": "^0.2.30"
+  },
+  "devDependencies": {
+    "assert": "^2.0.0",
+    "mongodb": "^3.6.3",
+    "mssql": "^6.3.1",
+    "mysql": "^2.18.1",
+    "pg": "^8.5.1",
+    "typeorm-adapter": "^1.2.0"
+  },
+  "peerDependencies": {
+    "mongodb": "^3.5.9",
+    "mssql": "^6.2.1",
+    "mysql": "^2.18.1",
+    "next-auth": "^3.1.0",
+    "pg": "^8.2.1"
+  },
+  "peerDependenciesMeta": {
+    "mongodb": {
+      "optional": true
+    },
+    "mysql": {
+      "optional": true
+    },
+    "mssql": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    }
+  }
+}

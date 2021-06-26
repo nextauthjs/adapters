@@ -1,0 +1,47 @@
+{
+  "name": "@next-auth/prisma-legacy-adapter",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "version": "0.0.0",
+  "description": "Prisma (legacy) adapter for next-auth.",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "prisma"
+  ],
+  "homepage": "https://next-auth.js.org",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "index.d.ts"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "setup": "yarn reset",
+    "reset": "prisma migrate reset --preview-feature -f",
+    "test": "yarn setup && jest",
+    "build": "yarn reset && babel src --out-dir dist"
+  },
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
+  "author": "Fredrik Pettersen <pettersen@hey.com>",
+  "license": "ISC",
+  "peerDependencies": {
+    "@prisma/client": "^2.16.1",
+    "next-auth": "^3.17.2"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.14.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^2.16.0",
+    "prisma": "^2.16.0"
+  }
+}

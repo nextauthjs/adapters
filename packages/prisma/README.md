@@ -1,138 +1,83 @@
-# Prisma Adapter
+<p align="center">
+   <br/>
+   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/canary/packages/prisma/logo.svg" />
+   <h3 align="center"><b>Prisma Adapter</b> - NextAuth.js</h3>
+   <p align="center">
+   Open Source. Full Stack. Own Your Data.
+   </p>
+   <p align="center" style="align: center;">
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Canary CI Test" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/prisma-adapter/canary" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/prisma-adapter/canary" alt="@next-auth/prisma-adapter Version" />
+   </p>
+</p>
 
-```prisma filename="schema.prisma"
-model Account {
-  id                 Int       @id @default(autoincrement())
-  userId             Int
-  providerType       String
-  providerId         String
-  providerAccountId  String
-  refreshToken       String?
-  accessToken        String?
-  accessTokenExpires DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  user               User      @relation(fields: [userId], references: [id])
+## Overview
 
-  @@unique([providerId, providerAccountId])
-}
+This is the Prisma Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-model Session {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  expires      DateTime
-  sessionToken String   @unique
-  accessToken  String   @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id])
-}
+You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma](https://next-auth.js.org/adapters/prisma).
 
+## Getting Started
+
+1. Install `next-auth` and `@next-auth/prisma-adapter@canary`
+
+```js
+npm install next-auth @next-auth/prisma-adapter@canary
+```
+
+2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
+
+```js
+import NextAuth from "next-auth"
+import Providers from "next-auth/providers"
+import { PrismaAdapter } from "@next-auth/prisma-adapter"
+import * as Prisma from "@prisma/client"
+
+const prisma = new Prisma.PrismaClient()
+
+// For more information on each option (and a full list of options) go to
+// https://next-auth.js.org/configuration/options
+export default NextAuth({
+  // https://next-auth.js.org/configuration/providers
+  providers: [
+    Providers.Google({
+      clientId: process.env.GOOGLE_ID,
+      clientSecret: process.env.GOOGLE_SECRET,
+    }),
+  ],
+  adapter: PrismaAdapter(prisma)
+  ...
+})
+```
+
+## Custom Fields
+
+In order to add custom fields to the database, you must first add them to your Prisma schema file, for example.
+
+```diff
 model User {
-  id            Int       @id @default(autoincrement())
+  id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+> google        String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
 }
-
-model VerificationRequest {
-  id         Int      @id @default(autoincrement())
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
 ```
 
-Changes from the original Prisma Adapter
+When running `prisma migrate`, Prisma will create the User table with the above schema in your specified underlying database.
 
-```diff
- model Account {
--  id                 Int       @default(autoincrement()) @id
-+  id                 Int       @id @default(autoincrement())
--  compoundId         String    @unique @map(name: "compound_id")
--  userId             Int       @map(name: "user_id")
-+  userId             Int
-+  user               User      @relation(fields: [userId], references: [id])
--  providerType       String    @map(name: "provider_type")
-+  providerType       String
--  providerId         String    @map(name: "provider_id")
-+  providerId         String
--  providerAccountId  String    @map(name: "provider_account_id")
-+  providerAccountId  String
--  refreshToken       String?   @map(name: "refresh_token")
-+  refreshToken       String?
--  accessToken        String?   @map(name: "access_token")
-+  accessToken        String?
--  accessTokenExpires DateTime? @map(name: "access_token_expires")
-+  accessTokenExpires DateTime?
--  createdAt          DateTime  @default(now()) @map(name: "created_at")
-+  createdAt          DateTime  @default(now())
--  updatedAt          DateTime  @default(now()) @map(name: "updated_at")
-+  updatedAt          DateTime  @updatedAt
+Then, during the first sign-in NextAuth.js will return the simpler prototype user object, but after the first sign-in, NextAuth.js will return the full custom User object, including your custom field and userId, in callbacks such as [`signIn`](https://next-auth.js.org/configuration/callbacks#sign-in-callback).
 
--  @@index([providerAccountId], name: "providerAccountId")
--  @@index([providerId], name: "providerId")
--  @@index([userId], name: "userId")
--  @@map(name: "accounts")
-+  @@unique([providerId, providerAccountId])
- }
+## Contributing
 
- model Session {
--  id           Int      @default(autoincrement()) @id
-+  id           Int      @id @default(autoincrement())
--  userId       Int      @map(name: "user_id")
-+  userId       Int
-+  user         User     @relation(fields: [userId], references: [id])
-   expires      DateTime
--  sessionToken String   @unique @map(name: "session_token")
-+  sessionToken String   @unique
--  accessToken  String   @unique @map(name: "access_token")
-+  accessToken  String   @unique
--  createdAt    DateTime @default(now()) @map(name: "created_at")
-+  createdAt    DateTime @default(now())
--  updatedAt    DateTime @default(now()) @map(name: "updated_at")
-+  updatedAt    DateTime @updatedAt
--
--  @@map(name: "sessions")
- }
+We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
 
- model User {
--  id            Int       @default(autoincrement()) @id
-+  id            Int       @id @default(autoincrement())
-   name          String?
-   email         String?   @unique
--  emailVerified DateTime? @map(name: "email_verified")
-+  emailVerified DateTime?
-   image         String?
-+  accounts      Account[]
-+  sessions      Session[]
--  createdAt     DateTime  @default(now()) @map(name: "created_at")
-+  createdAt     DateTime  @default(now())
--  updatedAt     DateTime  @default(now()) @map(name: "updated_at")
-+  updatedAt     DateTime  @updatedAt
+## License
 
--  @@map(name: "users")
- }
-
- model VerificationRequest {
--  id         Int      @default(autoincrement()) @id
-+  id         Int      @id @default(autoincrement())
-   identifier String
-   token      String   @unique
-   expires    DateTime
--  createdAt  DateTime  @default(now()) @map(name: "created_at")
-+  createdAt  DateTime @default(now())
--  updatedAt  DateTime  @default(now()) @map(name: "updated_at")
-+  updatedAt  DateTime @updatedAt
-
--  @@map(name: "verification_requests")
- }
-```
+ISC
