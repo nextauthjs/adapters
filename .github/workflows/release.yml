@@ -69,7 +69,6 @@ jobs:
       - name: Publish to @next
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
         run: lerna publish --canary --preid next --dist-tag next --yes --no-verify-access
-
       - name: Publish to @pr
         if: ${{ github.base_ref == 'main' }}
         run: lerna publish --canary --preid pr.${{github.event.number}} --dist-tag pr-${{github.event.number}} --yes --no-verify-access
