@@ -10,43 +10,17 @@ on:
       - main
 
 jobs:
-  changes:
-    name: "Identify changed packages"
-    runs-on: ubuntu-latest
-    outputs:
-      adapters: ${{ steps.filter.outputs.changes }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            prisma: packages/prisma/**
-            fauna: packages/fauna/**
-            dynamodb: packages/dynamodb/**
-            typeorm-legacy: packages/typeorm-legacy/**
-            prisma-legacy: packages/prisma-legacy/**
-            firebase: packages/firebase/**
-            pouchdb: packages/pouchdb/**
   test-adapters:
     name: "Test"
     runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.adapters != '[]'
-    strategy:
-      matrix:
-        adapter: ${{ fromJSON(needs.changes.outputs.adapters) }}
-    defaults:
-      run:
-        working-directory: ./packages/${{ matrix.adapter }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
       - uses: bahmutov/npm-install@v1
-      - name: test ${{ matrix.adapter }}
-        run: yarn test
+      - name: Test (changed packges)
+        run: lerna run test --since HEAD~
   publish:
     name: "Publish"
     needs: test-adapters
