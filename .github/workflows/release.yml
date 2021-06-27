@@ -74,4 +74,4 @@ jobs:
         run: lerna publish --canary --preid pr.${{github.event.number}} --dist-tag pr-${{github.event.number}} --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: lerna publish --conventional-commits--create-release github --yes
+        run: lerna publish --create-release github --yes
