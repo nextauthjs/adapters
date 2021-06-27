@@ -77,7 +77,7 @@ jobs:
       - name: Publish to @pr
         if: ${{ github.base_ref == 'main' }}
         run: |
-          git switch -c "pr"
+          git checkout ${{ github.head_ref }}
           lerna publish
           --preid pr.${{ github.event.number }}-${GITHUB_SHA::8}
           --canary --dist-tag experimental --yes
