@@ -1,8 +1,6 @@
 {
   "lerna": "2.11.0",
-  "packages": [
-    "packages/*"
-  ],
+  "packages": ["packages/*"],
   "version": "independent",
   "npmClient": "yarn",
   "useWorkspaces": true,
@@ -11,7 +9,7 @@
       "conventionalCommits": true
     }
   },
-  "ignoreChanges": ["**/__fixtures__/**", "**/tests/**", "**/*.md"],
+  "ignoreChanges": ["**/tests/**"],
   "publishConfig": {
     "access": "public"
   }
