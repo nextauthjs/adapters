@@ -7,9 +7,9 @@
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/fauna-adapter/canary" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/fauna-adapter/canary" alt="@next-auth/fauna-adapter Version" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="Build Test" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/fauna-adapter/latest" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/fauna-adapter" alt="@next-auth/fauna-adapter Version" />
    </p>
 </p>
 
