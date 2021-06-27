@@ -52,7 +52,7 @@ jobs:
     needs: test-adapters
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v2
@@ -68,10 +68,10 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - name: Publish to @next
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
-        run: lerna publish --canary --preid next --dist-tag next --yes --no-verify-access
+        run: lerna publish --canary --preid next --dist-tag next --yes
       - name: Publish to @pr
         if: ${{ github.base_ref == 'main' }}
-        run: lerna publish --canary --preid pr.${{github.event.number}} --dist-tag pr-${{github.event.number}} --yes --no-verify-access
+        run: lerna publish --canary --preid pr.${{github.event.number}} --dist-tag pr-${{github.event.number}} --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: "lerna publish --dist-tag latest --yes --no-verify-access -m 'chore(release): publish [skip ci]'"
+        run: lerna publish --conventional-commits--create-release github --yes
