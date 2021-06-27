@@ -10,16 +10,7 @@ on:
       - main
 
 jobs:
-  debug:
-    name: Debug
-    runs-on: ubuntu-latest
-    steps:
-      - name: Short SHA
-        run: ${{echo ${github.sha} | cut -c1-8}}
-      - name: Exit
-        run: exit 1
   changes:
-    needs: debug
     name: "Identify changed packages"
     runs-on: ubuntu-latest
     outputs:
@@ -80,7 +71,7 @@ jobs:
         run: lerna publish --canary --preid next --dist-tag next --conventional-prerelease --create-release github --yes
       - name: Publish to @pr
         if: ${{ github.base_ref == 'main' }}
-        run: lerna publish --canary --preid experimental-${{echo ${github.sha} | cut -c1-8}} --dist-tag experimental --yes
+        run: lerna publish --canary --preid experimental-${{ github.sha }} --dist-tag experimental --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
         run: lerna publish --create-release github --yes
