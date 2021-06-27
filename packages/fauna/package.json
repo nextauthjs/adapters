@@ -19,6 +19,7 @@
   ],
   "main": "dist/index.js",
   "license": "ISC",
+  "type": "module",
   "keywords": [
     "next-auth",
     "next.js",
