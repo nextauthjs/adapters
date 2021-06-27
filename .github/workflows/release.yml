@@ -10,17 +10,6 @@ on:
       - main
 
 jobs:
-  test-adapters:
-    name: "Test"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "12"
-      - uses: bahmutov/npm-install@v1
-      - name: Test (changed packges)
-        run: lerna run test --since HEAD~
   publish:
     name: "Publish"
     needs: test-adapters
@@ -36,6 +25,8 @@ jobs:
         with:
           node-version: "12"
       - uses: bahmutov/npm-install@v1
+      - name: Test (changed packages)
+        run: lerna run test --since HEAD~
       - name: Build (changed packages)
         run: lerna run build --since HEAD~
       - name: Authenticate with NPM
@@ -47,7 +38,10 @@ jobs:
           git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
       - name: Publish to @next
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
-        run: lerna publish --canary --preid next --dist-tag next --conventional-prerelease --create-release github --yes
+        run: |
+          lerna publish --canary --preid next \
+          --dist-tag next --conventional-prerelease \
+          --create-release github --yes
       - name: Publish to @experimental
         if: ${{ github.base_ref == 'main' }}
         run: |
