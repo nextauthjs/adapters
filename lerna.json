@@ -6,7 +6,8 @@
   "useWorkspaces": true,
   "command": {
     "publish": {
-      "conventionalCommits": true
+      "conventionalCommits": true,
+      "verifyAccess": false
     }
   },
   "ignoreChanges": ["**/tests/**"],
