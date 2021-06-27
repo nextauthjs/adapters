@@ -66,6 +66,11 @@ jobs:
         run: lerna run build --since HEAD~
       - name: Authenticate with NPM
         run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+      - name: Configure CI Git User
+        run: |
+          git config --global user.email nextauth@gmail.com
+          git config --global user.name "NextAuth.js"
+          git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
       - name: Publish to @next
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
         run: lerna publish --canary --preid next --dist-tag next --conventional-prerelease --create-release github --yes
