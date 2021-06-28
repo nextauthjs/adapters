@@ -41,10 +41,13 @@ jobs:
           lerna publish --canary --preid next \
           --dist-tag next --conventional-prerelease \
           --create-release github --yes
+      - name: Set short commit SHA
+        if: ${{ github.base_ref == 'main' }}
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV
       - name: Publish to @experimental
         if: ${{ github.base_ref == 'main' }}
         run: |
-          lerna publish pr.${{ github.event.number }}-${GITHUB_SHA::8} \
+          lerna publish pr.${{ github.event.number }}-${{ env.SHORT_SHA }} \
           --no-changelog --no-push --no-git-tag --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
