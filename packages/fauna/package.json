@@ -11,7 +11,13 @@
     "src"
   ],
   "author": "Bhanu Teja P",
-  "main": "src/index.js",
+  "contributors": [
+    {
+      "name": "Nico Domino",
+      "email": "yo@ndo.dev"
+    }
+  ],
+  "main": "dist/index.js",
   "license": "ISC",
   "keywords": [
     "next-auth",
@@ -25,6 +31,7 @@
   },
   "scripts": {
     "migrate": "fauna-schema-migrate generate",
+    "build": "babel src --out-dir dist",
     "test": "./tests/test.sh"
   },
   "peerDependencies": {
