@@ -11,7 +11,7 @@ on:
 
 jobs:
   publish:
-    name: "Publish"
+    name: "Test, Build, Publish"
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,9 +25,9 @@ jobs:
           node-version: "12"
       - uses: bahmutov/npm-install@v1
       - name: Test (changed packages)
-        run: lerna run test --since HEAD~
+        run: lerna run test --concurrency 3 --since HEAD~
       - name: Build (changed packages)
-        run: lerna run build --since HEAD~
+        run: lerna run build --concurrency 3 --since HEAD~
       - name: Authenticate with NPM
         run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - name: Configure CI Git User
@@ -45,9 +45,8 @@ jobs:
         if: ${{ github.base_ref == 'main' }}
         run: |
           git checkout ${{ github.head_ref }}
-          lerna publish \
-          --preid pr.${{ github.event.number }}-${GITHUB_SHA::8} \
-          --canary --dist-tag experimental --yes
+          lerna publish pr.${{ github.event.number }}-${GITHUB_SHA::8} \
+          --no-changelog --no-push --no-git-tag --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
         run: lerna publish --create-release github --yes
