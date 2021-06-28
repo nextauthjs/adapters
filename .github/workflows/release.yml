@@ -44,7 +44,6 @@ jobs:
       - name: Publish to @experimental
         if: ${{ github.base_ref == 'main' }}
         run: |
-          git checkout ${{ github.head_ref }}
           lerna publish pr.${{ github.event.number }}-${GITHUB_SHA::8} \
           --no-changelog --no-push --no-git-tag --yes
       - name: Publish to @latest
