@@ -48,7 +48,7 @@ jobs:
         if: ${{ github.base_ref == 'main' }}
         run: |
           lerna publish pr.${{ github.event.number }}-${{ env.SHORT_SHA }} \
-          --no-changelog --no-push --no-git-tag --yes
+          --no-changelog --no-push --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
         run: lerna publish --create-release github --yes
