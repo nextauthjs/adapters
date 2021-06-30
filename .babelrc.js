@@ -3,7 +3,7 @@
 // https://nextjs.org/docs/basic-features/supported-browsers-features
 
 module.exports = {
-  presets: [["@babel/preset-env", { targets: { node: "12.22" } }]],
+  presets: [["@babel/preset-env", { targets: { node: "12" } }]],
   plugins: ["@babel/plugin-transform-runtime"],
   comments: false,
 }
