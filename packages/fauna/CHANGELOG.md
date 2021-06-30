@@ -17,9 +17,3 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 ### Features
 
 - add build step to package.json ([28a4f40](https://github.com/nextauthjs/adapters/commit/28a4f403b07fc115c171623d6801c9392f50bd28))
-
-# CHANGELOG
-
-The changelog is automatically updated using
-[lerna publish](https://github.com/lerna/lerna/blob/main/commands/version/README.md#--create-release-type). You
-can see it on the [releases page](../../../../releases).
