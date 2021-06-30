@@ -42,7 +42,8 @@ jobs:
         run: |
           lerna publish --canary --preid next \
           --dist-tag next --conventional-prerelease \
-          --create-release github --yes
+          --create-release github --yes \
+          -m "chore(release): create release [skip ci]"
       - name: Publish to @experimental
         if: ${{ github.base_ref == 'main' }}
         run: |
@@ -50,4 +51,6 @@ jobs:
           --no-changelog --no-push --canary --dist-tag experimental --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: lerna publish --create-release github --yes
+        run: |
+          lerna publish --create-release github --yes \
+          -m "chore(release): create release [skip ci]"
