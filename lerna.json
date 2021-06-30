@@ -10,7 +10,7 @@
       "verifyAccess": false
     }
   },
-  "ignoreChanges": ["**/tests/**"],
+  "ignoreChanges": ["**/tests/**", "**/CHANGELOG.md"],
   "publishConfig": {
     "access": "public"
   }
