@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.1](https://github.com/nextauthjs/adapters/compare/@next-auth/fauna-adapter@0.2.0...@next-auth/fauna-adapter@0.2.1) (2021-06-30)
+
+### Bug Fixes
+
+- **fauna:** change the name of the index to `verification_request_by_token_and_identifier` ([#157](https://github.com/nextauthjs/adapters/issues/157)) ([01a3c52](https://github.com/nextauthjs/adapters/commit/01a3c5205f30eec57c7b9298b762cccf1f2400fd))
+
 # [0.2.0](https://github.com/nextauthjs/adapters/compare/@next-auth/fauna-adapter@0.1.0...@next-auth/fauna-adapter@0.2.0) (2021-06-30)
 
 ### Bug Fixes
