@@ -44,7 +44,7 @@ jobs:
       - name: Publish to @experimental
         if: ${{ github.base_ref == 'main' }}
         run: |
-          lerna publish --preid pr.${{ github.event.number }} \
+          lerna publish --preid pr.${{ github.event.number }}-${GITHUB_SHA::8} \
           --no-changelog --no-push --canary --dist-tag experimental --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
