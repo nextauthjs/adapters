@@ -1,6 +1,6 @@
 {
   "name": "@next-auth/fauna-adapter",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "FaunaDB Adapter for NextAuth",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
@@ -8,10 +8,17 @@
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
   "files": [
-    "src"
+    "src",
+    "dist"
   ],
   "author": "Bhanu Teja P",
-  "main": "src/index.js",
+  "contributors": [
+    {
+      "name": "Nico Domino",
+      "email": "yo@ndo.dev"
+    }
+  ],
+  "main": "dist/index.js",
   "license": "ISC",
   "keywords": [
     "next-auth",
@@ -25,6 +32,7 @@
   },
   "scripts": {
     "migrate": "fauna-schema-migrate generate",
+    "build": "babel src --out-dir dist",
     "test": "./tests/test.sh"
   },
   "peerDependencies": {

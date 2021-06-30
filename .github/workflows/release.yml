@@ -4,71 +4,53 @@ on:
   push:
     branches:
       - main
-      - canary
+      - next
   pull_request:
     branches:
-      - canary
+      - main
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      adapters: ${{ steps.filter.outputs.changes }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            prisma: packages/prisma/**
-            fauna: packages/fauna/**
-            dynamodb: packages/dynamodb/**
-            typeorm-legacy: packages/typeorm-legacy/**
-            prisma-legacy: packages/prisma-legacy/**
-            firebase: packages/firebase/**
-            pouchdb: packages/pouchdb/**
-  test-adapters:
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.adapters != '[]'
-    strategy:
-      matrix:
-        adapter: ${{ fromJSON(needs.changes.outputs.adapters) }}
-    defaults:
-      run:
-        working-directory: ./packages/${{ matrix.adapter }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "12"
-      - uses: bahmutov/npm-install@v1
-      - name: test ${{ matrix.adapter }}
-        run: yarn test
   publish:
-    needs: test-adapters
+    name: "Test, Build, Publish"
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          persist-credentials: false
+          token: ${{ secrets.GH_PAT }}
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
       - uses: bahmutov/npm-install@v1
+      - name: Test (changed packages)
+        run: lerna run test --concurrency 3 --since HEAD~
       - name: Build (changed packages)
-        run: lerna run build --since HEAD~
+        run: lerna run build --concurrency 3 --since HEAD~
       - name: Authenticate with NPM
         run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-      - name: Publish to @canary
-        if: ${{github.event_name == 'push' && github.ref == 'refs/heads/canary'}}
-        run: lerna publish --canary --preid canary --dist-tag canary --yes --no-verify-access
-      - name: Publish to @pr
-        if: ${{github.event_name == 'pull_request' && github.base_ref	 == 'refs/heads/canary'}}
-        run: lerna publish --canary --preid pr.${{github.event.number}} --dist-tag pr-${{github.event.number}} --yes --no-verify-access
+      - name: Configure CI Git User
+        run: |
+          git config --global user.email nextauth@gmail.com
+          git config --global user.name "NextAuth.js"
+          git config remote.origin.url https://x-access-token:${{ secrets.GH_PAT }}@github.com/$GITHUB_REPOSITORY
+      - name: Publish to @next
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
+        run: |
+          lerna publish --canary --preid next \
+          --dist-tag next --conventional-prerelease \
+          --create-release github --yes \
+          -m "chore(release): create release [skip ci]"
+      - name: Publish to @experimental
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          lerna publish --preid pr.${{ github.event.number }}-${GITHUB_SHA::8} \
+          --no-changelog --no-push --canary --dist-tag experimental --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: lerna publish --dist-tag latest --yes --no-verify-access -m "publish [skip ci]"
+        run: |
+          lerna publish --create-release github --yes \
+          -m "chore(release): create release [skip ci]"
