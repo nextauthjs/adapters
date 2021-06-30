@@ -2,7 +2,7 @@ import { query as q } from "faunadb"
 import { createHash, randomBytes } from "crypto"
 
 /** @type {import("next-auth/adapters").Adapter} */
-export function Adapter(config, options = {}) {
+export function FaunaAdapter(config, options = {}) {
   const {
     faunaClient,
     collections = {
