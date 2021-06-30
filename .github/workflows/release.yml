@@ -36,7 +36,7 @@ jobs:
         run: |
           git config --global user.email nextauth@gmail.com
           git config --global user.name "NextAuth.js"
-          git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
+          git config remote.origin.url https://x-access-token:${{ secrets.GH_PAT }}@github.com/$GITHUB_REPOSITORY
       - name: Publish to @next
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
         run: |
