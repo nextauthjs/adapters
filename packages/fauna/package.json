@@ -8,8 +8,7 @@
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
   "files": [
-    "src",
-    "dist"
+    "src"
   ],
   "author": "Bhanu Teja P",
   "contributors": [
