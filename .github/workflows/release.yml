@@ -20,6 +20,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          persist-credentials: false
+          token: ${{ secrets.GH_PAT }}
       - uses: actions/setup-node@v2
         with:
           node-version: "12"
@@ -34,18 +36,21 @@ jobs:
         run: |
           git config --global user.email nextauth@gmail.com
           git config --global user.name "NextAuth.js"
-          git config remote.origin.url https://x-access-token:$GH_PAT@github.com/$GITHUB_REPOSITORY
+          git config remote.origin.url https://x-access-token:${{ secrets.GH_PAT }}@github.com/$GITHUB_REPOSITORY
       - name: Publish to @next
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
         run: |
           lerna publish --canary --preid next \
           --dist-tag next --conventional-prerelease \
-          --create-release github --yes
+          --create-release github --yes \
+          -m "chore(release): create release [skip ci]"
       - name: Publish to @experimental
         if: ${{ github.base_ref == 'main' }}
         run: |
-          lerna publish --preid pr.${{ github.event.number }} \
+          lerna publish --preid pr.${{ github.event.number }}-${GITHUB_SHA::8} \
           --no-changelog --no-push --canary --dist-tag experimental --yes
       - name: Publish to @latest
         if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: lerna publish --create-release github --yes
+        run: |
+          lerna publish --create-release github --yes \
+          -m "chore(release): create release [skip ci]"

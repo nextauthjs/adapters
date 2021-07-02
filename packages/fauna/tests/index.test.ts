@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore
-import { Adapter } from "../src"
+import { FaunaAdapter } from "../src"
 import { runBasicTests } from "../../../basic-tests"
 import * as Fauna from "faunadb"
 
@@ -11,7 +11,7 @@ const client = new Fauna.Client({
   port: 8443,
 })
 
-const adapter = Adapter({ faunaClient: client })
+const adapter = FaunaAdapter({ faunaClient: client })
 
 const q = Fauna.query
 

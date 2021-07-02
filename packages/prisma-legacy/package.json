@@ -1,7 +1,7 @@
 {
   "name": "@next-auth/prisma-legacy-adapter",
   "repository": "https://github.com/nextauthjs/adapters",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Prisma (legacy) adapter for next-auth.",
   "keywords": [
     "next-auth",
