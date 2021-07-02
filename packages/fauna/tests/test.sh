@@ -13,7 +13,7 @@ docker run -d --rm \
 -p ${FAUNADB_PORT}:${FAUNADB_PORT} \
 fauna/faunadb
 
-echo "Waiting 10 sec for db to start..."
+echo "Waiting 20 sec for db to start..."
 sleep 20
 
 # Create tables and indeces
