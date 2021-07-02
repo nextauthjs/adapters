@@ -76,7 +76,7 @@ Then, during the first sign-in NextAuth.js will return the simpler prototype use
 
 ## Contributing
 
-We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/main/CONTRIBUTING.md).
+We're open to all community contributions! If you'd like to contribute in any way, please read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/main/CONTRIBUTING.md).
 
 ## License
 
