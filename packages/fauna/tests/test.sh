@@ -14,7 +14,7 @@ docker run -d --rm \
 fauna/faunadb
 
 echo "Waiting 10 sec for db to start..."
-sleep 10
+sleep 20
 
 # Create tables and indeces
 npx fauna-schema-migrate apply all
