@@ -8,7 +8,7 @@
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="Canary CI Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/typeorm-legacy-adapter/canary" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/typeorm-legacy-adapter/canary" alt="@next-auth/typeorm-legacy-adapter Version" />
+      <img src="https://img.shields.io/npm/v/@next-auth/typeorm-legacy-adapter" alt="@next-auth/typeorm-legacy-adapter Version" />
    </p>
 </p>
 
@@ -20,10 +20,10 @@ You can find more TypeORM information in the docs at [next-auth.js.org/adapters/
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/typeorm-legacy-adapter@canary`
+1. Install `next-auth`
 
 ```js
-npm install next-auth @next-auth/typeorm-legacy-adapter@canary
+npm install next-auth
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
