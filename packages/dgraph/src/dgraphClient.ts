@@ -86,8 +86,15 @@ class DgraphClient {
   deleteUser = async (id: userId) => {
     return await this.dgraph(mutations.deleteUser, { id });
   };
-  linkAccount = async (input: LinkAccountInput) => {
-    return await this.dgraph(mutations.linkAccount, { input });
+  linkAccount = async (id: userId, account: LinkAccountInput) => {
+    return await this.dgraph(mutations.linkAccount, {
+      input: {
+        ...account,
+        user: {
+          id
+        }
+      }
+    });
   };
   unlinkAccount = async (providerId: providerId, providerAccountId: providerAccountId) => {
     return await this.dgraph(mutations.unlinkAccount, { providerId, providerAccountId });

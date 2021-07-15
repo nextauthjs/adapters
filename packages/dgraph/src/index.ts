@@ -66,7 +66,7 @@ export const DgraphAdapter: Adapter<DgraphClient, never, User, Profile & { email
           accessToken,
           accessTokenExpires
         ) {
-          return await dgraph.linkAccount({
+          return await dgraph.linkAccount(userId, {
             providerId,
             providerType,
             providerAccountId,
@@ -74,10 +74,7 @@ export const DgraphAdapter: Adapter<DgraphClient, never, User, Profile & { email
             accessToken,
             accessTokenExpires,
             createdAt: new Date(),
-            updatedAt: new Date(),
-            user: {
-              id: userId
-            }
+            updatedAt: new Date()
           });
         },
 
@@ -146,7 +143,7 @@ export const DgraphAdapter: Adapter<DgraphClient, never, User, Profile & { email
           const hashedToken = hashToken(token);
 
           const verificationRequest = await dgraph.getVerificationRequest(identifier, hashedToken);
-          if (verificationRequest && new Date(verificationRequest.expires) < new Date()) {
+          if (verificationRequest && verificationRequest.expires.getTime() < Date.now()) {
             await dgraph.deleteVerificationRequest(identifier, hashedToken);
             return null;
           }

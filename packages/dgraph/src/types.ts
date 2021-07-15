@@ -29,9 +29,6 @@ export interface LinkAccountInput {
   accessTokenExpires?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  user: {
-    id: userId;
-  };
 }
 export interface CreateSessionInput {
   expires: Date;
