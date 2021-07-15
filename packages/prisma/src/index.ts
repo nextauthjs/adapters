@@ -1,191 +1,84 @@
 import type * as Prisma from "@prisma/client"
-import { createHash, randomBytes } from "crypto"
-import type { Profile } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 
-export const PrismaAdapter: Adapter<
-  Prisma.PrismaClient,
-  never,
-  Prisma.User,
-  Profile & { emailVerified?: Date },
-  Prisma.Session
-> = (prisma) => {
+// TODO: These will come from core in the appropriate methods.
+
+const sessionMaxAgeMs = 0
+const sessionUpdateAgeMs = 0
+
+export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
   return {
-    async getAdapter({ session, secret, ...appOptions }) {
-      const sessionMaxAge = session.maxAge * 1000 // default is 30 days
-      const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
-
-      /**
-       * @todo Move this to core package
-       * @todo Use bcrypt or a more secure method
-       */
-      const hashToken = (token: string) =>
-        createHash("sha256").update(`${token}${secret}`).digest("hex")
-
-      return {
-        displayName: "PRISMA",
-        createUser(profile) {
-          return prisma.user.create({
-            data: {
-              name: profile.name,
-              email: profile.email,
-              image: profile.image,
-              emailVerified: profile.emailVerified?.toISOString() ?? null,
-            },
-          })
-        },
-
-        getUser(id) {
-          return prisma.user.findUnique({
-            where: { id },
-          })
-        },
-
-        getUserByEmail(email) {
-          if (!email) return Promise.resolve(null)
-          return prisma.user.findUnique({ where: { email } })
-        },
-
-        async getUserByProviderAccountId(providerId, providerAccountId) {
-          const account = await prisma.account.findUnique({
-            where: {
-              providerId_providerAccountId: { providerId, providerAccountId },
-            },
-            select: { user: true },
-          })
-          return account?.user ?? null
-        },
-
-        updateUser(user) {
-          return prisma.user.update({
-            where: { id: user.id },
-            data: {
-              name: user.name,
-              email: user.email,
-              image: user.image,
-              emailVerified: user.emailVerified?.toISOString() ?? null,
-            },
-          })
-        },
-
-        async deleteUser(userId) {
-          await prisma.user.delete({
-            where: { id: userId },
-          })
-        },
-
-        async linkAccount(
-          userId,
-          providerId,
-          providerType,
-          providerAccountId,
-          refreshToken,
-          accessToken,
-          accessTokenExpires
-        ) {
-          await prisma.account.create({
-            data: {
-              userId,
-              providerId,
-              providerType,
-              providerAccountId,
-              refreshToken,
-              accessToken,
-              accessTokenExpires,
-            },
-          })
-        },
-
-        async unlinkAccount(_, providerId, providerAccountId) {
-          await prisma.account.delete({
-            where: {
-              providerId_providerAccountId: { providerId, providerAccountId },
-            },
-          })
-        },
-
-        createSession(user) {
-          return prisma.session.create({
-            data: {
-              userId: user.id,
-              expires: new Date(Date.now() + sessionMaxAge),
-              sessionToken: randomBytes(32).toString("hex"),
-              accessToken: randomBytes(32).toString("hex"),
-            },
-          })
-        },
-
-        async getSession(sessionToken) {
-          const session = await prisma.session.findUnique({
-            where: { sessionToken },
-          })
-          if (session && session.expires < new Date()) {
-            await prisma.session.delete({ where: { sessionToken } })
-            return null
-          }
-          return session
-        },
-
-        async updateSession(session, force) {
-          if (
-            !force &&
-            Number(session.expires) - sessionMaxAge + sessionUpdateAge >
-              Date.now()
-          ) {
-            return null
-          }
-          return await prisma.session.update({
-            where: { id: session.id },
-            data: {
-              expires: new Date(Date.now() + sessionMaxAge),
-            },
-          })
-        },
-
-        async deleteSession(sessionToken) {
-          await prisma.session.delete({ where: { sessionToken } })
-        },
-
-        async createVerificationRequest(identifier, url, token, _, provider) {
-          await prisma.verificationRequest.create({
-            data: {
-              identifier,
-              token: hashToken(token),
-              expires: new Date(Date.now() + provider.maxAge * 1000),
-            },
-          })
-          await provider.sendVerificationRequest({
-            identifier,
-            url,
-            token,
-            baseUrl: appOptions.baseUrl,
-            provider,
-          })
-        },
-
-        async getVerificationRequest(identifier, token) {
-          const hashedToken = hashToken(token)
-          const verificationRequest =
-            await prisma.verificationRequest.findUnique({
-              where: { identifier_token: { identifier, token: hashedToken } },
-            })
-          if (verificationRequest && verificationRequest.expires < new Date()) {
-            await prisma.verificationRequest.delete({
-              where: { identifier_token: { identifier, token: hashedToken } },
-            })
-            return null
-          }
-          return verificationRequest
-        },
-
-        async deleteVerificationRequest(identifier, token) {
-          await prisma.verificationRequest.delete({
-            where: {
-              identifier_token: { identifier, token: hashToken(token) },
-            },
-          })
-        },
-      }
+    displayName: "Prisma",
+    createUser: (data) => p.user.create({ data }),
+    getUser: (id) => p.user.findUnique({ where: { id } }),
+    getUserByEmail: (email) => p.user.findUnique({ where: { email } }),
+    async getUserByProviderAccountId(provider, id) {
+      const account = await p.account.findUnique({
+        where: { provider_id: { provider, id } },
+        select: { user: true },
+      })
+      return account?.user ?? null
     },
+    updateUser: (data) => p.user.update({ where: { id: data.id }, data }),
+    async deleteUser(id) {
+      await p.user.delete({ where: { id } })
+    },
+    async linkAccount(userId, account) {
+      await p.account.create({
+        data: {
+          userId,
+          provider: account.provider,
+          type: account.type,
+          id: account.id,
+          refreshToken: account.refresh_token,
+          accessToken: account.access_token,
+          accessTokenExpires: account.expires_in
+            ? new Date(Date.now() + account.expires_in * 1000)
+            : null,
+        },
+      })
+    },
+
+    async unlinkAccount(provider, id) {
+      await p.account.delete({ where: { provider_id: { provider, id } } })
+    },
+
+    createSession: (data) => p.session.create({ data }),
+
+    async getSession(id) {
+      const session = await p.session.findUnique({ where: { id } })
+      if (session && session.expires < new Date()) {
+        await p.session.delete({ where: { id } })
+        return null
+      }
+      return session
+    },
+
+    async updateSession(session, force) {
+      if (
+        !force &&
+        Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
+          Date.now()
+      ) {
+        return null
+      }
+      return await p.session.update({
+        where: { id: session.id },
+        data: {
+          expires: new Date(Date.now() + sessionMaxAgeMs),
+        },
+      })
+    },
+
+    async deleteSession(id) {
+      await p.session.delete({ where: { id } })
+    },
+
+    async createVerificationToken(data) {
+      await p.verificationToken.create({ data })
+    },
+
+    useVerificationToken: (identifier_token) =>
+      p.verificationToken.delete({ where: { identifier_token } }),
   }
 }
