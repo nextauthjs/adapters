@@ -36,7 +36,7 @@
     "jest": "^27.0.3",
     "lerna": "^4.0.0",
     "lint-staged": ">=10",
-    "next-auth": "latest",
+    "next-auth": "0.0.0-pr.2361.2f293a83",
     "prettier": "^2.3.0",
     "ts-jest": "^27.0.3",
     "typescript": "^4.2.4"
@@ -51,7 +51,8 @@
     },
     "rules": {
       "@typescript-eslint/explicit-function-return-type": "off",
-      "@typescript-eslint/strict-boolean-expressions": "off"
+      "@typescript-eslint/strict-boolean-expressions": "off",
+      "@typescript-eslint/naming-convention": "off"
     },
     "extends": [
       "standard-with-typescript",
