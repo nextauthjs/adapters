@@ -12,9 +12,9 @@ export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
     createUser: (data) => p.user.create({ data }),
     getUser: (id) => p.user.findUnique({ where: { id } }),
     getUserByEmail: (email) => p.user.findUnique({ where: { email } }),
-    async getUserByProviderAccountId(provider, id) {
+    async getUserByAccount(provider_id) {
       const account = await p.account.findUnique({
-        where: { provider_id: { provider, id } },
+        where: { provider_id },
         select: { user: true },
       })
       return account?.user ?? null
