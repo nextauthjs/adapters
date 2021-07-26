@@ -1,15 +1,15 @@
 <p align="center">
    <br/>
    <a href="https://next-auth.js.org" target="_blank">
-    <img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a><img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/canary/packages/firebase/logo.svg" />
+    <img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a><img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/main/packages/firebase/logo.svg" />
    <h3 align="center"><b>Firebase Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/firebase-adapter/canary" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/firebase-adapter/canary" alt="@next-auth/firebase-adapter Version" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="Build Test" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/firebase-adapter/latest" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/firebase-adapter" alt="@next-auth/firebase-adapter Version" />
    </p>
 </p>
 
@@ -21,10 +21,10 @@ You can find more Firebase information in the docs at [next-auth.js.org/adapters
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/firebase-adapter@canary`
+1. Install `next-auth` and `@next-auth/firebase-adapter`
 
 ```js
-npm install next-auth @next-auth/firebase-adapter@canary
+npm install next-auth @next-auth/firebase-adapter
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
@@ -83,7 +83,7 @@ See [firebase.google.com/docs/web/setup](https://firebase.google.com/docs/web/se
 
 ## Contributing
 
-We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
+We're open to all community contributions! If you'd like to contribute in any way, please read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/main/CONTRIBUTING.md).
 
 ## License
 

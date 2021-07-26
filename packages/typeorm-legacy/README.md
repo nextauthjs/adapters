@@ -6,7 +6,7 @@
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Canary CI Test" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="Canary CI Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/typeorm-legacy-adapter/canary" alt="Bundle Size"/>
       <img src="https://img.shields.io/npm/v/@next-auth/typeorm-legacy-adapter/canary" alt="@next-auth/typeorm-legacy-adapter Version" />
    </p>
@@ -31,7 +31,7 @@ npm install next-auth @next-auth/typeorm-legacy-adapter@canary
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import { TypeORMLegacyAdapter } from "@next-auth/typeorm-legacy-adapter"
+import Adapters from "next-auth/adapters"
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -43,7 +43,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapter: TypeORMLegacyAdapter({
+  adapter: Adapters.TypeORM.Adapter(({
     type: 'sqlite',  // or mysql, postgresql, mssql
     database: ':memory:',
     synchronize: true
@@ -84,7 +84,7 @@ Schema: [mssql/schema.sql](https://github.com/nextauthjs/adapters/tree/canary/pa
 
 ## Contributing
 
-We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
+We're open to all community contributions! If you'd like to contribute in any way, please read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
 
 ## License
 

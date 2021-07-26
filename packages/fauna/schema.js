@@ -26,7 +26,7 @@ CreateIndex({
   terms: [{ field: ["data", "email"] }],
 })
 CreateIndex({
-  name: "verification_request_by_token",
+  name: "verification_request_by_token_and_identifier",
   source: Collection("verification_requests"),
   unique: true,
   terms: [{ field: ["data", "token"] }, { field: ["data", "identifier"] }],
