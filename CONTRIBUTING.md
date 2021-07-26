@@ -14,14 +14,19 @@ Anyone can be a contributor. Either you found a typo, or you have an awesome fea
 
 ### Pull Requests
 
-- The latest changes are always in `canary`, so please make your Pull Request against that branch.
+- The latest changes are always in `next`, so please make your Pull Request against that branch.
 - Pull Requests should be raised for any change
-
-
 
 ### Setting up local environment
 
+The local environment consists of two pieces:
+
+1. The top-level package.json and its dependencies, like `lerna`.
+2. The package-level dependencies which can be installed via npm. Any other package specific instructions can be found in their README's or the [docs](https://next-auth.js.org/adapters/overview).
+
 #### Testing
+
+Testing takes place on a per-adapter basis. Each adapter in the `packages` subdirectory should have an npm test script which will setup a test environment, often consiting of a docker container of the appropriate databse, and a test-runner like jest.
 
 ## For maintainers
 

@@ -1,12 +1,12 @@
 <p align="center">
    <br/>
-   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/canary/packages/pouchdb/logo.svg" />
+   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/packages/pouchdb/logo.svg" />
    <h3 align="center"><b>PouchDB Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Canary CI Test" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="CI Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/pouchdb-adapter" alt="Bundle Size"/>
       <img src="https://img.shields.io/npm/v/@next-auth/pouchdb-adapter" alt="@next-auth/pouchdb-adapter Version" />
    </p>
@@ -37,9 +37,8 @@ import { PouchDBAdapter } from "@next-auth/pouchdb-adapter"
 import PouchDB from "pouchdb"
 
 // Setup your PouchDB instance and database
-PouchDB
-  .plugin(require("pouchdb-adapter-leveldb"))   // Or any other PouchDB-compliant adapter
-  .plugin(require("pouchdb-find"))              // Don't forget the `pouchdb-find` plugin
+PouchDB.plugin(require("pouchdb-adapter-leveldb")) // Or any other PouchDB-compliant adapter
+  .plugin(require("pouchdb-find")) // Don't forget the `pouchdb-find` plugin
 
 const pouchdb = new PouchDB("auth_db", { adapter: "leveldb" })
 
@@ -58,7 +57,7 @@ export default NextAuth({
 })
 ```
 
-## Advanced 
+## Advanced
 
 ### Memory-First Caching Strategy
 
@@ -72,7 +71,7 @@ For more details, please see https://pouchdb.com/api.html#sync
 
 ## Contributing
 
-We're open to all community contributions! If you'd like to contribute in any way, please first read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/canary/CONTRIBUTING.md).
+We're open to all community contributions! If you'd like to contribute in any way, please read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/main/CONTRIBUTING.md).
 
 ## License
 

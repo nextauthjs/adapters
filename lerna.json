@@ -1,17 +1,16 @@
 {
   "lerna": "2.11.0",
-  "packages": [
-    "packages/*"
-  ],
+  "packages": ["packages/*"],
   "version": "independent",
   "npmClient": "yarn",
   "useWorkspaces": true,
   "command": {
     "publish": {
-      "conventionalCommits": true
+      "conventionalCommits": true,
+      "verifyAccess": false
     }
   },
-  "ignoreChanges": ["**/__fixtures__/**", "**/tests/**", "**/*.md"],
+  "ignoreChanges": ["**/tests/**", "**/CHANGELOG.md"],
   "publishConfig": {
     "access": "public"
   }

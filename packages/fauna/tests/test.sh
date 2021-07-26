@@ -13,8 +13,8 @@ docker run -d --rm \
 -p ${FAUNADB_PORT}:${FAUNADB_PORT} \
 fauna/faunadb
 
-echo "Waiting 10 sec for db to start..."
-sleep 10
+echo "Waiting 20 sec for db to start..."
+sleep 20
 
 # Create tables and indeces
 npx fauna-schema-migrate apply all

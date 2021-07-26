@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - next
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: "Test, Build, Publish"
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          token: ${{ secrets.GH_PAT }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "12"
+      - uses: bahmutov/npm-install@v1
+      - name: Test (changed packages)
+        run: lerna run test --concurrency 3 --since HEAD~
+      - name: Build (changed packages)
+        run: lerna run build --concurrency 3 --since
+      - name: Authenticate with NPM
+        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+      - name: Configure CI Git User
+        run: |
+          git config --global user.email nextauth@gmail.com
+          git config --global user.name "NextAuth.js"
+          git config remote.origin.url https://x-access-token:${{ secrets.GH_PAT }}@github.com/$GITHUB_REPOSITORY
+      - name: Publish to @next
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
+        run: |
+          lerna publish --canary --preid next \
+          --dist-tag next --conventional-prerelease \
+          --create-release github --yes \
+          -m "chore(release): create release [skip ci]"
+      - name: Publish to @experimental
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          lerna publish --preid pr.${{ github.event.number }}-${GITHUB_SHA::8} \
+          --no-changelog --no-push --canary --dist-tag experimental --yes
+      - name: Publish to @latest
+        if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main'}}
+        run: |
+          lerna publish --create-release github --yes \
+          -m "chore(release): create release [skip ci]"
