@@ -31,11 +31,12 @@ export const createUser = async (
     const result = await neo4jSession.writeTransaction((tx) =>
       tx.run(
         `
-        MERGE (u:User { email: $email })
-        ON CREATE SET u.id = $id
+        CREATE (u:User)
         SET
+          u.id = $id,
           u.name= $name,
           u.image= $image,
+          u.email=  $email,
           u.emailVerified= datetime($emailVerified)
         RETURN ${userReturn}
         `,
