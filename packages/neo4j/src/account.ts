@@ -47,7 +47,7 @@ export const linkAccount = async (
       })
       SET 
         a.providerType       = $providerType,
-        a.refreshToken       = $refreshToken,
+        ${refreshToken ? `a.refreshToken = $refreshToken,` : ``}
         a.accessToken        = $accessToken,
         a.accessTokenExpires = datetime($accessTokenExpires)
       
