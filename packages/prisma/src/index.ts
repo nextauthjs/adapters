@@ -3,7 +3,6 @@ import type { Adapter } from "next-auth/adapters"
 
 export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
   return {
-    displayName: "Prisma",
     createUser: (data) => p.user.create({ data }),
     getUser: (id) => p.user.findUnique({ where: { id } }),
     getUserByEmail: (email) => p.user.findUnique({ where: { email } }),
