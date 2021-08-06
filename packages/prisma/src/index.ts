@@ -1,11 +1,6 @@
 import type * as Prisma from "@prisma/client"
 import type { Adapter } from "next-auth/adapters"
 
-// TODO: These will come from core in the appropriate methods.
-
-const sessionMaxAgeMs = 0
-const sessionUpdateAgeMs = 0
-
 export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
   return {
     displayName: "Prisma",
@@ -20,9 +15,7 @@ export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
       return account?.user ?? null
     },
     updateUser: (data) => p.user.update({ where: { id: data.id }, data }),
-    async deleteUser(id) {
-      await p.user.delete({ where: { id } })
-    },
+    deleteUser: (id) => p.user.delete({ where: { id } }),
     async linkAccount(userId, account) {
       await p.account.create({
         data: {
@@ -32,52 +25,28 @@ export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
           id: account.id,
           refreshToken: account.refresh_token,
           accessToken: account.access_token,
-          accessTokenExpires: account.expires_in
-            ? new Date(Date.now() + account.expires_in * 1000)
+          accessTokenExpires: account.expires_at
+            ? new Date(account.expires_at)
             : null,
         },
       })
     },
-
-    async unlinkAccount(provider, id) {
-      await p.account.delete({ where: { provider_id: { provider, id } } })
-    },
-
-    createSession: (data) => p.session.create({ data }),
-
-    async getSession(id) {
-      const session = await p.session.findUnique({ where: { id } })
-      if (session && session.expires < new Date()) {
-        await p.session.delete({ where: { id } })
-        return null
-      }
-      return session
-    },
-
-    async updateSession(session, force) {
-      if (
-        !force &&
-        Number(session.expires) - sessionMaxAgeMs + sessionUpdateAgeMs >
-          Date.now()
-      ) {
-        return null
-      }
-      return await p.session.update({
-        where: { id: session.id },
-        data: {
-          expires: new Date(Date.now() + sessionMaxAgeMs),
-        },
+    async getSessionAndUser({ sessionId }) {
+      const userAndSession = await p.session.findUnique({
+        where: { id: sessionId },
+        include: { user: true },
       })
+      if (!userAndSession) return null
+      const { user, ...session } = userAndSession
+      return { user, session }
     },
-
-    async deleteSession(id) {
-      await p.session.delete({ where: { id } })
+    async unlinkAccount(provider_id) {
+      await p.account.delete({ where: { provider_id } })
     },
-
-    async createVerificationToken(data) {
-      await p.verificationToken.create({ data })
-    },
-
+    createSession: (data) => p.session.create({ data }),
+    updateSession: (data) => p.session.update({ data, where: { id: data.id } }),
+    deleteSession: (id) => p.session.delete({ where: { id } }),
+    createVerificationToken: (data) => p.verificationToken.create({ data }),
     useVerificationToken: (identifier_token) =>
       p.verificationToken.delete({ where: { identifier_token } }),
   }
