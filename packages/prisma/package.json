@@ -32,7 +32,7 @@
   ],
   "peerDependencies": {
     "@prisma/client": ">=2.16.0",
-    "next-auth": ">=3.19.2"
+    "next-auth": ">=4"
   },
   "devDependencies": {
     "@prisma/client": "^2.16.0",
