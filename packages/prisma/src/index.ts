@@ -17,19 +17,7 @@ export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
     updateUser: (data) => p.user.update({ where: { id: data.id }, data }),
     deleteUser: (id) => p.user.delete({ where: { id } }),
     async linkAccount(userId, account) {
-      await p.account.create({
-        data: {
-          userId,
-          provider: account.provider,
-          type: account.type,
-          id: account.id,
-          refreshToken: account.refresh_token,
-          accessToken: account.access_token,
-          accessTokenExpires: account.expires_at
-            ? new Date(account.expires_at)
-            : null,
-        },
-      })
+      await p.account.create({ data: { userId, ...account } })
     },
     async getSessionAndUser({ sessionId }) {
       const userAndSession = await p.session.findUnique({
