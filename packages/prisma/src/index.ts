@@ -18,9 +18,9 @@ export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
     async linkAccount(userId, account) {
       await p.account.create({ data: { userId, ...(account as any) } })
     },
-    async getSessionAndUser({ sessionId }) {
+    async getSessionAndUser(sessionToken) {
       const userAndSession = await p.session.findUnique({
-        where: { id: sessionId },
+        where: { sessionToken },
         include: { user: true },
       })
       if (!userAndSession) return null
