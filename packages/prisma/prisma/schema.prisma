@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialActions"]
 }
 
 model Account {
@@ -12,6 +13,7 @@ model Account {
   userId             String
   type               String
   provider           String
+  providerAccountId  String
   refresh_token      String?
   access_token       String?
   expires_at         Int?
@@ -24,9 +26,9 @@ model Account {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, id])
+  @@unique([provider, providerAccountId])
 }
 
 model Session {
@@ -34,7 +36,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
