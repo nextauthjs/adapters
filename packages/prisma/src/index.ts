@@ -31,7 +31,15 @@ export function PrismaAdapter(p: Prisma.PrismaClient): Adapter {
     updateSession: (data) => p.session.update({ data, where: { id: data.id } }),
     deleteSession: (id) => p.session.delete({ where: { id } }),
     createVerificationToken: (data) => p.verificationToken.create({ data }),
-    useVerificationToken: (identifier_token) =>
-      p.verificationToken.delete({ where: { identifier_token } }),
+    async useVerificationToken(identifier_token) {
+      try {
+        return await p.verificationToken.delete({ where: { identifier_token } })
+      } catch (error) {
+        // If token already used/deleted, just return null
+        // https://www.prisma.io/docs/reference/api-reference/error-reference#p2025
+        if (error.code === "P2025") return null
+        throw error
+      }
+    },
   }
 }
