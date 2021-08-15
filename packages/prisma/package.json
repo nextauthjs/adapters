@@ -21,10 +21,11 @@
     "access": "public"
   },
   "scripts": {
-    "setup": "yarn reset && yarn build",
-    "reset": "prisma migrate reset --preview-feature -f && prisma migrate dev",
-    "test": "yarn setup && jest",
-    "build": "yarn reset && tsc"
+    "clean": "rm -rf ./prisma/migrations && rm ./prisma/dev.db*",
+    "reset": "prisma migrate dev -n init && prisma migrate reset -f",
+    "test": "yarn reset && jest",
+    "build": "yarn reset && tsc",
+    "studio": "prisma studio"
   },
   "files": [
     "README.md",
