@@ -112,7 +112,7 @@ export function runBasicTests(options: TestOptions) {
     })
 
     test("getUserByEmail", async () => {
-      expect(await adapter.getUserByEmail("non-existent-email")).toEqual(null)
+      expect(await adapter.getUserByEmail("non-existent-email")).toBeNull()
       expect(await adapter.getUserByEmail(user.email)).toEqual(user)
     })
 
@@ -242,11 +242,7 @@ export function runBasicTests(options: TestOptions) {
         throw new Error("Verification Token was not found, but it should exist")
       }
 
-      expect(dbVerificationToken1.token).toBe(hashedToken)
-      expect(dbVerificationToken1.identifier).toBe(identifier)
-      expect(dbVerificationToken1.expires.valueOf()).toBe(
-        verificationToken.expires.valueOf()
-      )
+      expect(dbVerificationToken1).toEqual(verificationToken)
 
       const dbVerificationToken2 = await adapter.useVerificationToken?.({
         identifier,
