@@ -28,8 +28,10 @@ export function PrismaAdapter(p: PrismaClient): Adapter {
       return { user, session }
     },
     createSession: (data) => p.session.create({ data }),
-    updateSession: (data) => p.session.update({ data, where: { id: data.id } }),
-    deleteSession: (id) => p.session.delete({ where: { id } }),
+    updateSession: (data) =>
+      p.session.update({ data, where: { sessionToken: data.sessionToken } }),
+    deleteSession: (sessionToken) =>
+      p.session.delete({ where: { sessionToken } }),
     createVerificationToken: (data) => p.verificationToken.create({ data }),
     async useVerificationToken(identifier_token) {
       try {
