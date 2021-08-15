@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - next
 
 jobs:
   publish:
@@ -45,7 +46,7 @@ jobs:
           --create-release github --yes \
           -m "chore(release): create release [skip ci]"
       - name: Publish to @experimental
-        if: ${{ github.base_ref == 'main' }}
+        if: ${{ github.base_ref == 'main' || github.base_ref == 'next' }}
         run: |
           lerna publish --preid pr.${{ github.event.number }}-${GITHUB_SHA::8} \
           --no-changelog --no-push --canary --dist-tag experimental --yes
