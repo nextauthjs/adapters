@@ -273,14 +273,15 @@ export function runBasicTests(options: TestOptions) {
       providerAccountId: account.providerAccountId,
     })
     expect(dbAccount).toBeNull()
-
-    // Re-add account so we can test `deleteUser` under
-    await adapter.linkAccount(account)
   })
 
   test("deleteUser", async () => {
     let dbUser = await db.user(user.id)
     expect(dbUser).toEqual(user)
+
+    // Re-populate db with session and account
+    await adapter.createSession(session)
+    await adapter.linkAccount(account)
 
     await adapter.deleteUser?.(user.id)
     dbUser = await db.user(user.id)

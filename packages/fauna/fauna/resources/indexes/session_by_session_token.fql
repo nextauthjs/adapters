@@ -1,6 +1,6 @@
 CreateIndex({
-  name: 'session_by_session_token',
-  source: Collection('sessions'),
+  name: "session_by_session_token",
+  source: Collection("sessions"),
   unique: true,
-  terms: [{ field: ['data', 'sessionToken'] }],
+  terms: [{ field: ["data", "sessionToken"] }],
 })

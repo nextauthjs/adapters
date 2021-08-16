@@ -16,6 +16,9 @@ import {
   Time,
   Update,
   Var,
+  Paginate,
+  Map,
+  Lambda,
 } from "faunadb"
 
 import {
@@ -37,6 +40,8 @@ export const indexes = {
   User: Index("user_by_email"),
   Session: Index("session_by_session_token"),
   VerificationToken: Index("verification_token_by_identifier_and_token"),
+  SessionsByUser: Index("sessions_by_user_id"),
+  AccountsByUser: Index("accounts_by_user_id"),
 } as const
 
 export const format = {
@@ -116,7 +121,22 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
     updateUser: async (data) =>
       (await q(Update(Ref(Users, data.id), { data: to(data) })))!,
     async deleteUser(userId) {
-      await q(Delete(Ref(Users, userId)))
+      await f.query(
+        Let(
+          {
+            deleteSessions: Map(
+              Paginate(Match(indexes.SessionsByUser, userId)),
+              Lambda("ref", Delete(Var("ref")))
+            ),
+            deleteAccounts: Map(
+              Paginate(Match(indexes.AccountsByUser, userId)),
+              Lambda("ref", Delete(Var("ref")))
+            ),
+            user: Delete(Ref(Users, userId)),
+          },
+          true
+        )
+      )
     },
     linkAccount: async (data) =>
       (await q(Create(Accounts, { data: to(data) })))!,
