@@ -98,10 +98,7 @@ export function runBasicTests(options: TestOptions) {
   test("createUser", async () => {
     const { id } = await adapter.createUser(user)
     const dbUser = await db.user(id)
-    expect(dbUser).toEqual({
-      ...user,
-      id,
-    })
+    expect(dbUser).toEqual({ ...user, id })
     user = dbUser
     session.userId = dbUser.id
     account.userId = dbUser.id
