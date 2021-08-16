@@ -36,7 +36,9 @@ export const collections = {
 } as const
 
 export const indexes = {
-  UserByAccount: Index("user_by_provider_and_provider_account_id"),
+  AccountByProviderAndProviderAccountId: Index(
+    "account_by_provider_and_provider_account_id"
+  ),
   UserByEmail: Index("user_by_email"),
   SessionByToken: Index("session_by_session_token"),
   VerificationTokenByIdentifierAndToken: Index(
@@ -99,16 +101,23 @@ export function query(client: FaunaClient, format: (...args: any) => any) {
 
 export function FaunaAdapter(f: FaunaClient): Adapter {
   const { Users, Accounts, Sessions, VerificationTokens } = collections
+  const {
+    AccountByProviderAndProviderAccountId,
+    AccountsByUser,
+    SessionByToken,
+    SessionsByUser,
+    UserByEmail,
+    VerificationTokenByIdentifierAndToken,
+  } = indexes
   const { to, from } = format
   const q = query(f, from)
   return {
     createUser: async (data) => (await q(Create(Users, { data: to(data) })))!,
     getUser: async (id) => await q(Get(Ref(Users, id))),
-    getUserByEmail: async (email) =>
-      await q(Get(Match(indexes.UserByEmail, email))),
+    getUserByEmail: async (email) => await q(Get(Match(UserByEmail, email))),
     async getUserByAccount({ provider, providerAccountId }) {
       const key = [provider, providerAccountId]
-      const ref = Match(indexes.UserByAccount, key)
+      const ref = Match(AccountByProviderAndProviderAccountId, key)
       const user = await q<AdapterUser>(
         Let(
           { ref },
@@ -128,11 +137,11 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
         Let(
           {
             deleteSessions: Map(
-              Paginate(Match(indexes.SessionsByUser, userId)),
+              Paginate(Match(SessionsByUser, userId)),
               Lambda("ref", Delete(Var("ref")))
             ),
             deleteAccounts: Map(
-              Paginate(Match(indexes.AccountsByUser, userId)),
+              Paginate(Match(AccountsByUser, userId)),
               Lambda("ref", Delete(Var("ref")))
             ),
             user: Delete(Ref(Users, userId)),
@@ -145,13 +154,17 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
       (await q(Create(Accounts, { data: to(data) })))!,
     async unlinkAccount({ provider, providerAccountId }) {
       const id = [provider, providerAccountId]
-      await q(Delete(Select("ref", Get(Match(indexes.UserByAccount, id)))))
+      await q(
+        Delete(
+          Select("ref", Get(Match(AccountByProviderAndProviderAccountId, id)))
+        )
+      )
     },
     createSession: async (data) =>
       (await q<AdapterSession>(Create(Sessions, { data: to(data) })))!,
     async getSessionAndUser(sessionToken) {
       const session = await q<AdapterSession>(
-        Get(Match(indexes.SessionByToken, sessionToken))
+        Get(Match(SessionByToken, sessionToken))
       )
       if (!session) return null
 
@@ -160,16 +173,11 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
       return { session, user: user! }
     },
     async updateSession(data) {
-      const ref = Select(
-        "ref",
-        Get(Match(indexes.SessionByToken, data.sessionToken))
-      )
+      const ref = Select("ref", Get(Match(SessionByToken, data.sessionToken)))
       return await q(Update(ref, { data: to(data) }))
     },
     async deleteSession(sessionToken) {
-      await q(
-        Delete(Select("ref", Get(Match(indexes.SessionByToken, sessionToken))))
-      )
+      await q(Delete(Select("ref", Get(Match(SessionByToken, sessionToken)))))
     },
     async createVerificationToken(data) {
       // @ts-expect-error
@@ -180,9 +188,7 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
     },
     async useVerificationToken({ identifier, token }) {
       const key = [identifier, token]
-      const object = Get(
-        Match(indexes.VerificationTokenByIdentifierAndToken, key)
-      )
+      const object = Get(Match(VerificationTokenByIdentifierAndToken, key))
 
       const verificationToken = await q<VerificationToken>(object)
       if (!verificationToken) return null

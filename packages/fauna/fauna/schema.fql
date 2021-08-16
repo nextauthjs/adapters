@@ -26,7 +26,7 @@ Do(
     terms: [{ field: ["data", "email"] }],
   }),
   CreateIndex({
-    name: "user_by_provider_and_provider_account_id",
+    name: "account_by_provider_and_provider_account_id",
     source: Collection("accounts"),
     unique: true,
     terms: [
