@@ -82,10 +82,13 @@ export const format = {
  * Fauna throws an error when something is not found in the db,
  * `next-auth` expects `null` to be returned
  */
-export function query(client: FaunaClient, format: (...args: any) => any) {
+export function query(f: FaunaClient, format: (...args: any) => any) {
   return async function <T>(expr: ExprArg): Promise<T | null> {
     try {
-      const result = await client.query<QueryResult<T> | null>(expr)
+      const result = await f.query<{
+        data: T
+        ref: { id: string }
+      } | null>(expr)
       if (!result) return null
       return format({ ...result.data, id: result.ref.id })
     } catch (error) {
@@ -200,20 +203,3 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
     },
   }
 }
-
-// Utils
-export interface QueryResult<T> {
-  data: T
-  ref: { id: string }
-}
-
-export type FDate = { value: number } | null
-export type FUser = Replace<AdapterUser, "emailVerified", FDate>
-export type FSession = Replace<AdapterSession, "expires", FDate>
-export type FVerificationToken = Replace<VerificationToken, "expires", FDate>
-
-type Identity<T> = { [P in keyof T]: T[P] }
-
-type Replace<T, K extends keyof T, TReplace> = Identity<
-  Pick<T, Exclude<keyof T, K>> & { [P in K]: TReplace }
->
