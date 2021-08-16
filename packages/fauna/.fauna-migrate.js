@@ -1,6 +1,6 @@
 module.exports = {
   directories: {
-    root: "tests",
+    root: "fauna",
     resources: "resources",
     migrations: "migrations",
     children: "dbs",

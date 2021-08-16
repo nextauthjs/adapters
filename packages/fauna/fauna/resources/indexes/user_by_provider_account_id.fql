@@ -1,9 +1,9 @@
 CreateIndex({
-  name: 'account_by_provider_account_id',
+  name: 'user_by_provider_account_id',
   source: Collection('accounts'),
   unique: true,
   terms: [
-    { field: ['data', 'providerId'] },
+    { field: ['data', 'provider'] },
     { field: ['data', 'providerAccountId'] },
   ],
 })
