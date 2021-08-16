@@ -79,7 +79,7 @@ export const format = {
 }
 
 /**
- * FaunaDB throws an error when something is not found in the db,
+ * Fauna throws an error when something is not found in the db,
  * `next-auth` expects `null` to be returned
  */
 export function query(client: FaunaClient, format: (...args: any) => any) {
