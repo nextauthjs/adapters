@@ -1,8 +1,13 @@
+// First run this in the Fauna shell to create the collections
 Do(
   CreateCollection({ name: "users" }),
   CreateCollection({ name: "accounts" }),
   CreateCollection({ name: "sessions" }),
-  CreateCollection({ name: "verification_tokens" }),
+  CreateCollection({ name: "verification_tokens" })
+)
+
+// Then run this in the Fauna shell to create indexes
+Do(
   CreateIndex({
     name: "accounts_by_user_id",
     source: Collection("accounts"),
