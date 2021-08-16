@@ -208,7 +208,6 @@ export interface QueryResult<T> {
 }
 
 export type FDate = { value: number } | null
-
 export type FUser = Replace<AdapterUser, "emailVerified", FDate>
 export type FSession = Replace<AdapterSession, "expires", FDate>
 export type FVerificationToken = Replace<VerificationToken, "expires", FDate>

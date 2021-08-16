@@ -20,14 +20,15 @@ runBasicTests({
       await q(Get(Match(indexes.SessionByToken, sessionToken))),
     async account({ provider, providerAccountId }) {
       const key = [provider, providerAccountId]
-      const ref = Match(indexes.UserByAccount, key)
+      const ref = Match(indexes.AccountByProviderAndProviderAccountId, key)
       return await q(Get(ref))
     },
     async verificationToken({ identifier, token }) {
       const key = [identifier, token]
       const ref = Match(indexes.VerificationTokenByIdentifierAndToken, key)
+      const verificationToken = await q(Get(ref))
       // @ts-expect-error
-      const { id: _id, ...verificationToken } = await q(Get(ref))
+      if (verificationToken) delete verificationToken.id
       return verificationToken
     },
   },
