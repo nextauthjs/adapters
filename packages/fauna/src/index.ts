@@ -17,8 +17,9 @@ import {
   Update,
   Var,
   Paginate,
-  Map,
   Lambda,
+  Do,
+  Foreach,
 } from "faunadb"
 
 import {
@@ -134,19 +135,16 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
       (await q(Update(Ref(Users, data.id), { data: to(data) })))!,
     async deleteUser(userId) {
       await f.query(
-        Let(
-          {
-            deleteSessions: Map(
-              Paginate(Match(SessionsByUser, userId)),
-              Lambda("ref", Delete(Var("ref")))
-            ),
-            deleteAccounts: Map(
-              Paginate(Match(AccountsByUser, userId)),
-              Lambda("ref", Delete(Var("ref")))
-            ),
-            user: Delete(Ref(Users, userId)),
-          },
-          true
+        Do(
+          Foreach(
+            Paginate(Match(SessionsByUser, userId)),
+            Lambda("ref", Delete(Var("ref")))
+          ),
+          Foreach(
+            Paginate(Match(AccountsByUser, userId)),
+            Lambda("ref", Delete(Var("ref")))
+          ),
+          Delete(Ref(Users, userId))
         )
       )
     },
