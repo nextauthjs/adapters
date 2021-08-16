@@ -36,10 +36,12 @@ export const collections = {
 } as const
 
 export const indexes = {
-  UserByAccount: Index("user_by_provider_account_id"),
-  User: Index("user_by_email"),
-  Session: Index("session_by_session_token"),
-  VerificationToken: Index("verification_token_by_identifier_and_token"),
+  UserByAccount: Index("user_by_provider_and_provider_account_id"),
+  UserByEmail: Index("user_by_email"),
+  SessionByToken: Index("session_by_session_token"),
+  VerificationTokenByIdentifierAndToken: Index(
+    "verification_token_by_identifier_and_token"
+  ),
   SessionsByUser: Index("sessions_by_user_id"),
   AccountsByUser: Index("accounts_by_user_id"),
 } as const
@@ -102,7 +104,8 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
   return {
     createUser: async (data) => (await q(Create(Users, { data: to(data) })))!,
     getUser: async (id) => await q(Get(Ref(Users, id))),
-    getUserByEmail: async (email) => await q(Get(Match(indexes.User, email))),
+    getUserByEmail: async (email) =>
+      await q(Get(Match(indexes.UserByEmail, email))),
     async getUserByAccount({ provider, providerAccountId }) {
       const key = [provider, providerAccountId]
       const ref = Match(indexes.UserByAccount, key)
@@ -148,7 +151,7 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
       (await q<AdapterSession>(Create(Sessions, { data: to(data) })))!,
     async getSessionAndUser(sessionToken) {
       const session = await q<AdapterSession>(
-        Get(Match(indexes.Session, sessionToken))
+        Get(Match(indexes.SessionByToken, sessionToken))
       )
       if (!session) return null
 
@@ -157,11 +160,16 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
       return { session, user: user! }
     },
     async updateSession(data) {
-      const ref = Select("ref", Get(Match(indexes.Session, data.sessionToken)))
+      const ref = Select(
+        "ref",
+        Get(Match(indexes.SessionByToken, data.sessionToken))
+      )
       return await q(Update(ref, { data: to(data) }))
     },
     async deleteSession(sessionToken) {
-      await q(Delete(Select("ref", Get(Match(indexes.Session, sessionToken)))))
+      await q(
+        Delete(Select("ref", Get(Match(indexes.SessionByToken, sessionToken))))
+      )
     },
     async createVerificationToken(data) {
       // @ts-expect-error
@@ -172,7 +180,9 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
     },
     async useVerificationToken({ identifier, token }) {
       const key = [identifier, token]
-      const object = Get(Match(indexes.VerificationToken, key))
+      const object = Get(
+        Match(indexes.VerificationTokenByIdentifierAndToken, key)
+      )
 
       const verificationToken = await q<VerificationToken>(object)
       if (!verificationToken) return null

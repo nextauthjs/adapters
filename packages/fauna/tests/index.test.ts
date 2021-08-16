@@ -17,7 +17,7 @@ runBasicTests({
     disconnect: async () => await client.close({ force: true }),
     user: async (id) => await q(Get(Ref(collections.Users, id))),
     session: async (sessionToken) =>
-      await q(Get(Match(indexes.Session, sessionToken))),
+      await q(Get(Match(indexes.SessionByToken, sessionToken))),
     async account({ provider, providerAccountId }) {
       const key = [provider, providerAccountId]
       const ref = Match(indexes.UserByAccount, key)
@@ -25,7 +25,7 @@ runBasicTests({
     },
     async verificationToken({ identifier, token }) {
       const key = [identifier, token]
-      const ref = Match(indexes.VerificationToken, key)
+      const ref = Match(indexes.VerificationTokenByIdentifierAndToken, key)
       // @ts-expect-error
       const { id: _id, ...verificationToken } = await q(Get(ref))
       return verificationToken

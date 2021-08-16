@@ -1,5 +1,5 @@
 CreateIndex({
-  name: "user_by_provider_account_id",
+  name: "user_by_provider_and_provider_account_id",
   source: Collection("accounts"),
   unique: true,
   terms: [
