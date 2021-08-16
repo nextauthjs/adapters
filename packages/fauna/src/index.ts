@@ -117,8 +117,6 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
       (await q(Update(Ref(Users, data.id), { data: to(data) })))!,
     async deleteUser(userId) {
       await q(Delete(Ref(Users, userId)))
-      // TODO: Delete all sessions, accounts as well.
-      return null
     },
     linkAccount: async (data) =>
       (await q(Create(Accounts, { data: to(data) })))!,
@@ -138,15 +136,12 @@ export function FaunaAdapter(f: FaunaClient): Adapter {
 
       return { session, user: user! }
     },
-    updateSession: async (data) =>
-      await q(
-        Update(Select("ref", Get(Match(indexes.Session, data.sessionToken))), {
-          data: to(data),
-        })
-      ),
+    async updateSession(data) {
+      const ref = Select("ref", Get(Match(indexes.Session, data.sessionToken)))
+      return await q(Update(ref, { data: to(data) }))
+    },
     async deleteSession(sessionToken) {
       await q(Delete(Select("ref", Get(Match(indexes.Session, sessionToken)))))
-      return null
     },
     async createVerificationToken(data) {
       // @ts-expect-error
