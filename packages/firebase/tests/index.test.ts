@@ -1,67 +1,54 @@
 import { runBasicTests } from "../../../basic-tests"
-import { FirebaseAdapter } from "../src"
-import { docSnapshotToObject, querySnapshotToObject } from "../src/utils"
+import { collections, FirebaseAdapter, format } from "../src"
 
 import firebase from "firebase/app"
 import "firebase/firestore"
 
-const firestore = (
+const app =
   firebase.apps[0] ?? firebase.initializeApp({ projectId: "next-auth-test" })
-).firestore()
-firestore.useEmulator("localhost", 8080)
+
+const f = app.firestore()
+
+f.useEmulator("localhost", 8080)
+
+const { Users, Accounts, Sessions, VerificationTokens } = collections(f)
 
 runBasicTests({
-  adapter: FirebaseAdapter(firestore),
+  adapter: FirebaseAdapter(f),
   db: {
-    async disconnect() {
-      await firestore.terminate()
-    },
+    disconnect: async () => await f.terminate(),
     async session(sessionToken) {
-      const snapshot = await firestore
-        .collection("sessions")
-        .where("sessionToken", "==", sessionToken)
-        .limit(1)
-        .get()
-      return querySnapshotToObject(snapshot)
-    },
-    async expireSession(sessionToken, expires) {
-      const snapshot = await firestore
-        .collection("sessions")
-        .where("sessionToken", "==", sessionToken)
+      const session = await Sessions.where("sessionToken", "==", sessionToken)
         .limit(1)
         .get()
 
-      if (snapshot.empty) {
-        console.error(sessionToken, expires)
-        throw new Error("Could not expire session")
-      }
-
-      return await firestore
-        .collection("sessions")
-        .doc(snapshot.docs[0].id)
-        .update({ expires })
+      return format.from(session)
     },
     async user(id) {
-      const snapshot = await firestore.collection("users").doc(id).get()
-      return docSnapshotToObject(snapshot)
+      const user = await Users.doc(id).get()
+      return format.from(user)
     },
-    async account(providerId, providerAccountId) {
-      const snapshot = await firestore
-        .collection("accounts")
-        .where("providerId", "==", providerId)
+    async account({ provider, providerAccountId }) {
+      const account = await Accounts.where("provider", "==", provider)
         .where("providerAccountId", "==", providerAccountId)
         .limit(1)
         .get()
-      return querySnapshotToObject(snapshot)
+
+      return format.from(account)
     },
-    async verificationRequest(identifier, token) {
-      const snapshot = await firestore
-        .collection("verificationRequests")
-        .where("identifier", "==", identifier)
+    async verificationToken({ identifier, token }) {
+      let verificationToken: any = await VerificationTokens.where(
+        "identifier",
+        "==",
+        identifier
+      )
         .where("token", "==", token)
         .limit(1)
         .get()
-      return querySnapshotToObject(snapshot)
+
+      verificationToken = format.from(verificationToken)
+      delete verificationToken.id
+      return verificationToken
     },
   },
 })
