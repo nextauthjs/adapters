@@ -14,9 +14,10 @@ import type {
   Firestore,
   FirestoreDataConverter,
 } from "firebase/firestore"
-import { Account } from "next-auth"
 
-import {
+import type { Account } from "next-auth"
+
+import type {
   Adapter,
   AdapterSession,
   AdapterUser,
