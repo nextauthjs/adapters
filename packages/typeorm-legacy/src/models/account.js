@@ -45,10 +45,10 @@ export const AccountSchema = {
       // This property is set to `type: objectId` on MongoDB databases
       type: "int",
     },
-    providerType: {
+    type: {
       type: "varchar",
     },
-    providerId: {
+    provider: {
       type: "varchar",
     },
     providerAccountId: {
@@ -85,8 +85,8 @@ export const AccountSchema = {
       columns: ["userId"],
     },
     {
-      name: "providerId",
-      columns: ["providerId"],
+      name: "provider",
+      columns: ["provider"],
     },
     {
       name: "providerAccountId",

@@ -1,6 +1,6 @@
 // This model is used for sign in emails, but is designed to support other
 // mechanisms in future (e.g. 2FA via text message or short codes)
-export class VerificationRequest {
+export class VerificationToken {
   constructor(identifier, token, expires) {
     if (identifier) {
       this.identifier = identifier
@@ -14,9 +14,9 @@ export class VerificationRequest {
   }
 }
 
-export const VerificationRequestSchema = {
-  name: "VerificationRequest",
-  target: VerificationRequest,
+export const VerificationTokenSchema = {
+  name: "VerificationToken",
+  target: VerificationToken,
   columns: {
     id: {
       // This property has `objectId: true` instead of `type: int` in MongoDB

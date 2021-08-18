@@ -1,20 +1,16 @@
 import { runBasicTests } from "../../../../basic-tests"
 
-import { createConnection, ConnectionOptions, Connection } from "typeorm"
-// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
-// @ts-ignore
+import { createConnection, Connection } from "typeorm"
 import { TypeORMLegacyAdapter, Models as models } from "../../src"
-// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
-// @ts-ignore
 import adapterTransform from "../../src/lib/transform"
-// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
-// @ts-ignore
 import { loadConfig, parseConnectionString } from "../../src/lib/config"
+import { VerificationToken } from "next-auth/adapters"
+import { Account } from "next-auth"
 
 const connectionString = "postgres://nextauth:password@localhost:5432/nextauth"
-const config: ConnectionOptions = parseConnectionString(connectionString)
+const config = parseConnectionString(connectionString)
 
-const adapter = new TypeORMLegacyAdapter(config)
+const adapter = TypeORMLegacyAdapter({ config })
 
 let _connection: Connection
 async function connection() {
@@ -51,31 +47,20 @@ runBasicTests({
       })
       return session ?? null
     },
-    async expireSession(sessionToken, expires) {
+    async account(providerAccountId) {
       const c = await connection()
-      await c.manager.update(
-        models.Session.model,
-        { sessionToken },
-        { expires }
+      return await c.manager.findOne<Account>(
+        models.Account.model,
+        providerAccountId
       )
     },
-    async account(providerId, providerAccountId) {
+    async verificationToken(identifier_token) {
       const c = await connection()
-      return await c.manager.findOne(models.Account.model, {
-        providerId,
-        providerAccountId,
-      })
-    },
-    async verificationRequest(identifier, hashedToken) {
-      const c = await connection()
-      const verificationRequest = await c.manager.findOne(
-        models.VerificationRequest.model,
-        {
-          identifier,
-          token: hashedToken,
-        }
+      const verificationToken = await c.manager.findOne<VerificationToken>(
+        models.VerificationToken.model,
+        identifier_token
       )
-      return verificationRequest ?? null
+      return verificationToken ?? null
     },
   },
 })

@@ -2,9 +2,9 @@ import { Account, AccountSchema } from "./account"
 import { User, UserSchema } from "./user"
 import { Session, SessionSchema } from "./session"
 import {
-  VerificationRequest,
-  VerificationRequestSchema,
-} from "./verification-request"
+  VerificationToken,
+  VerificationTokenSchema,
+} from "./verification-token"
 
 export default {
   Account: {
@@ -19,8 +19,8 @@ export default {
     model: Session,
     schema: SessionSchema,
   },
-  VerificationRequest: {
-    model: VerificationRequest,
-    schema: VerificationRequestSchema,
+  VerificationToken: {
+    model: VerificationToken,
+    schema: VerificationTokenSchema,
   },
 }

@@ -1,6 +1,10 @@
 import { EntitySchema } from "typeorm"
+import { ConnectParams } from "./connect"
 
-export function parseConnectionString(configOrString) {
+/** Ensure configOrString is normalized to an object. */
+export function parseConnectionString(
+  configOrString: string | ConnectParams
+): ConnectParams {
   if (typeof configOrString !== "string") {
     return configOrString
   }
@@ -13,7 +17,7 @@ export function parseConnectionString(configOrString) {
   // parsing it in this function.
   try {
     const parsedUrl = new URL(configOrString)
-    const config = {}
+    const config: any = {}
 
     if (parsedUrl.protocol.startsWith("mongodb+srv")) {
       // Special case handling is required for mongodb+srv with TypeORM
@@ -47,7 +51,7 @@ export function parseConnectionString(configOrString) {
         .replace(/^\?/, "")
         .split("&")
         .forEach((keyValuePair) => {
-          let [key, value] = keyValuePair.split("=")
+          let [key, value] = keyValuePair.split("=") as any
           // Converts true/false strings to actual boolean values
           if (value === "true") {
             value = true
@@ -62,13 +66,11 @@ export function parseConnectionString(configOrString) {
     return config
   } catch (error) {
     // If URL parsing fails for any reason, try letting TypeORM handle it
-    return {
-      url: configOrString,
-    }
+    return { url: configOrString } as any
   }
 }
 
-export function loadConfig(config, { models, namingStrategy }) {
+export function loadConfig(config: any, { models, namingStrategy }: any) {
   const defaultConfig = {
     name: "nextauth",
     autoLoadEntities: true,
@@ -76,15 +78,12 @@ export function loadConfig(config, { models, namingStrategy }) {
       new EntitySchema(models.User.schema),
       new EntitySchema(models.Account.schema),
       new EntitySchema(models.Session.schema),
-      new EntitySchema(models.VerificationRequest.schema),
+      new EntitySchema(models.VerificationToken.schema),
     ],
     timezone: "Z",
     logging: false,
     namingStrategy,
   }
 
-  return {
-    ...defaultConfig,
-    ...config,
-  }
+  return { ...defaultConfig, ...config }
 }
