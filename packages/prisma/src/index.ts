@@ -1,190 +1,46 @@
-import type * as Prisma from "@prisma/client"
-import { createHash, randomBytes } from "crypto"
-import type { Profile } from "next-auth"
+import type { PrismaClient } from "@prisma/client"
 import type { Adapter } from "next-auth/adapters"
 
-export const PrismaAdapter: Adapter<
-  Prisma.PrismaClient,
-  never,
-  Prisma.User,
-  Profile & { emailVerified?: Date },
-  Prisma.Session
-> = (prisma) => {
+export function PrismaAdapter(p: PrismaClient): Adapter {
   return {
-    async getAdapter({ session, secret, ...appOptions }) {
-      const sessionMaxAge = session.maxAge * 1000 // default is 30 days
-      const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
-
-      /**
-       * @todo Move this to core package
-       * @todo Use bcrypt or a more secure method
-       */
-      const hashToken = (token: string) =>
-        createHash("sha256").update(`${token}${secret}`).digest("hex")
-
-      return {
-        displayName: "PRISMA",
-        createUser(profile) {
-          return prisma.user.create({
-            data: {
-              name: profile.name,
-              email: profile.email,
-              image: profile.image,
-              emailVerified: profile.emailVerified?.toISOString() ?? null,
-            },
-          })
-        },
-
-        getUser(id) {
-          return prisma.user.findUnique({
-            where: { id },
-          })
-        },
-
-        getUserByEmail(email) {
-          if (!email) return Promise.resolve(null)
-          return prisma.user.findUnique({ where: { email } })
-        },
-
-        async getUserByProviderAccountId(providerId, providerAccountId) {
-          const account = await prisma.account.findUnique({
-            where: {
-              providerId_providerAccountId: { providerId, providerAccountId },
-            },
-            select: { user: true },
-          })
-          return account?.user ?? null
-        },
-
-        updateUser(user) {
-          return prisma.user.update({
-            where: { id: user.id },
-            data: {
-              name: user.name,
-              email: user.email,
-              image: user.image,
-              emailVerified: user.emailVerified?.toISOString() ?? null,
-            },
-          })
-        },
-
-        async deleteUser(userId) {
-          await prisma.user.delete({
-            where: { id: userId },
-          })
-        },
-
-        async linkAccount(
-          userId,
-          providerId,
-          providerType,
-          providerAccountId,
-          refreshToken,
-          accessToken,
-          accessTokenExpires
-        ) {
-          await prisma.account.create({
-            data: {
-              userId,
-              providerId,
-              providerType,
-              providerAccountId,
-              refreshToken,
-              accessToken,
-              accessTokenExpires,
-            },
-          })
-        },
-
-        async unlinkAccount(_, providerId, providerAccountId) {
-          await prisma.account.delete({
-            where: {
-              providerId_providerAccountId: { providerId, providerAccountId },
-            },
-          })
-        },
-
-        createSession(user) {
-          return prisma.session.create({
-            data: {
-              userId: user.id,
-              expires: new Date(Date.now() + sessionMaxAge),
-              sessionToken: randomBytes(32).toString("hex"),
-              accessToken: randomBytes(32).toString("hex"),
-            },
-          })
-        },
-
-        async getSession(sessionToken) {
-          const session = await prisma.session.findUnique({
-            where: { sessionToken },
-          })
-          if (session && session.expires < new Date()) {
-            await prisma.session.delete({ where: { sessionToken } })
-            return null
-          }
-          return session
-        },
-
-        async updateSession(session, force) {
-          if (
-            !force &&
-            Number(session.expires) - sessionMaxAge + sessionUpdateAge >
-              Date.now()
-          ) {
-            return null
-          }
-          return await prisma.session.update({
-            where: { id: session.id },
-            data: {
-              expires: new Date(Date.now() + sessionMaxAge),
-            },
-          })
-        },
-
-        async deleteSession(sessionToken) {
-          await prisma.session.delete({ where: { sessionToken } })
-        },
-
-        async createVerificationRequest(identifier, url, token, _, provider) {
-          await prisma.verificationRequest.create({
-            data: {
-              identifier,
-              token: hashToken(token),
-              expires: new Date(Date.now() + provider.maxAge * 1000),
-            },
-          })
-          await provider.sendVerificationRequest({
-            identifier,
-            url,
-            token,
-            baseUrl: appOptions.baseUrl,
-            provider,
-          })
-        },
-
-        async getVerificationRequest(identifier, token) {
-          const hashedToken = hashToken(token)
-          const verificationRequest =
-            await prisma.verificationRequest.findUnique({
-              where: { identifier_token: { identifier, token: hashedToken } },
-            })
-          if (verificationRequest && verificationRequest.expires < new Date()) {
-            await prisma.verificationRequest.delete({
-              where: { identifier_token: { identifier, token: hashedToken } },
-            })
-            return null
-          }
-          return verificationRequest
-        },
-
-        async deleteVerificationRequest(identifier, token) {
-          await prisma.verificationRequest.delete({
-            where: {
-              identifier_token: { identifier, token: hashToken(token) },
-            },
-          })
-        },
+    createUser: (data) => p.user.create({ data }),
+    getUser: (id) => p.user.findUnique({ where: { id } }),
+    getUserByEmail: (email) => p.user.findUnique({ where: { email } }),
+    async getUserByAccount(provider_providerAccountId) {
+      const account = await p.account.findUnique({
+        where: { provider_providerAccountId },
+        select: { user: true },
+      })
+      return account?.user ?? null
+    },
+    updateUser: (data) => p.user.update({ where: { id: data.id }, data }),
+    deleteUser: (id) => p.user.delete({ where: { id } }),
+    linkAccount: (data) => p.account.create({ data }) as any,
+    unlinkAccount: (provider_providerAccountId) =>
+      p.account.delete({ where: { provider_providerAccountId } }) as any,
+    async getSessionAndUser(sessionToken) {
+      const userAndSession = await p.session.findUnique({
+        where: { sessionToken },
+        include: { user: true },
+      })
+      if (!userAndSession) return null
+      const { user, ...session } = userAndSession
+      return { user, session }
+    },
+    createSession: (data) => p.session.create({ data }),
+    updateSession: (data) =>
+      p.session.update({ data, where: { sessionToken: data.sessionToken } }),
+    deleteSession: (sessionToken) =>
+      p.session.delete({ where: { sessionToken } }),
+    createVerificationToken: (data) => p.verificationToken.create({ data }),
+    async useVerificationToken(identifier_token) {
+      try {
+        return await p.verificationToken.delete({ where: { identifier_token } })
+      } catch (error) {
+        // If token already used/deleted, just return null
+        // https://www.prisma.io/docs/reference/api-reference/error-reference#p2025
+        if (error.code === "P2025") return null
+        throw error
       }
     },
   }

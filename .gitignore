@@ -6,3 +6,5 @@ dev.db
 .devcontainer
 coverage
 dev.db-journal 
+packages/prisma/prisma/migrations
+packages/fauna/fauna/migrations

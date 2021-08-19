@@ -21,10 +21,10 @@ You can find the Fauna schema and seed information in the docs at [next-auth.js.
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/fauna-adapter`
+1. Install `next-auth`, `faunadb` and `@next-auth/fauna-adapter`
 
 ```js
-npm install next-auth @next-auth/fauna-adapter
+npm install next-auth faunadb @next-auth/fauna-adapter
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
@@ -32,10 +32,10 @@ npm install next-auth @next-auth/fauna-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import * as Fauna from "faunadb"
+import {Client as FaunaClient} from "faunadb"
 import { FaunaAdapter } from "@next-auth/fauna-adapter"
 
-const client = new Fauna.Client({
+const client = new FaunaClient({
   secret: "secret",
   scheme: "http",
   domain: "localhost",
@@ -52,7 +52,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapter: FaunaAdapter({ faunaClient: client})
+  adapter: FaunaAdapter(client)
   ...
 })
 ```

@@ -17,6 +17,7 @@ echo "Waiting 20 sec for db to start..."
 sleep 20
 
 # Create tables and indeces
+npx fauna-schema-migrate generate
 npx fauna-schema-migrate apply all
 
 # Always stop container, but exit with 1 when tests are failing

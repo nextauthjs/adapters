@@ -1,383 +1,311 @@
-import { Adapter, AdapterInstance } from "next-auth/adapters"
-import { AppOptions } from "next-auth/internals"
-import Providers, { EmailConfig } from "next-auth/providers"
-import { createHash, randomBytes } from "crypto"
+import { Adapter } from "next-auth/adapters"
+import { createHash, randomUUID } from "crypto"
+
+export interface TestOptions {
+  adapter: Adapter
+  db: {
+    /**
+     * Manually disconnect database after all tests have been run,
+     * if your adapter doesn't do it automatically
+     */
+    disconnect?: () => Promise<any>
+    /**
+     * Manually establishes a db connection before all tests,
+     * if your db doesn't do this automatically
+     */
+    connect?: () => Promise<any>
+    /** A simple query function that returns a session directly from the db. */
+    session: (sessionToken: string) => any
+    /** A simple query function that returns a user directly from the db. */
+    user: (id: string) => any
+    /** A simple query function that returns an account directly from the db. */
+    account: (providerAccountId: {
+      provider: string
+      providerAccountId: string
+    }) => any
+    /**
+     * A simple query function that returns an verification token directly from the db,
+     * based on the user identifier and the verification token (hashed).
+     */
+    verificationToken: (params: { identifier: string; token: string }) => any
+  }
+}
 
 /**
  * A wrapper to run the most basic tests.
  * Run this at the top of your test file.
  * You can add additional tests below, if you wish.
  */
-export function runBasicTests(options: {
-  adapter: ReturnType<Adapter>
-  /** Utility functions to talk directly with the db */
-  db: {
-    /** Optional, after all tests have been run, this will make sure the database is disconnected */
-    disconnect?: () => any
-    /** Optional, establishes a db connection before all tests, if your db doesn't do this manually */
-    connect?: () => any
-    /** A simple query function that returns a session directly from the db. */
-    session: (token: string) => any
-    /**
-     * Forcefully sets the expiry date to a value
-     * in the past on the given session. This helps to
-     * test if an invalidated session is properly cleaned up.
-     */
-    expireSession: (sessionToken: string, expires: Date) => any
-    /** A simple query function that returns a user directly from the db. */
-    user: (id: string) => any
-    /** A simple query function that returns an account directly from the db. */
-    account: (providerId: string, providerAccountId: string) => any
-    /**
-     * A simple query function that returns an verification token directly from the db,
-     * based on the user identifier and the verification token (hashed).
-     */
-    verificationRequest: (identifier: string, hashedToken: string) => any
-  }
-  /** Optionally overrides the default mock data values */
-  mock?: {
-    /** The options that `getAdapter()` receives from `next-auth` */
-    appOptions?: AppOptions
-    /** The user object passed to the adapter from `next-auth` */
-    user?: any
-    /** The params */
-    verificationParams?: string[]
-  }
-}) {
-  // Mock data
-
-  const appOptions: AppOptions = {
-    action: "signin",
-    basePath: "",
-    baseUrl: "http://example.com",
-    callbacks: {},
-    cookies: {},
-    debug: false,
-    events: {},
-    jwt: {},
-    theme: "auto",
-    logger: {
-      debug: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-    } as const,
-    pages: {},
-    providers: [],
-    secret: "VERY SECRET",
-    session: {
-      jwt: false,
-      maxAge: 60 * 60 * 24 * 30,
-      updateAge: 60 * 60 * 24,
-    },
-    adapter: null as unknown as ReturnType<Adapter>, // TODO: Make it optional on AppOptions
-    ...options.mock?.appOptions,
-  }
-
-  const defaultUser = {
-    email: "fill@murray.com",
-    image: "https://www.fillmurray.com/460/300",
-    name: "Fill Murray",
-    ...options.mock?.user,
-  }
-
+export function runBasicTests(options: TestOptions) {
   // Init
-
-  let adapter: AdapterInstance<any, any, any>
-
   beforeAll(async () => {
     await options.db.connect?.()
-    adapter = await options.adapter.getAdapter(appOptions)
   })
 
   afterAll(async () => {
     await options.db.disconnect?.()
   })
 
-  // Tests
-  describe("Meta", () => {
-    test("Has displayName for debug purposes", async () => {
-      expect(adapter.displayName).not.toBe(undefined)
-    })
-  })
+  const { adapter, db } = options
 
-  describe("User", () => {
-    let user: any
-
-    test("createUser", async () => {
-      user = await adapter.createUser(defaultUser)
-      expect(user).toEqual(expect.objectContaining(defaultUser))
-    })
-
-    test("getUser", async () => {
-      const userById = await adapter.getUser(user.id)
-      expect(userById).toMatchObject(user)
-    })
-
-    test("getUserByEmail", async () => {
-      expect(await adapter.getUserByEmail(null)).toBeNull()
-      const userByEmail = await adapter.getUserByEmail(user.email)
-      expect(userByEmail).toMatchObject(user)
-    })
-
-    test("updatedUser", async () => {
-      user.email = "jane@example.com"
-      const updatedUser = await adapter.updateUser(user)
-      expect(updatedUser.email).toBe(user.email)
-    })
-
-    // (Currently unimplemented in core, so we don't require it yet)
-    test.skip("deleteUser", async () => {
-      if (adapter.deleteUser) {
-        await adapter.deleteUser(user.id)
-        const expectedUser = await options.db.user(user.id)
-        expect(expectedUser).toBeNull()
-      }
-    })
-  })
-
-  describe("Session", () => {
-    const now = Date.now()
-    let user: any
-
-    beforeAll(async () => {
-      user = await adapter.createUser(defaultUser)
-    })
-
-    test("createSession", async () => {
-      const session = await adapter.createSession(user)
-      expect(session.accessToken).toHaveLength(64)
-      expect(session.sessionToken).toHaveLength(64)
-      expect(session.userId).toBe(user.id)
-      expect(session.expires.valueOf()).toBeGreaterThanOrEqual(
-        now + appOptions.session.maxAge
-      )
-    })
-
-    test("getSession", async () => {
-      const session = await adapter.createSession(user)
-      const sessionByToken = await adapter.getSession(session.sessionToken)
-      expect(sessionByToken).toMatchObject(session)
-
-      // Invalidate expired session
-      await options.db.expireSession(session.sessionToken, new Date(1970, 1, 1))
-      // Expired session should return null
-      expect(await adapter.getSession(session.sessionToken)).toBeNull()
-      // Expired session should be removed from the database
-      expect(await options.db.session(session.sessionToken)).toBeNull()
-    })
-
-    test("updateSession", async () => {
-      const session = await adapter.createSession(user)
-      // Don't update session if not forced
-      expect(await adapter.updateSession(session)).toBeNull()
-      expect(await adapter.updateSession(session, false)).toBeNull()
-
-      // Update session if forced
-      const updated = await adapter.updateSession(session, true)
-      expect(updated.accessToken).toBe(session.accessToken)
-      expect(updated.sessionToken).toBe(session.sessionToken)
-      expect(updated.userId).toBe(session.userId)
-      // TODO: expect(updated.expires.valueOf()).toBe(????)
-
-      // Update session if expired
-      const expired = await adapter.updateSession(session, true)
-      expect(expired.accessToken).toBe(session.accessToken)
-      expect(expired.sessionToken).toBe(session.sessionToken)
-      expect(expired.userId).toBe(session.userId)
-      // TODO: expect(expired.expires.valueOf()).toBe(????)
-    })
-
-    test("deleteSession", async () => {
-      const session = await adapter.createSession(user)
-
-      await adapter.deleteSession(session.sessionToken)
-      expect(await options.db.session(session.sessionToken)).toBeNull()
-    })
-  })
-
-  describe("Account", () => {
-    let user: any
-
-    beforeAll(async () => {
-      user = await adapter.createUser({
-        ...defaultUser,
-        email: "account@test.com",
-      })
-    })
-
-    test("linkAccount (OAuth provider)", async () => {
-      // Basic OAuth provider config
-      const provider = Providers.Auth0({})
-
-      // Roughly what is returned from a succesful OAuth login flow
-      const providerProfile = {
-        id: randomBytes(32).toString("hex"),
-        refreshToken: randomBytes(32).toString("hex"),
-        accessToken: randomBytes(32).toString("hex"),
-        accessTokenExpires: null,
-      }
-
-      const account = {
-        userId: user.id,
-        providerId: provider.id,
-        providerType: provider.type,
-        providerAccountId: providerProfile.id,
-        refreshToken: providerProfile.refreshToken,
-        accessToken: providerProfile.accessToken,
-        accessTokenExpires: providerProfile.accessTokenExpires,
-      }
-
-      // @ts-expect-error
-      await adapter.linkAccount(...Object.values(account))
-
-      const dbAccount = await options.db.account(
-        provider.id,
-        providerProfile.id
-      )
-
-      expect(dbAccount).toEqual(expect.objectContaining(account))
-    })
-
-    test("getUserByProviderAccountId", async () => {
-      // Basic OAuth provider config
-      const provider = Providers.GitHub({})
-      // Roughly what is returned from a succesful OAuth login flow
-      const providerProfile = {
-        id: randomBytes(32).toString("hex"),
-        refreshToken: randomBytes(32).toString("hex"),
-        accessToken: randomBytes(32).toString("hex"),
-        accessTokenExpires: null,
-      }
-
-      const account = {
-        userId: user.id,
-        providerId: provider.id,
-        providerType: provider.type,
-        providerAccountId: providerProfile.id,
-        refreshToken: providerProfile.refreshToken,
-        accessToken: providerProfile.accessToken,
-        accessTokenExpires: providerProfile.accessTokenExpires,
-      }
-
-      // @ts-expect-error
-      await adapter.linkAccount(...Object.values(account))
-
-      const adapterUser = await adapter.getUserByProviderAccountId(
-        provider.id,
-        providerProfile.id
-      )
-
-      const dbUser = await options.db.user(user.id)
-      expect(dbUser).toEqual(expect.objectContaining(adapterUser))
-    })
-
-    // (Currently unimplemented in core, so we don't require it yet)
-    test.skip("unlinkAccount", async () => {
-      await adapter.unlinkAccount?.("", "", "")
-    })
-  })
-
-  describe("Verification Request", () => {
-    const email = "jane@example.com"
-    const url = appOptions.baseUrl
-    const token = "000000000000"
-    const hashToken = (token: string) =>
-      createHash("sha256").update(`${token}${appOptions.secret}`).digest("hex")
-    // @ts-expect-error
-    const provider: EmailConfig & {
-      maxAge: number
-      from: string
-    } = Providers.Email({
-      sendVerificationRequest: jest.fn(),
-      server: "",
-      maxAge: 60,
-      from: "noreply@example.com",
-    })
-
-    test("createVerificationRequest", async () => {
-      if (!adapter.createVerificationRequest) {
-        return console.warn("This adapter does not support Email providers")
-      }
-      await adapter.createVerificationRequest(
-        email,
-        appOptions.baseUrl,
-        token,
-        appOptions.secret,
-        provider
-      )
-
-      expect(provider.sendVerificationRequest).toBeCalledTimes(1)
-      expect(provider.sendVerificationRequest).toBeCalledWith({
-        baseUrl: appOptions.baseUrl,
-        identifier: email,
-        provider,
-        token,
-        url,
-      })
-      const dbVerificationRequest = await options.db.verificationRequest(
-        email,
-        hashToken(token)
-      )
-      expect(dbVerificationRequest.identifier).toBe(email)
-      expect(dbVerificationRequest.expires.valueOf()).toBeLessThanOrEqual(
-        Date.now() + provider.maxAge * 1000
-      )
-      expect(dbVerificationRequest.token).toBe(hashToken(token))
-    })
-    test("getVerificationRequest", async () => {
-      if (!adapter.getVerificationRequest) {
-        return console.warn("This adapter does not support Email providers")
-      }
-      expect(
-        await adapter.getVerificationRequest(
-          email,
-          token,
-          appOptions.secret,
-          provider
-        )
-      ).toEqual(
-        expect.objectContaining({
-          identifier: email,
-          expires: expect.any(Date),
-          token: hashToken(token),
-        })
-      )
-
-      // TODO: getVerificationRequest should delete the token from the database immediatelly
-      // expect(
-      //   await options.db.verificationRequest(email, hashToken(token))
-      // ).toBeNull()
-    })
-    test("deleteVerificationRequest", async () => {
-      // TODO: Deprecate in favour of getVerificationRequest doing this.
-      if (
-        !adapter.deleteVerificationRequest ||
-        !adapter.createVerificationRequest
-      ) {
-        return console.warn("This adapter does not support Email providers")
-      }
-      const token = "1111111111111111"
-      await adapter.createVerificationRequest(
-        email,
-        appOptions.baseUrl,
-        token,
-        appOptions.secret,
-        provider
-      )
-
-      await adapter.deleteVerificationRequest(
-        email,
-        token,
-        appOptions.secret,
-        provider
-      )
-      expect(
-        await options.db.verificationRequest(email, hashToken(token))
-      ).toBeNull()
-    })
-  })
-
-  return {
-    appOptions,
+  let user: any = {
+    email: "fill@murray.com",
+    image: "https://www.fillmurray.com/460/300",
+    name: "Fill Murray",
+    emailVerified: new Date(),
   }
+
+  const session: any = {
+    sessionToken: randomUUID(),
+    expires: ONE_WEEK_FROM_NOW,
+  }
+
+  const account: any = {
+    provider: "github",
+    providerAccountId: randomUUID(),
+    type: "oauth",
+    access_token: randomUUID(),
+    expires_at: ONE_MONTH,
+    id_token: randomUUID(),
+    oauth_token: randomUUID(),
+    oauth_token_secret: randomUUID(),
+    refresh_token: randomUUID(),
+    token_type: "bearer",
+    scope: "user",
+    session_state: randomUUID(),
+  }
+
+  // All adapters must define these methods
+
+  test("Required (User, Account, Session) methods exist", () => {
+    const requiredMethods = [
+      "createUser",
+      "getUser",
+      "getUserByEmail",
+      "getUserByAccount",
+      "updateUser",
+      "linkAccount",
+      "createSession",
+      "getSessionAndUser",
+      "updateSession",
+      "deleteSession",
+    ]
+    requiredMethods.forEach((method) => {
+      expect(adapter).toHaveProperty(method)
+    })
+  })
+
+  test("createUser", async () => {
+    const { id } = await adapter.createUser(user)
+    const dbUser = await db.user(id)
+    expect(dbUser).toEqual({ ...user, id })
+    user = dbUser
+    session.userId = dbUser.id
+    account.userId = dbUser.id
+  })
+
+  test("getUser", async () => {
+    expect(await adapter.getUser("non-existent-user-id")).toBeNull()
+    expect(await adapter.getUser(user.id)).toEqual(user)
+  })
+
+  test("getUserByEmail", async () => {
+    expect(await adapter.getUserByEmail("non-existent-email")).toBeNull()
+    expect(await adapter.getUserByEmail(user.email)).toEqual(user)
+  })
+
+  test("createSession", async () => {
+    const { sessionToken } = await adapter.createSession(session)
+    const dbSession = await db.session(sessionToken)
+
+    expect(dbSession).toEqual({ ...session, id: dbSession.id })
+    session.userId = dbSession.userId
+    session.id = dbSession.id
+  })
+
+  test("getSessionAndUser", async () => {
+    let sessionAndUser = await adapter.getSessionAndUser("invalid-token")
+    expect(sessionAndUser).toBeNull()
+
+    sessionAndUser = await adapter.getSessionAndUser(session.sessionToken)
+    if (!sessionAndUser) {
+      throw new Error("Session and User was not found, but they should exist")
+    }
+    expect(sessionAndUser).toEqual({
+      user,
+      session,
+    })
+  })
+
+  test("updateUser", async () => {
+    const newName = "Updated Name"
+    await adapter.updateUser({ id: user.id, name: newName })
+
+    const dbUser = await db.user(user.id)
+    expect(dbUser.name).toBe(newName)
+    user.name = newName
+  })
+
+  test("updateSession", async () => {
+    let dbSession = await db.session(session.sessionToken)
+
+    expect(dbSession.expires.valueOf()).not.toBe(ONE_MONTH_FROM_NOW.valueOf())
+
+    await adapter.updateSession({
+      sessionToken: session.sessionToken,
+      expires: ONE_MONTH_FROM_NOW,
+    })
+
+    dbSession = await db.session(session.sessionToken)
+    expect(dbSession.expires.valueOf()).toBe(ONE_MONTH_FROM_NOW.valueOf())
+  })
+
+  test("linkAccount", async () => {
+    await adapter.linkAccount(account)
+    const dbAccount = await db.account({
+      provider: account.provider,
+      providerAccountId: account.providerAccountId,
+    })
+    expect(dbAccount).toEqual({ ...account, id: dbAccount.id })
+  })
+
+  test("getUserByAccount", async () => {
+    let userByAccount = await adapter.getUserByAccount({
+      provider: "invalid-provider",
+      providerAccountId: "invalid-provider-account-id",
+    })
+    expect(userByAccount).toBeNull()
+
+    userByAccount = await adapter.getUserByAccount({
+      provider: account.provider,
+      providerAccountId: account.providerAccountId,
+    })
+    expect(userByAccount).toEqual(user)
+  })
+
+  test("deleteSession", async () => {
+    await adapter.deleteSession(session.sessionToken)
+    const dbSession = await db.session(session.sessionToken)
+    expect(dbSession).toBeNull()
+  })
+
+  // These are optional for custom adapters, but we require them for the official adapters
+
+  test("Verification Token methods exist", () => {
+    const requiredMethods = ["createVerificationToken", "useVerificationToken"]
+    requiredMethods.forEach((method) => {
+      expect(adapter).toHaveProperty(method)
+    })
+  })
+
+  test("createVerificationToken", async () => {
+    const identifier = "info@example.com"
+    const token = randomUUID()
+    const hashedToken = hashToken(token)
+
+    const verificationToken = {
+      token: hashedToken,
+      identifier,
+      expires: FIFTEEN_MINUTES_FROM_NOW,
+    }
+    await adapter.createVerificationToken?.(verificationToken)
+
+    const dbVerificationToken = await db.verificationToken({
+      token: hashedToken,
+      identifier,
+    })
+
+    expect(dbVerificationToken).toEqual(verificationToken)
+  })
+
+  test("useVerificationToken", async () => {
+    const identifier = "info@example.com"
+    const token = randomUUID()
+    const hashedToken = hashToken(token)
+    const verificationToken = {
+      token: hashedToken,
+      identifier,
+      expires: FIFTEEN_MINUTES_FROM_NOW,
+    }
+    await adapter.createVerificationToken?.(verificationToken)
+
+    const dbVerificationToken1 = await adapter.useVerificationToken?.({
+      identifier,
+      token: hashedToken,
+    })
+
+    if (!dbVerificationToken1) {
+      throw new Error("Verification Token was not found, but it should exist")
+    }
+
+    expect(dbVerificationToken1).toEqual(verificationToken)
+
+    const dbVerificationToken2 = await adapter.useVerificationToken?.({
+      identifier,
+      token: hashedToken,
+    })
+
+    expect(dbVerificationToken2).toBeNull()
+  })
+
+  // Future methods
+  // These methods are not yet invoked in the core, but built-in adapters must implement them
+  test("Future methods exist", () => {
+    const requiredMethods = ["unlinkAccount", "deleteUser"]
+    requiredMethods.forEach((method) => {
+      expect(adapter).toHaveProperty(method)
+    })
+  })
+
+  test("unlinkAccount", async () => {
+    let dbAccount = await db.account({
+      provider: account.provider,
+      providerAccountId: account.providerAccountId,
+    })
+    expect(dbAccount).toEqual({ ...account, id: dbAccount.id })
+
+    await adapter.unlinkAccount?.({
+      provider: account.provider,
+      providerAccountId: account.providerAccountId,
+    })
+    dbAccount = await db.account({
+      provider: account.provider,
+      providerAccountId: account.providerAccountId,
+    })
+    expect(dbAccount).toBeNull()
+  })
+
+  test("deleteUser", async () => {
+    let dbUser = await db.user(user.id)
+    expect(dbUser).toEqual(user)
+
+    // Re-populate db with session and account
+    await adapter.createSession(session)
+    await adapter.linkAccount(account)
+
+    await adapter.deleteUser?.(user.id)
+    dbUser = await db.user(user.id)
+    expect(dbUser).toBeNull()
+
+    const dbSession = await db.session(session.sessionToken)
+    expect(dbSession).toBeNull()
+
+    const dbAccount = await db.account({
+      provider: account.provider,
+      providerAccountId: account.providerAccountId,
+    })
+    expect(dbAccount).toBeNull()
+  })
 }
+
+// UTILS
+export function hashToken(token: string) {
+  return createHash("sha256").update(`${token}anything`).digest("hex")
+}
+
+export { randomUUID }
+
+export const ONE_WEEK_FROM_NOW = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
+export const FIFTEEN_MINUTES_FROM_NOW = new Date(Date.now() + 15 * 60 * 1000)
+export const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
+export const ONE_MONTH_FROM_NOW = new Date(Date.now() + ONE_MONTH)
