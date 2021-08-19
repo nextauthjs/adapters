@@ -1,14 +1,11 @@
 import neo4j from "neo4j-driver"
-import { createHash } from "crypto"
-import type { Profile } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 
 import {
-  Neo4jUser,
   createUser,
   getUser,
   getUserByEmail,
-  getUserByProviderAccountId,
+  getUserByAccount,
   updateUser,
   deleteUser,
 } from "./user"
@@ -16,152 +13,86 @@ import {
 import { linkAccount, unlinkAccount } from "./account"
 
 import {
-  Neo4jSession,
   createSession,
-  getSession,
+  getSessionAndUser,
   updateSession,
   deleteSession,
 } from "./session"
 
 import {
-  createVerificationRequest,
-  getVerificationRequest,
-  deleteVerificationRequest,
-} from "./verificationRequest"
+  createVerificationToken,
+  useVerificationToken,
+} from "./verificationToken"
 
-export const Neo4jAdapter: Adapter<
-  typeof neo4j.Session,
-  never,
-  Neo4jUser,
-  Profile & { emailVerified?: Date },
-  Neo4jSession
-> = (neo4jSession) => {
+// export const Neo4jAdapter: Adapter = (neo4jSession: Neo4jSession) => {
+export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
   return {
-    async getAdapter({ session, secret, ...appOptions }) {
-      const sessionMaxAge = session.maxAge * 1000 // default is 30 days
-      const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
+    async createUser(data) {
+      return await createUser(neo4jSession, data)
+    },
 
-      /**
-       * @todo Move this to core package
-       * @todo Use bcrypt or a more secure method
-       */
-      const hashToken = (token: string) =>
-        createHash("sha256").update(`${token}${secret}`).digest("hex")
+    async getUser(id) {
+      return await getUser(neo4jSession, id)
+    },
 
-      return {
-        displayName: "NEO4J",
+    async getUserByEmail(email) {
+      return await getUserByEmail(neo4jSession, email)
+    },
 
-        async createUser(profile) {
-          return await createUser(neo4jSession, profile)
-        },
+    // TODO:
+    // Question: Was providerId and provider accountID now single parameter.
+    // providerAccountId: Pick<Account, "provider" | "providerAccountId">
+    // Will this always be of type providerAccountId ?
+    // If not, when would it be type provider ?
 
-        async getUser(id) {
-          return await getUser(neo4jSession, id)
-        },
+    async getUserByAccount(provider_providerAccountId) {
+      return await getUserByAccount(neo4jSession, provider_providerAccountId)
+    },
 
-        async getUserByEmail(email) {
-          return await getUserByEmail(neo4jSession, email)
-        },
+    async updateUser(data) {
+      return await updateUser(neo4jSession, data)
+    },
 
-        async getUserByProviderAccountId(providerId, providerAccountId) {
-          return await getUserByProviderAccountId(
-            neo4jSession,
-            providerId,
-            providerAccountId
-          )
-        },
+    async deleteUser(id) {
+      return await deleteUser(neo4jSession, id)
+    },
 
-        async updateUser(user) {
-          return await updateUser(neo4jSession, user)
-        },
+    async linkAccount(data) {
+      return await linkAccount(neo4jSession, data)
+    },
 
-        async deleteUser(id) {
-          return await deleteUser(neo4jSession, id)
-        },
+    // TODO:
+    // Same question as with getUserByAccount
 
-        async linkAccount(
-          userId,
-          providerId,
-          providerType,
-          providerAccountId,
-          refreshToken,
-          accessToken,
-          accessTokenExpires
-        ) {
-          return await linkAccount(
-            neo4jSession,
-            userId,
-            providerId,
-            providerType,
-            providerAccountId,
-            refreshToken,
-            accessToken,
-            accessTokenExpires
-          )
-        },
+    async unlinkAccount(provider_providerAccountId) {
+      return await unlinkAccount(neo4jSession, provider_providerAccountId)
+    },
 
-        async unlinkAccount(_, providerId, providerAccountId) {
-          return await unlinkAccount(
-            neo4jSession,
-            _,
-            providerId,
-            providerAccountId
-          )
-        },
+    async createSession(data) {
+      return await createSession(neo4jSession, data)
+    },
 
-        async createSession(user: Neo4jUser) {
-          return await createSession(neo4jSession, user, sessionMaxAge)
-        },
+    async getSessionAndUser(sessionToken) {
+      return await getSessionAndUser(neo4jSession, sessionToken)
+    },
 
-        async getSession(sessionToken) {
-          return await getSession(neo4jSession, sessionToken)
-        },
+    // TODO:
+    // Question: force parameter is no longer used?
 
-        async updateSession(session, force) {
-          return await updateSession(
-            neo4jSession,
-            session,
-            force,
-            sessionMaxAge,
-            sessionUpdateAge
-          )
-        },
+    async updateSession(data) {
+      return await updateSession(neo4jSession, data)
+    },
 
-        async deleteSession(sessionToken) {
-          return await deleteSession(neo4jSession, sessionToken)
-        },
+    async deleteSession(sessionToken) {
+      return await deleteSession(neo4jSession, sessionToken)
+    },
 
-        async createVerificationRequest(identifier, url, token, _, provider) {
-          return await createVerificationRequest(
-            neo4jSession,
-            identifier,
-            url,
-            token,
-            _,
-            provider,
-            hashToken,
-            appOptions.baseUrl
-          )
-        },
+    async createVerificationToken(data) {
+      return await createVerificationToken(neo4jSession, data)
+    },
 
-        async getVerificationRequest(identifier, token) {
-          return await getVerificationRequest(
-            neo4jSession,
-            identifier,
-            token,
-            hashToken
-          )
-        },
-
-        async deleteVerificationRequest(identifier, token) {
-          return await deleteVerificationRequest(
-            neo4jSession,
-            identifier,
-            token,
-            hashToken
-          )
-        },
-      }
+    async useVerificationToken(data) {
+      return await useVerificationToken(neo4jSession, data)
     },
   }
 }

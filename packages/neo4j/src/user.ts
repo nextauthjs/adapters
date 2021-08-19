@@ -1,16 +1,9 @@
 import neo4j from "neo4j-driver"
-import type { Profile } from "next-auth"
+import type { Profile, Account, User } from "next-auth"
+import type { AdapterUser } from "next-auth/adapters"
 import { v4 as uuid } from "uuid"
 
 import { neo4jEpochToDate } from "./utils"
-
-export interface Neo4jUser {
-  id: string
-  name?: string
-  email?: string
-  emailVerified?: Date | null
-  image?: string
-}
 
 export const userReturn = `
   { 
@@ -24,41 +17,42 @@ export const userReturn = `
 
 export const createUser = async (
   neo4jSession: typeof neo4j.Session,
-  profile: Profile & { emailVerified?: Date }
+  user: Omit<AdapterUser, "id">
 ) => {
-  let user
+  const { emailVerified, ...userData } = user
+
+  let result
   try {
-    const result = await neo4jSession.writeTransaction((tx) =>
+    result = await neo4jSession.writeTransaction((tx) =>
       tx.run(
         `
-        CREATE (u:User)
+        CREATE (u:User) 
         SET
-          u.id = $id,
-          u.name= $name,
-          u.image= $image,
-          u.email=  $email,
-          u.emailVerified= datetime($emailVerified)
-        RETURN ${userReturn}
+          u               += $userData,
+          u.id            = $id,
+          u.emailVerified = datetime($emailVerified)
+        RETURN u AS user, u.emailVerified.epochMillis AS emailVerified
         `,
         {
           id: uuid(),
-          name: profile.name,
-          email: profile.email,
-          image: profile.image,
-          emailVerified: profile.emailVerified?.toISOString() ?? null,
+          userData,
+          emailVerified:
+            emailVerified instanceof Date ? emailVerified.toISOString() : null,
         }
       )
     )
-    user = result?.records[0]?.get("user")
   } catch (error) {
     console.error(error)
     return null
   }
 
-  return user
+  const dbUser = result?.records[0]?.get("user")?.properties
+  const dbEmailVerified = result?.records[0]?.get("emailVerified")
+
+  return dbUser
     ? {
-        ...user,
-        emailVerified: neo4jEpochToDate(user.emailVerified),
+        ...dbUser,
+        emailVerified: neo4jEpochToDate(dbEmailVerified),
       }
     : null
 }
@@ -67,22 +61,29 @@ export const getUser = async (
   neo4jSession: typeof neo4j.Session,
   id: String
 ) => {
-  const result = await neo4jSession.readTransaction((tx) =>
-    tx.run(
-      `
+  let result
+  try {
+    result = await neo4jSession.readTransaction((tx) =>
+      tx.run(
+        `
     MATCH (u:User { id: $id })
-    RETURN ${userReturn} 
+    RETURN u AS user, u.emailVerified.epochMillis AS emailVerified
     `,
-      { id }
+        { id }
+      )
     )
-  )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
-  const user = result?.records[0]?.get("user")
+  const dbUser = result?.records[0]?.get("user")?.properties
+  const dbEmailVerified = result?.records[0]?.get("emailVerified")
 
-  return user
+  return dbUser
     ? {
-        ...user,
-        emailVerified: neo4jEpochToDate(user.emailVerified),
+        ...dbUser,
+        emailVerified: neo4jEpochToDate(dbEmailVerified),
       }
     : null
 }
@@ -93,76 +94,92 @@ export const getUserByEmail = async (
 ) => {
   if (!email) return null
 
-  const result = await neo4jSession.readTransaction((tx) =>
-    tx.run(
-      `
-    MATCH (u:User { email: $email })
-    RETURN ${userReturn} 
-    `,
-      { email }
+  let result
+  try {
+    result = await neo4jSession.readTransaction((tx) =>
+      tx.run(
+        `
+        MATCH (u:User { email: $email })
+        RETURN u AS user, u.emailVerified.epochMillis AS emailVerified
+        `,
+        { email }
+      )
     )
-  )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
-  const user = result?.records[0]?.get("user")
+  const dbUser = result?.records[0]?.get("user")?.properties
+  const dbEmailVerified = result?.records[0]?.get("emailVerified")
 
-  return user
+  return dbUser
     ? {
-        ...user,
-        emailVerified: neo4jEpochToDate(user.emailVerified),
+        ...dbUser,
+        emailVerified: neo4jEpochToDate(dbEmailVerified),
       }
     : null
 }
 
-export const getUserByProviderAccountId = async (
+export const getUserByAccount = async (
   neo4jSession: typeof neo4j.Session,
-  providerId: string,
-  providerAccountId: string
+  provider_providerAccountId: Pick<Account, "provider" | "providerAccountId">
 ) => {
   const result = await neo4jSession.readTransaction((tx) =>
     tx.run(
       `
       MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
-        providerId: $providerId, 
+        provider: $provider,
         providerAccountId: $providerAccountId
       })
-      RETURN ${userReturn} 
+      RETURN 
+        u AS user, 
+        u.emailVerified.epochMillis AS emailVerified
       `,
-      { providerId, providerAccountId }
+      { ...provider_providerAccountId }
     )
   )
-  const user = result?.records[0]?.get("user")
+  const dbUser = result?.records[0]?.get("user")?.properties
+  const dbEmailVerified = result?.records[0]?.get("emailVerified")
 
-  return user
+  // console.log({ dbUser })
+  // console.log({ dbEmailVerified })
+
+  return dbUser
     ? {
-        ...user,
-        emailVerified: neo4jEpochToDate(user.emailVerified),
+        ...dbUser,
+        emailVerified: neo4jEpochToDate(dbEmailVerified),
       }
     : null
 }
 
 export const updateUser = async (
   neo4jSession: typeof neo4j.Session,
-  user: Neo4jUser & { id: string }
+  user: Partial<AdapterUser>
 ) => {
+  const { id, emailVerified, ...userData } = user
+
   let result
   try {
     result = await neo4jSession.writeTransaction((tx) =>
       tx.run(
         `
         MATCH (u:User { id: $id })
-        SET 
-        u.name          = $name,
-        u.email         = $email,
-        u.image         = $image,
-        u.emailVerified = datetime($emailVerified)
-        RETURN ${userReturn}
+        SET
+          u               += $userData
+          ${
+            emailVerified
+              ? `,
+                u.emailVerified = datetime($emailVerified)
+                `
+              : ``
+          }
+        RETURN u AS user, u.emailVerified.epochMillis AS emailVerified
         `,
         {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          emailVerified: user.emailVerified?.toISOString() ?? null,
+          id,
+          userData,
+          emailVerified: emailVerified?.toISOString() ?? null,
         }
       )
     )
@@ -171,12 +188,13 @@ export const updateUser = async (
     return null
   }
 
-  const updatedUser = result?.records[0]?.get("user")
+  const dbUser = result?.records[0]?.get("user")?.properties
+  const dbEmailVerified = result?.records[0]?.get("emailVerified")
 
-  return updatedUser
+  return dbUser
     ? {
-        ...updatedUser,
-        emailVerified: neo4jEpochToDate(updatedUser.emailVerified),
+        ...dbUser,
+        emailVerified: neo4jEpochToDate(dbEmailVerified),
       }
     : null
 }

@@ -30,7 +30,7 @@
     "dist"
   ],
   "peerDependencies": {
-    "next-auth": ">=3.19.2"
+    "next-auth": ">=4"
   },
   "devDependencies": {
     "@types/uuid": "^8.3.0"

@@ -1,40 +1,24 @@
 import neo4j from "neo4j-driver"
-
-import { neo4jEpochToDate } from "./utils"
-
-export interface Neo4jAccount {
-  id: string
-  userId: string
-  providerType: string
-  providerId: string
-  providerAccountId: string
-  refreshToken: string | null | undefined
-  accessToken: string | null | undefined
-  accessTokenExpires: Date | null | undefined
-}
+import type { Account } from "next-auth"
+import { v4 as uuid } from "uuid"
 
 export const accountReturn = `
   {
     userId: u.id,
-    providerId: a.providerId,
-    providerAccountId: a.providerAccountId,
+    id: a.providerAccountId,
+    provider: a.providerId,
     providerType: a.providerType,
     refreshToken: a.refreshToken,
-    accessToken: a.accessToken,
-    accessTokenExpires: a.accessTokenExpires
-  } AS account
+    providerType: a.providerType
+  } AS account 
 `
 
 export const linkAccount = async (
   neo4jSession: typeof neo4j.Session,
-  userId: Neo4jAccount["userId"],
-  providerId: Neo4jAccount["providerId"],
-  providerType: Neo4jAccount["providerType"],
-  providerAccountId: Neo4jAccount["providerAccountId"],
-  refreshToken: Neo4jAccount["refreshToken"],
-  accessToken: Neo4jAccount["accessToken"],
-  accessTokenExpires: Neo4jAccount["accessTokenExpires"]
+  data: Account
 ) => {
+  const { userId, ...accountData } = data
+
   const result = await neo4jSession.writeTransaction((tx) =>
     tx.run(
       `
@@ -42,60 +26,53 @@ export const linkAccount = async (
       // Use merge here because composite of
       // providerId + providerAccountId is unique
       MERGE (a:Account { 
-        providerId: $providerId, 
-        providerAccountId: $providerAccountId 
-      })
+        providerAccountId: $accountData.providerAccountId, 
+        provider: $accountData.provider 
+      }) 
+      ON CREATE SET 
+        a.id = $id
       SET 
-        a.providerType       = $providerType,
-        ${refreshToken ? `a.refreshToken = $refreshToken,` : ``}
-        a.accessToken        = $accessToken,
-        a.accessTokenExpires = datetime($accessTokenExpires)
-      
+        a += $accountData
+
       MERGE (u)-[:HAS_ACCOUNT]->(a)
 
-      RETURN ${accountReturn}
+      RETURN a AS account, u AS user
       `,
       {
+        id: uuid(),
         userId,
-        providerId,
-        providerType,
-        providerAccountId,
-        refreshToken,
-        accessToken,
-        accessTokenExpires: accessTokenExpires?.toISOString() ?? null,
+        accountData,
       }
     )
   )
 
-  const account = result?.records[0]?.get("account")
+  const account = result?.records[0]?.get("account")?.properties
+  if (!account) return null
 
-  return account
-    ? {
-        ...account,
-        accessTokenExpires: neo4jEpochToDate(account.accessTokenExpires),
-      }
-    : null
+  const user = result?.records[0]?.get("user")?.properties
+  if (!user) return null
+
+  return {
+    ...account,
+    userId: user.id,
+  }
 }
 
 export const unlinkAccount = async (
   neo4jSession: typeof neo4j.Session,
-  _: string,
-  providerId: string,
-  providerAccountId: string
+  provider_providerAccountId: Pick<Account, "provider" | "providerAccountId">
 ) => {
   await neo4jSession.writeTransaction((tx) =>
     tx.run(
       `
       MATCH (a:Account { 
-        providerId: $providerId, 
-        providerAccountId: $providerAccountId 
+        providerAccountId: $provider_providerAccountId 
       })
       DETACH DELETE a
       RETURN count(a)
       `,
       {
-        providerId,
-        providerAccountId,
+        provider_providerAccountId,
       }
     )
   )
