@@ -1,28 +1,8 @@
 import neo4j from "neo4j-driver"
-import { randomBytes } from "crypto"
 import { v4 as uuid } from "uuid"
 import type { AdapterSession } from "next-auth/adapters"
 
-import { neo4jEpochToDate } from "./utils"
-
-import { userReturn } from "./user"
-
-export interface Neo4jSession {
-  id: string
-  userId: string
-  expires: Date | string
-  sessionToken: string
-  accessToken: string
-}
-
-export const sessionReturn = `
-  {
-    userId: u.id,
-    id: s.id,
-    expires: s.expires.epochMillis, 
-    sessionToken: s.sessionToken
-  } AS session
-`
+import { neo4jDateToJs } from "./utils"
 
 export const createSession = async (
   neo4jSession: typeof neo4j.Session,
@@ -45,9 +25,7 @@ export const createSession = async (
           sessionToken : $sessionToken
         })
         CREATE (u)-[:HAS_SESSION]->(s)
-        RETURN 
-          s AS session,
-          u.id AS userId
+        RETURN s, u.id AS userId
         `,
         {
           userId: session.userId,
@@ -62,70 +40,77 @@ export const createSession = async (
     return null
   }
 
-  const dbSession = result?.records[0]?.get("session")?.properties
+  const dbSession = result?.records[0]?.get("s")?.properties
   const dbUserId = result?.records[0]?.get("userId")
 
-  return dbSession && dbUserId
-    ? {
-        ...dbSession,
-        expires: neo4jEpochToDate(dbSession.expires),
-        userId: dbUserId,
-      }
-    : null
+  if (!dbSession || !dbUserId) return null
+
+  return {
+    ...dbSession,
+    expires: neo4jDateToJs(dbSession.expires),
+    userId: dbUserId,
+  }
 }
 
 export const getSessionAndUser = async (
   neo4jSession: typeof neo4j.Session,
   sessionToken: string
 ) => {
-  const result = await neo4jSession.readTransaction((tx) =>
-    tx.run(
-      `
+  let result
+
+  try {
+    result = await neo4jSession.readTransaction((tx) =>
+      tx.run(
+        `
       MATCH 
         (u:User)
         -[:HAS_SESSION]->
         (s:Session { sessionToken: $sessionToken })
       RETURN 
-        s AS session, 
-        s.expires.epochMillis AS sessionExpires,
-        u AS user,
-        u.emailVerified.epochMillis AS userEmailVerified
+        s, 
+        u
       `,
-      { sessionToken }
+        { sessionToken }
+      )
     )
-  )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
-  let user = result?.records[0]?.get("user")?.properties
-  const userEmailVerified = result?.records[0]?.get("userEmailVerified")
-  if (!user) return null
+  let session = result?.records[0]?.get("s")?.properties
+  let user = result?.records[0]?.get("u")?.properties
+
+  if (!session || !user) return null
 
   user = {
     ...user,
-    emailVerified: neo4jEpochToDate(userEmailVerified),
+    emailVerified: neo4jDateToJs(user.emailVerified),
   }
 
-  let session = result?.records[0]?.get("session")?.properties
-  const sessionExpires = result?.records[0]?.get("sessionExpires")
-  if (!session) return null
-
   session = {
-    ...session,
-    expires: neo4jEpochToDate(sessionExpires),
     userId: user.id,
+    ...session,
+    expires: neo4jDateToJs(session.expires),
   }
 
   if (session.expires < new Date()) {
-    await neo4jSession.writeTransaction((tx) =>
-      tx.run(
-        `
-      MATCH (s:Session { id: $id })
-      DETACH DELETE s
-      RETURN count(s) 
-      `,
-        { id: session.id }
+    try {
+      await neo4jSession.writeTransaction((tx) =>
+        tx.run(
+          `
+          MATCH (s:Session { id: $id })
+          DETACH DELETE s
+          RETURN count(s) 
+          `,
+          { id: session.id }
+        )
       )
-    )
-    return null
+      return null
+    } catch (error) {
+      console.error(error)
+      return null
+    }
   }
 
   return { session, user }
@@ -135,51 +120,75 @@ export const updateSession = async (
   neo4jSession: typeof neo4j.Session,
   session: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">
 ) => {
-  // TODO: remove
-  // if (
-  //   !force &&
-  //   Number(session.expires) - sessionMaxAge + sessionUpdateAge > Date.now()
-  // ) {
-  //   return null
-  // }
+  const { sessionToken, expires, ...sessionData } = session
+  const expiresParsed =
+    expires instanceof Date ? expires.toISOString() : expires
 
-  const result = await neo4jSession.writeTransaction((tx) =>
-    tx.run(
-      `
-    MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-    SET 
-      s.expires = datetime($expires)
-    RETURN ${sessionReturn}
-    `,
-      {
-        sessionToken: session.sessionToken,
-        expires: session.expires?.toISOString(),
-      }
+  let result
+  try {
+    result = await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
+        MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+        SET 
+          s += $sessionData
+          ${undefined !== expires ? `, s.expires = datetime($expires)` : ``}
+        RETURN s, u.id AS userId
+        `,
+        {
+          sessionToken,
+          sessionData,
+          expires: expiresParsed,
+        }
+      )
     )
-  )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
-  const updatedSession = result?.records[0]?.get("session")
+  const dbSession = result?.records[0]?.get("s")?.properties
+  const dbUserId = result?.records[0]?.get("userId")
 
-  return updatedSession
-    ? {
-        ...updatedSession,
-        expires: neo4jEpochToDate(updatedSession.expires),
-      }
-    : null
+  if (!dbSession || !dbUserId) return null
+
+  return {
+    ...dbSession,
+    expires: neo4jDateToJs(dbSession.expires),
+    userId: dbUserId,
+  }
 }
 
 export const deleteSession = async (
   neo4jSession: typeof neo4j.Session,
   sessionToken: string
 ) => {
-  await neo4jSession.writeTransaction((tx) =>
-    tx.run(
-      `
-    MATCH (s:Session { sessionToken: $sessionToken })
-    DETACH DELETE s
-    RETURN count(s)
-    `,
-      { sessionToken }
+  let result
+  try {
+    result = await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
+        MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+        WITH u, s, properties(s) AS props
+        DETACH DELETE s
+        RETURN props, u.id AS userId
+        `,
+        { sessionToken }
+      )
     )
-  )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+
+  const dbSession = result?.records[0]?.get("props")
+  const dbUserId = result?.records[0]?.get("userId")
+
+  if (!dbSession || !dbUserId) return null
+
+  return {
+    ...dbSession,
+    expires: neo4jDateToJs(dbSession.expires),
+    userId: dbUserId,
+  }
 }

@@ -1,15 +1,9 @@
 import neo4j from "neo4j-driver"
 
-import { Neo4jAdapter } from "../src"
-
-import { neo4jEpochToDate } from "../src/utils"
-
-import { userReturn } from "../src/user"
-import { accountReturn } from "../src/account"
-import { sessionReturn } from "../src/session"
-import { verificationTokenReturn } from "../src/verificationToken"
-
 import { runBasicTests } from "../../../basic-tests"
+
+import { Neo4jAdapter } from "../src"
+import { neo4jDateToJs } from "../src/utils"
 
 const driver: typeof neo4j.Driver = neo4j.driver(
   "bolt://localhost",
@@ -35,81 +29,51 @@ runBasicTests({
       await neo4jSession.close()
       await driver.close()
     },
-    async session(sessionToken: any) {
-      const result = await neo4jSession.readTransaction((tx) =>
-        tx.run(
-          `
-          MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-          RETURN 
-            s AS session, 
-            s.expires.epochMillis AS sessionExpires,
-            u.id AS userId
-          `,
-          {
-            sessionToken,
-          }
-        )
-      )
-      if (!result?.records[0]) return null
 
-      const session = result?.records[0]?.get("session")?.properties
-      const sessionExpires = result?.records[0]?.get("sessionExpires")
-      const userId = result?.records[0]?.get("userId")
-
-      return {
-        ...session,
-        expires: neo4jEpochToDate(sessionExpires),
-        userId,
-      }
-    },
-    // async expireSession(sessionToken: any, expires: Date) {
-    //   const result = await neo4jSession.writeTransaction((tx) =>
-    //     tx.run(
-    //       `
-    //       MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-    //       SET s.expires = datetime($expires)
-    //       RETURN ${sessionReturn}
-    //       `,
-    //       {
-    //         sessionToken,
-    //         expires: new Date(expires)?.toISOString(),
-    //       }
-    //     )
-    //   )
-    //   if (!result?.records[0]) {
-    //     console.error(sessionToken, expires)
-    //     throw new Error("Could not expire session")
-    //   }
-    //   const session = result?.records[0]?.get("session")
-    //   return {
-    //     ...session,
-    //     expires: neo4jEpochToDate(session.expires),
-    //   }
-    // },
     async user(id) {
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
           `
           MATCH (u:User { id: $id })
-          RETURN u AS user, u.emailVerified.epochMillis AS emailVerified
+          RETURN u
           `,
           {
             id,
           }
         )
       )
-      if (!result?.records[0]) return null
+      const dbUser = result?.records[0]?.get("u")?.properties
+      if (!dbUser) return null
 
-      const dbUser = result?.records[0]?.get("user")?.properties
-      const dbEmailVerified = result?.records[0]?.get("emailVerified")
-
-      return dbUser
-        ? {
-            ...dbUser,
-            emailVerified: neo4jEpochToDate(dbEmailVerified),
-          }
-        : null
+      return {
+        ...dbUser,
+        emailVerified: neo4jDateToJs(dbUser?.emailVerified),
+      }
     },
+
+    async session(sessionToken: any) {
+      const result = await neo4jSession.readTransaction((tx) =>
+        tx.run(
+          `
+          MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+          RETURN s, u.id AS userId
+          `,
+          {
+            sessionToken,
+          }
+        )
+      )
+      const dbSession = result?.records[0]?.get("s")?.properties
+      const dbUserId = result?.records[0]?.get("userId")
+      if (!dbSession || !dbUserId) return null
+
+      return {
+        ...dbSession,
+        expires: neo4jDateToJs(dbSession.expires),
+        userId: dbUserId,
+      }
+    },
+
     async account(provider_providerAccountId) {
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
@@ -118,22 +82,19 @@ runBasicTests({
             provider: $provider,
             providerAccountId: $providerAccountId
           })
-          RETURN a AS account, u AS user
+          RETURN a, u.id AS userId
           `,
           { ...provider_providerAccountId }
         )
       )
 
-      const account = result?.records[0]?.get("account")?.properties
-      if (!account) return null
-
-      const user = result?.records[0]?.get("user")?.properties
-      if (!user) return null
+      const dbAccount = result?.records[0]?.get("a")?.properties
+      const dbUserId = result?.records[0]?.get("userId")
+      if (!dbAccount || !dbUserId) return null
 
       return {
-        ...account,
-        userId: user.id,
-        expires_at: account.expires_at,
+        ...dbAccount,
+        userId: dbUserId,
       }
     },
 
@@ -141,23 +102,22 @@ runBasicTests({
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
           `
-        MATCH (v:VerificationRequest {
-          identifier: $identifier,
-          token: $token 
-        })
-
-        RETURN ${verificationTokenReturn}
-        `,
-          identifier_token
+          MATCH (v:VerificationToken {
+            identifier: $identifier,
+            token: $token 
+          })
+          RETURN v
+          `,
+          { ...identifier_token }
         )
       )
-      if (!result?.records[0]) return null
 
-      const verificationRequest = result.records[0].get("verificationRequest")
+      const dbVerificationToken = result?.records[0]?.get("v")?.properties
+      if (!dbVerificationToken) return null
 
       return {
-        ...verificationRequest,
-        expires: neo4jEpochToDate(verificationRequest.expires),
+        ...dbVerificationToken,
+        expires: neo4jDateToJs(dbVerificationToken?.expires),
       }
     },
   },

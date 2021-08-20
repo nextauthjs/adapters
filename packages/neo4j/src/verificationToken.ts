@@ -1,51 +1,47 @@
 import neo4j from "neo4j-driver"
 import type { VerificationToken } from "next-auth/adapters"
 
-import { neo4jEpochToDate } from "./utils"
-
-export const verificationTokenReturn = `
-  {
-    identifier: v.identifier,
-    token: v.token,
-    expires: v.expires.epochMillis 
-  } AS verificationToken 
-`
+import { neo4jDateToJs } from "./utils"
 
 export const createVerificationToken = async (
   neo4jSession: typeof neo4j.Session,
   verificationToken: VerificationToken
 ) => {
-  const result = await neo4jSession.writeTransaction((tx) =>
-    tx.run(
-      `
-    // Use merge here because composite of
-    // identifier + token is unique
-    MERGE (v:VerificationToken {
-      identifier: $identifier,
-      token: $token 
-    })
-    SET 
-      v.expires = datetime($expires),
-      v.token   = $token
+  let result
+  try {
+    result = await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
+        // Use merge here because composite of
+        // identifier + token is unique
+        MERGE (v:VerificationToken {
+          identifier: $identifier,
+          token: $token 
+        })
+        SET 
+          v.expires = datetime($expires),
+          v.token   = $token
 
-    RETURN ${verificationTokenReturn}
-    `,
-      {
-        identifier: verificationToken.identifier,
-        expires: verificationToken.expires?.toISOString(),
-        token: verificationToken.token,
-      }
+        RETURN v
+        `,
+        {
+          ...verificationToken,
+          expires: verificationToken.expires?.toISOString(),
+        }
+      )
     )
-  )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
-  const dbVerificationToken = result?.records[0]?.get("verificationToken")
+  const dbVerificationToken = result?.records[0]?.get("v")?.properties
+  if (!dbVerificationToken) return null
 
-  return dbVerificationToken
-    ? {
-        ...dbVerificationToken,
-        expires: neo4jEpochToDate(dbVerificationToken.expires),
-      }
-    : null
+  return {
+    ...dbVerificationToken,
+    expires: neo4jDateToJs(dbVerificationToken?.expires),
+  }
 }
 
 export const useVerificationToken = async (
@@ -55,30 +51,35 @@ export const useVerificationToken = async (
     token: string
   }
 ) => {
-  const result = await neo4jSession.writeTransaction((tx) =>
-    tx.run(
-      `
-    MATCH (v:VerificationRequest {
-      identifier: $identifier,
-      token: $token 
-    })
-    DETACH DELETE v
-    RETURN ${verificationTokenReturn}
-    `,
-      {
-        ...data,
-      }
+  let result
+
+  try {
+    result = await neo4jSession.writeTransaction((tx) =>
+      tx.run(
+        `
+        MATCH (v:VerificationToken {
+          identifier: $identifier,
+          token: $token 
+        })
+        WITH v, properties(v) AS props
+        DETACH DELETE v
+        RETURN props
+        `,
+        {
+          ...data,
+        }
+      )
     )
-  )
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 
-  const dbVerificationToken = result?.records[0]?.get("verificationToken")
-
+  const dbVerificationToken = result?.records[0]?.get("props")
   if (!dbVerificationToken) return null
 
-  return dbVerificationToken
-    ? {
-        ...dbVerificationToken,
-        expires: neo4jEpochToDate(dbVerificationToken.expires),
-      }
-    : null
+  return {
+    ...dbVerificationToken,
+    expires: neo4jDateToJs(dbVerificationToken.expires),
+  }
 }

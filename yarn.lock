@@ -945,6 +945,13 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
+"@babel/runtime@^7.5.5":
+  version "7.15.3"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.15.3.tgz#2e1c2880ca118e5b2f9988322bd8a7656a32502b"
+  integrity sha512-OvwMLqNXkCXSz1kSm58sEsNuhqOx/fKpnUnKnFB5v8uDda5bLNEHNgKPvhDN6IU0LDcnHQ90LlJ0Q6jnyBSIBA==
+  dependencies:
+    regenerator-runtime "^0.13.4"
+
 "@babel/template@^7.14.5", "@babel/template@^7.3.3":
   version "7.14.5"
   resolved "https://registry.yarnpkg.com/@babel/template/-/template-7.14.5.tgz#a9bc9d8b33354ff6e55a9c60d1109200a68974f4"
@@ -3060,6 +3067,11 @@
   version "1.4.3"
   resolved "https://registry.yarnpkg.com/@types/tinycolor2/-/tinycolor2-1.4.3.tgz#ed4a0901f954b126e6a914b4839c77462d56e706"
   integrity sha512-Kf1w9NE5HEgGxCRyIcRXR/ZYtDv0V8FVPtYHwLxl0O+maGX0erE77pQlD0gpP+/KByMZ87mOA79SjifhSB3PjQ==
+
+"@types/uuid@^8.3.0":
+  version "8.3.1"
+  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-8.3.1.tgz#1a32969cf8f0364b3d8c8af9cc3555b7805df14f"
+  integrity sha512-Y2mHTRAbqfFkpjldbkHGY8JIzRN6XqYRliG8/24FcHm2D2PwW24fl5xMRTVGdrb7iMrwCaIEbLWerGIkXuFWVg==
 
 "@types/yargs-parser@*":
   version "20.2.1"
@@ -9727,6 +9739,29 @@ neo-async@^2.6.0:
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.6.2.tgz#b4aafb93e3aeb2d8174ca53cf163ab7d7308305f"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
 
+neo4j-driver-bolt-connection@^4.3.3:
+  version "4.3.3"
+  resolved "https://registry.yarnpkg.com/neo4j-driver-bolt-connection/-/neo4j-driver-bolt-connection-4.3.3.tgz#603734caba66b09f6a5962516d27427fd6633502"
+  integrity sha512-yCiNf4c96wUFrBflabkJ3P+2jLLxrKrjHofvnPqoaTtFBEdnFQYk6oNI+xtF4STe9ADRRrpzOQo1SI8jfmksRQ==
+  dependencies:
+    neo4j-driver-core "^4.3.3"
+    text-encoding-utf-8 "^1.0.2"
+
+neo4j-driver-core@^4.3.3:
+  version "4.3.3"
+  resolved "https://registry.yarnpkg.com/neo4j-driver-core/-/neo4j-driver-core-4.3.3.tgz#600081d2d1e7dfa79ba624aafceb74c8419d947d"
+  integrity sha512-n0ltGzACnKTta/d1CGhqgcjYaWwlTIgUU0nwRRd3OZZifXcW030ICqNtwqn2t7WFmDE5iVmD2yQwo4JIvitV5g==
+
+neo4j-driver@^4.3.0:
+  version "4.3.3"
+  resolved "https://registry.yarnpkg.com/neo4j-driver/-/neo4j-driver-4.3.3.tgz#497383d89b0141b11926ef7cec7a91678604fd6f"
+  integrity sha512-rsBd8BB3YA8mNhQcltj3UuoTJKd07DRN5ZrtW4bKJHp9AgC28v6Q65nLYTdZZo0r+NRpxau1SlsAeqSEnLPCZA==
+  dependencies:
+    "@babel/runtime" "^7.5.5"
+    neo4j-driver-bolt-connection "^4.3.3"
+    neo4j-driver-core "^4.3.3"
+    rxjs "^6.6.3"
+
 netmask@^2.0.1:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/netmask/-/netmask-2.0.2.tgz#8b01a07644065d536383835823bc52004ebac5e7"
@@ -11737,7 +11772,7 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
-rxjs@^6.4.0, rxjs@^6.6.0, rxjs@^6.6.7:
+rxjs@^6.4.0, rxjs@^6.6.0, rxjs@^6.6.3, rxjs@^6.6.7:
   version "6.6.7"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-6.6.7.tgz#90ac018acabf491bf65044235d5863c4dab804c9"
   integrity sha512-hTdwr+7yYNIT5n4AMYp85KA6yw2Va0FLa3Rguvbpa4W3I5xynaBZo41cM3XM+4Q6fRMj3sBYIR1VAmZMXYJvRQ==
@@ -12650,6 +12685,11 @@ test-exclude@^6.0.0:
     "@istanbuljs/schema" "^0.1.2"
     glob "^7.1.4"
     minimatch "^3.0.4"
+
+text-encoding-utf-8@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/text-encoding-utf-8/-/text-encoding-utf-8-1.0.2.tgz#585b62197b0ae437e3c7b5d0af27ac1021e10d13"
+  integrity sha512-8bw4MY9WjdsD2aMtO0OzOCY3pXGYNx2d2FfHRVUKkiCPDWjKuOlhLVASS+pD7VkLTVjW268LYJHwsnPFlBpbAg==
 
 text-extensions@^1.0.0:
   version "1.9.0"

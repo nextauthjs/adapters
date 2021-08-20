@@ -24,7 +24,6 @@ import {
   useVerificationToken,
 } from "./verificationToken"
 
-// export const Neo4jAdapter: Adapter = (neo4jSession: Neo4jSession) => {
 export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
   return {
     async createUser(data) {

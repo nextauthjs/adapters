@@ -1,6 +1,6 @@
 import neo4j from "neo4j-driver"
 
-export const neo4jToSafeNumber = (x: typeof neo4j.Integer) => {
+const neo4jToSafeNumber = (x: typeof neo4j.Integer) => {
   if (!neo4j.isInt(x)) {
     return x
   }
@@ -11,10 +11,11 @@ export const neo4jToSafeNumber = (x: typeof neo4j.Integer) => {
   }
 }
 
-export const neo4jEpochToDate = (epoch: typeof neo4j.Integer) => {
-  const epochParsed = neo4jToSafeNumber(epoch)
-
-  if (typeof epochParsed !== "number") return null
-
-  return new Date(epochParsed)
+const neo4jDateToJs = (value: typeof neo4j.DateTime | null) => {
+  if (!value || !neo4j.temporal.isDateTime(value)) {
+    return value
+  }
+  return new Date(value.toString())
 }
+
+export { neo4jToSafeNumber, neo4jDateToJs }

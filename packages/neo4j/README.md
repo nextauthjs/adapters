@@ -7,8 +7,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Canary CI Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/pouchdb-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/pouchdb-adapter" alt="@next-auth/pouchdb-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/neo4j-adapter" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/neo4j-adapter" alt="@next-auth/neo4j-adapter Version" />
    </p>
 </p>
 
@@ -18,7 +18,7 @@ This is the Neo4j Adapter for [`next-auth`](https://next-auth.js.org). This pack
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/pouchdb-adapter`
+1. Install `next-auth` and `@next-auth/neo4j-adapter`
 
 ```js
 npm install next-auth @next-auth/neo4j-adapter

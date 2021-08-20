@@ -20,11 +20,6 @@ CREATE CONSTRAINT account_id_constraint
 //   FOR (n:Account)  
 //   ON (n.provider_id);
 
-// CREATE INDEX account_user_id 
-//   IF NOT EXISTS
-//   FOR (n:Account)  
-//   ON (n.user_id);
-
 // // Session constraints
 
 // CREATE CONSTRAINT session_session_token_constraint 
@@ -48,5 +43,5 @@ CREATE CONSTRAINT account_id_constraint
 
 // CREATE CONSTRAINT verification_request_token_constraint 
 //   IF NOT EXISTS
-//   ON (n:VerificationRequest) 
+//   ON (n:VerificationToken) 
 //   ASSERT n.token IS UNIQUE;
