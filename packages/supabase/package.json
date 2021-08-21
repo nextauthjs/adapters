@@ -1,0 +1,40 @@
+{
+  "name": "@next-auth/supabase-adapter",
+  "version": "0.0.1",
+  "description": "Supabase adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "author": "Balázs Orbán <info@balazsorban.com>",
+  "main": "dist/index.js",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "supabase"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "./tests/test.sh",
+    "jest": "jest",
+    "build": "tsc"
+  },
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "peerDependencies": {
+    "@supabase/supabase-js": "^1.22.0",
+    "next-auth": ">=4"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^1.22.0",
+    "supabase": "^0.5.0"
+  }
+}

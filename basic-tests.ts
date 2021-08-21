@@ -75,22 +75,24 @@ export function runBasicTests(options: TestOptions) {
     session_state: randomUUID(),
   }
 
-  // All adapters must define these methods
-
-  test("Required (User, Account, Session) methods exist", () => {
-    const requiredMethods = [
+  test("Methods defined", () => {
+    const methods = [
       "createUser",
       "getUser",
       "getUserByEmail",
       "getUserByAccount",
       "updateUser",
+      "deleteUser",
       "linkAccount",
+      "unlinkAccount",
       "createSession",
       "getSessionAndUser",
       "updateSession",
       "deleteSession",
+      "createVerificationToken",
+      "useVerificationToken",
     ]
-    requiredMethods.forEach((method) => {
+    methods.forEach((method) => {
       expect(adapter).toHaveProperty(method)
     })
   })
@@ -184,18 +186,11 @@ export function runBasicTests(options: TestOptions) {
   })
 
   test("deleteSession", async () => {
+    let dbSession = await db.session(session.sessionToken)
+    expect(dbSession).not.toBeNull()
     await adapter.deleteSession(session.sessionToken)
-    const dbSession = await db.session(session.sessionToken)
+    dbSession = await db.session(session.sessionToken)
     expect(dbSession).toBeNull()
-  })
-
-  // These are optional for custom adapters, but we require them for the official adapters
-
-  test("Verification Token methods exist", () => {
-    const requiredMethods = ["createVerificationToken", "useVerificationToken"]
-    requiredMethods.forEach((method) => {
-      expect(adapter).toHaveProperty(method)
-    })
   })
 
   test("createVerificationToken", async () => {
@@ -246,15 +241,6 @@ export function runBasicTests(options: TestOptions) {
     })
 
     expect(dbVerificationToken2).toBeNull()
-  })
-
-  // Future methods
-  // These methods are not yet invoked in the core, but built-in adapters must implement them
-  test("Future methods exist", () => {
-    const requiredMethods = ["unlinkAccount", "deleteUser"]
-    requiredMethods.forEach((method) => {
-      expect(adapter).toHaveProperty(method)
-    })
   })
 
   test("unlinkAccount", async () => {
