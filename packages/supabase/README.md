@@ -7,23 +7,29 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="CI Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/prisma-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/prisma-adapter" alt="@next-auth/prisma-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/supabase-adapter" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/supabase-adapter" alt="@next-auth/supabase-adapter Version" />
    </p>
 </p>
 
 ## Overview
 
-This is the Prisma Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
+This is the Supabase Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma](https://next-auth.js.org/adapters/prisma).
+You can find the Supabase schema in the docs at [next-auth.js.org/adapters/supabase](https://next-auth.js.org/adapters/supabase).
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/prisma-adapter`
+1. Install the following packages
 
-```js
-npm install next-auth @next-auth/prisma-adapter
+```sh
+npm i next-auth @next-auth/supabase-adapter @supabase/supabase-js
+```
+
+or
+
+```sh
+yarn add next-auth @next-auth/supabase-adapter @supabase/supabase-js
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
@@ -31,23 +37,17 @@ npm install next-auth @next-auth/prisma-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import * as Prisma from "@prisma/client"
+import { createClient } from "@supabase/supabase-js"
+import { SupabaseAdapter } from "@next-auth/supabase-adapter"
 
-const prisma = new Prisma.PrismaClient()
+export const client = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+)
 
-// For more information on each option (and a full list of options) go to
-// https://next-auth.js.org/configuration/options
 export default NextAuth({
-  // https://next-auth.js.org/configuration/providers
-  providers: [
-    Providers.Google({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-  ],
-  adapter: PrismaAdapter(prisma)
-  ...
+  adapter: SupabaseAdapter(client),
+  // Rest of your NextAuth config
 })
 ```
 
