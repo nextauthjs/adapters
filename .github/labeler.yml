@@ -17,6 +17,9 @@ firebase:
 pouchdb:
   - packages/pouchdb/**/*
 
+supabase:
+  - packages/supabase/**/*
+
 documentation:
   - ./**/*.md
 
