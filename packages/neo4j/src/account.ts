@@ -8,9 +8,6 @@ export const linkAccount = async (
 ) => {
   const { userId, providerAccountId, provider, ...accountData } = data
 
-  // TODO: Question, account.expires is an int. here
-  // Should it be changed to js Date ?
-
   let result
   try {
     result = await neo4jSession.writeTransaction((tx) =>

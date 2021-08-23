@@ -38,12 +38,6 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
       return await getUserByEmail(neo4jSession, email)
     },
 
-    // TODO:
-    // Question: Was providerId and provider accountID now single parameter.
-    // providerAccountId: Pick<Account, "provider" | "providerAccountId">
-    // Will this always be of type providerAccountId ?
-    // If not, when would it be type provider ?
-
     async getUserByAccount(provider_providerAccountId) {
       return await getUserByAccount(neo4jSession, provider_providerAccountId)
     },
@@ -60,9 +54,6 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
       return await linkAccount(neo4jSession, data)
     },
 
-    // TODO:
-    // Same question as with getUserByAccount
-
     async unlinkAccount(provider_providerAccountId) {
       return await unlinkAccount(neo4jSession, provider_providerAccountId)
     },
@@ -74,9 +65,6 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     async getSessionAndUser(sessionToken) {
       return await getSessionAndUser(neo4jSession, sessionToken)
     },
-
-    // TODO:
-    // Question: force parameter is no longer used?
 
     async updateSession(data) {
       return await updateSession(neo4jSession, data)
