@@ -21,7 +21,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
                 ? `, u.emailVerified = datetime($emailVerified)`
                 : ``
             }
-          RETURN u`,
+          RETURN properties(u) AS u`,
         {
           userData: { id: uuid(), ...userData },
           emailVerified,
@@ -32,7 +32,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     async getUser(id) {
       return await neo4jWrap(
         neo4jSession,
-        `MATCH (u:User { id: $id }) RETURN u`,
+        `MATCH (u:User { id: $id }) RETURN properties(u) AS u`,
         {
           id,
         },
@@ -45,7 +45,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     async getUserByEmail(email) {
       return await neo4jWrap(
         neo4jSession,
-        `MATCH (u:User { email: $email }) RETURN u`,
+        `MATCH (u:User { email: $email }) RETURN properties(u) AS u`,
         {
           email,
         },
@@ -62,7 +62,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
             provider: $provider,
             providerAccountId: $providerAccountId
           })
-          RETURN u`,
+          RETURN properties(u) AS u`,
         {
           ...provider_providerAccountId,
         },
@@ -83,7 +83,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
                 ? `, u.emailVerified = datetime($emailVerified)`
                 : ``
             }
-          RETURN u`,
+          RETURN properties(u) AS u`,
         {
           id,
           userData,
@@ -98,7 +98,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
         ` MATCH (u:User { id: $id })
           WITH u, properties(u) AS properties
           DETACH DELETE u
-          RETURN { properties: properties} AS deletedUser`,
+          RETURN properties AS deletedUser`,
         {
           id,
         }
@@ -142,7 +142,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
           })
           WITH u, a, properties(a) AS properties
           DETACH DELETE a 
-          RETURN { properties: properties { .*, userId: u.id }} AS deletedAccount`,
+          RETURN properties { .*, userId: u.id } AS deletedAccount`,
         {
           ...provider_providerAccountId,
         }
@@ -163,7 +163,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
             sessionToken : $sessionToken
           })
           CREATE (u)-[:HAS_SESSION]->(s)
-          RETURN { properties: s { .*, userId: u.id } } AS s`,
+          RETURN s { .*, userId: u.id } AS s`,
         {
           ...data,
           id: uuid(),
@@ -181,7 +181,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
         WITH count(s) AS c
         // Valid session
         MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-        RETURN { properties: s { .*, userId: u.id } } AS session, u AS user`,
+        RETURN s { .*, userId: u.id } AS session, properties(u) AS user`,
         {
           sessionToken,
           now: new Date().toISOString(),
@@ -202,7 +202,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
         SET 
           s += $sessionData
           ${undefined !== expires ? `, s.expires = datetime($expires)` : ``}
-        RETURN { properties: s { .*, userId: u.id } } AS s`,
+        RETURN s { .*, userId: u.id } AS s`,
         {
           sessionToken,
           sessionData,
@@ -217,7 +217,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
         ` MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
           WITH u, s, properties(s) AS properties
           DETACH DELETE s
-          RETURN { properties: properties { .*, userId: u.id } } AS deletedSession`,
+          RETURN properties { .*, userId: u.id } AS deletedSession`,
         {
           sessionToken,
         }
@@ -236,7 +236,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
             token: $token
           })
           SET v.expires = datetime($expires)
-          RETURN v`,
+          RETURN properties(v) AS v`,
         { ...data }
       )
     },
@@ -250,7 +250,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
           })
           WITH v, properties(v) AS properties
           DETACH DELETE v
-          RETURN { properties: properties } AS deletedVerificationToken`,
+          RETURN properties AS deletedVerificationToken`,
         { ...data }
       )
     },

@@ -11,6 +11,7 @@ const neo4jToSafeNumber = (x: typeof neo4j.Integer) => {
   }
 }
 
+// Function to transform date values from neo4j DateTime to JS Date object.
 const neo4jDateToJs = (value: typeof neo4j.DateTime | null) => {
   if (!value || !neo4j.temporal.isDateTime(value)) {
     return value
@@ -47,39 +48,36 @@ const neo4jWrap = async (
     return null
   }
 
-  // Following are different ways to return the data
-
-  if (!options?.returnFormat) {
-    const properties = result?.records[0]?.get(0)?.properties
-
+  // Function to loop over neo4j result and run transforms on date values.
+  const withJsDates = (neo4jResult: any) => {
     DATE_KEYS.forEach((key: string) => {
-      if (properties?.[key]) {
-        properties[key] = neo4jDateToJs(properties[key])
+      if (neo4jResult?.[key]) {
+        neo4jResult[key] = neo4jDateToJs(neo4jResult[key])
       }
     })
-
-    return properties || null
+    return neo4jResult
   }
 
+  // Following are different ways to return the data.
+
+  // 1️⃣ Return the single value or object from the database response.
+  if (!options?.returnFormat) {
+    return withJsDates(result?.records[0]?.get(0)) || null
+  }
+
+  // 2️⃣ Return multiple values or objects from the database response.
   if (Array.isArray(options?.returnFormat)) {
     const returnObject: any = {}
+
     options?.returnFormat.forEach((returnKey: string) => {
       returnObject[returnKey] =
-        result?.records[0]?.get(returnKey)?.properties || null
-
-      DATE_KEYS.forEach((key: string) => {
-        if (returnObject[returnKey]?.[key]) {
-          returnObject[returnKey][key] = neo4jDateToJs(
-            returnObject[returnKey][key]
-          )
-        }
-      })
+        withJsDates(result?.records[0]?.get(returnKey)) || null
     })
 
     return returnObject
   }
 
-  // Return the database data without any transforms.
+  // 3️⃣ Return the database data without any transforms.
   if (options?.returnFormat === "raw") {
     return result
   }
