@@ -36,23 +36,13 @@ import { Neo4jAdapter } from "@next-auth/neo4j-adapter"
 const driver = neo4j.driver(
   "bolt://localhost",
   neo4j.auth.basic("neo4j", "password")
-)
+).session()
 const neo4jSession = driver.session()
 
-// For more information on each option (and a full list of options) go to
-// https://next-auth.js.org/configuration/options
 export default NextAuth({
-  // https://next-auth.js.org/configuration/providers
-  providers: [
-    Providers.Google({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-  ],
   adapter: Neo4jAdapter(neo4jSession),
-  // ...
+  // Rest of your NextAuth config
 })
-```
 
 ## Contributing
 
