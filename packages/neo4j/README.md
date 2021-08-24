@@ -6,7 +6,7 @@
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
-      <img src="https://github.com/nextauthjs/adapters/actions/workflows/canary.yml/badge.svg" alt="Canary CI Test" />
+      <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="Canary CI Test" />
       <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/neo4j-adapter" alt="Bundle Size"/>
       <img src="https://img.shields.io/npm/v/@next-auth/neo4j-adapter" alt="@next-auth/neo4j-adapter Version" />
    </p>
@@ -43,6 +43,7 @@ export default NextAuth({
   adapter: Neo4jAdapter(neo4jSession),
   // Rest of your NextAuth config
 })
+```
 
 ## Contributing
 
