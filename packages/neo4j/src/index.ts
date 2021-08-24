@@ -5,14 +5,11 @@ import { v4 as uuid } from "uuid"
 import { neo4jWrap } from "./utils"
 
 export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
-  return {
-    // * * * * * * * * * * * * * * * *
-    // User
-    // * * * * * * * * * * * * * * * *
+  const query = neo4jWrap(neo4jSession)
 
+  return {
     async createUser({ emailVerified, ...userData }) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` CREATE (u:User)
           SET
             u += $userData
@@ -30,8 +27,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async getUser(id) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         `MATCH (u:User { id: $id }) RETURN properties(u) AS u`,
         {
           id,
@@ -43,8 +39,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async getUserByEmail(email) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         `MATCH (u:User { email: $email }) RETURN properties(u) AS u`,
         {
           email,
@@ -56,16 +51,13 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async getUserByAccount(provider_providerAccountId) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
             provider: $provider,
             providerAccountId: $providerAccountId
           })
           RETURN properties(u) AS u`,
-        {
-          ...provider_providerAccountId,
-        },
+        provider_providerAccountId,
         {
           tx: "read",
         }
@@ -73,8 +65,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async updateUser({ id, emailVerified, ...userData }) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (u:User { id: $id })
           SET
             u += $userData
@@ -93,8 +84,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async deleteUser(id) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (u:User { id: $id })
           WITH u, properties(u) AS properties
           DETACH DELETE u
@@ -105,22 +95,15 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
       )
     },
 
-    // * * * * * * * * * * * * * * * *
-    // Account
-    // * * * * * * * * * * * * * * * *
-
     async linkAccount({ userId, providerAccountId, provider, ...accountData }) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (u:User { id: $userId })
           MERGE (a:Account { 
             providerAccountId: $providerAccountId, 
             provider: $provider 
           }) 
-          ON CREATE SET 
-            a.id = $id
-          SET 
-            a += $accountData
+          ON CREATE SET a.id = $id
+          SET a += $accountData
           MERGE (u)-[:HAS_ACCOUNT]->(a)
           RETURN a { .*, userId: u.id } AS a`,
         {
@@ -134,8 +117,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async unlinkAccount(provider_providerAccountId) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account { 
             providerAccountId: $providerAccountId, 
             provider: $provider 
@@ -143,19 +125,12 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
           WITH u, a, properties(a) AS properties
           DETACH DELETE a 
           RETURN properties { .*, userId: u.id } AS deletedAccount`,
-        {
-          ...provider_providerAccountId,
-        }
+        provider_providerAccountId
       )
     },
 
-    // * * * * * * * * * * * * * * * *
-    // Session
-    // * * * * * * * * * * * * * * * *
-
     async createSession(data) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (u:User { id: $userId })
           CREATE (s:Session  {
             id           : $id,
@@ -172,8 +147,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async getSessionAndUser(sessionToken) {
-      const result = await neo4jWrap(
-        neo4jSession,
+      const result = await query(
         `// Delete expired session
         OPTIONAL MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
         WHERE s.expires <= datetime($now)
@@ -196,8 +170,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async updateSession({ sessionToken, expires, ...sessionData }) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         `MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
         SET 
           s += $sessionData
@@ -212,8 +185,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async deleteSession(sessionToken) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
           WITH u, s, properties(s) AS properties
           DETACH DELETE s
@@ -224,13 +196,8 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
       )
     },
 
-    // * * * * * * * * * * * * * * * *
-    // VerificationToken
-    // * * * * * * * * * * * * * * * *
-
     async createVerificationToken(data) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MERGE (v:VerificationToken {
             identifier: $identifier,
             token: $token
@@ -242,8 +209,7 @@ export function Neo4jAdapter(neo4jSession: typeof neo4j.Session): Adapter {
     },
 
     async useVerificationToken(data) {
-      return await neo4jWrap(
-        neo4jSession,
+      return await query(
         ` MATCH (v:VerificationToken {
             identifier: $identifier,
             token: $token 

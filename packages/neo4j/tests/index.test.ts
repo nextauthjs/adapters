@@ -19,11 +19,9 @@ runBasicTests({
     async disconnect() {
       await neo4jSession.writeTransaction((tx) =>
         tx.run(
-          `
-          MATCH (n)
+          `MATCH (n)
           DETACH DELETE n
-          RETURN count(n)
-          `
+          RETURN count(n)`
         )
       )
       await neo4jSession.close()
@@ -32,15 +30,9 @@ runBasicTests({
 
     async user(id) {
       const result = await neo4jSession.readTransaction((tx) =>
-        tx.run(
-          `
-          MATCH (u:User { id: $id })
-          RETURN u
-          `,
-          {
-            id,
-          }
-        )
+        tx.run(`MATCH (u:User { id: $id }) RETURN u`, {
+          id,
+        })
       )
       const dbUser = result?.records[0]?.get("u")?.properties
       if (!dbUser) return null
@@ -54,10 +46,8 @@ runBasicTests({
     async session(sessionToken: any) {
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
-          `
-          MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-          RETURN s, u.id AS userId
-          `,
+          `MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+          RETURN s, u.id AS userId`,
           {
             sessionToken,
           }
@@ -77,14 +67,12 @@ runBasicTests({
     async account(provider_providerAccountId) {
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
-          `
-          MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account { 
+          `MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account { 
             provider: $provider,
             providerAccountId: $providerAccountId
           })
-          RETURN a, u.id AS userId
-          `,
-          { ...provider_providerAccountId }
+          RETURN a, u.id AS userId`,
+          provider_providerAccountId
         )
       )
 
@@ -108,7 +96,7 @@ runBasicTests({
           })
           RETURN v
           `,
-          { ...identifier_token }
+          identifier_token
         )
       )
 

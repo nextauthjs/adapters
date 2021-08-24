@@ -19,70 +19,75 @@ const neo4jDateToJs = (value: typeof neo4j.DateTime | null) => {
   return new Date(value.toString())
 }
 
-const neo4jWrap = async (
-  session: typeof neo4j.Session,
-  statement: string,
-  values: any,
-  options?: any
+const neo4jWrap: (
+  session: typeof neo4j.Session
+) => (statement: string, values: any, options?: any) => Promise<any> = (
+  session
 ) => {
-  let result: any
+  return async (statement, values, options) => {
+    let result: any
 
-  const DATE_KEYS = ["emailVerified", "expires"]
+    const DATE_KEYS = ["emailVerified", "expires"]
 
-  // Transform date values from JS Date object to ISO strings.
-  DATE_KEYS.forEach((key: string) => {
-    if (values?.[key] instanceof Date) {
-      values[key] = values[key].toISOString()
-    }
-  })
-
-  // Database read or write transaction.
-  try {
-    if (options?.tx === "read") {
-      result = await session.readTransaction((tx) => tx.run(statement, values))
-    } else {
-      result = await session.writeTransaction((tx) => tx.run(statement, values))
-    }
-  } catch (error) {
-    console.error(error)
-    return null
-  }
-
-  // Function to loop over neo4j result and run transforms on date values.
-  const withJsDates = (neo4jResult: any) => {
+    // Transform date values from JS Date object to ISO strings.
     DATE_KEYS.forEach((key: string) => {
-      if (neo4jResult?.[key]) {
-        neo4jResult[key] = neo4jDateToJs(neo4jResult[key])
+      if (values?.[key] instanceof Date) {
+        values[key] = values[key].toISOString()
       }
     })
-    return neo4jResult
+
+    // Database read or write transaction.
+    try {
+      if (options?.tx === "read") {
+        result = await session.readTransaction((tx) =>
+          tx.run(statement, values)
+        )
+      } else {
+        result = await session.writeTransaction((tx) =>
+          tx.run(statement, values)
+        )
+      }
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+
+    // Function to loop over neo4j result and run transforms on date values.
+    const withJsDates = (neo4jResult: any) => {
+      DATE_KEYS.forEach((key: string) => {
+        if (neo4jResult?.[key]) {
+          neo4jResult[key] = neo4jDateToJs(neo4jResult[key])
+        }
+      })
+      return neo4jResult
+    }
+
+    // Following are different ways to return the data.
+
+    // 1️⃣ Return the single value or object from the database response.
+    if (!options?.returnFormat) {
+      return withJsDates(result?.records[0]?.get(0)) || null
+    }
+
+    // 2️⃣ Return multiple values or objects from the database response.
+    if (Array.isArray(options?.returnFormat)) {
+      const returnObject: any = {}
+
+      options?.returnFormat.forEach((returnKey: string) => {
+        returnObject[returnKey] =
+          withJsDates(result?.records[0]?.get(returnKey)) || null
+      })
+
+      return returnObject
+    }
+
+    // 3️⃣ Return the database data without any transforms.
+    if (options?.returnFormat === "raw") {
+      return result
+    }
+
+    return null
   }
-
-  // Following are different ways to return the data.
-
-  // 1️⃣ Return the single value or object from the database response.
-  if (!options?.returnFormat) {
-    return withJsDates(result?.records[0]?.get(0)) || null
-  }
-
-  // 2️⃣ Return multiple values or objects from the database response.
-  if (Array.isArray(options?.returnFormat)) {
-    const returnObject: any = {}
-
-    options?.returnFormat.forEach((returnKey: string) => {
-      returnObject[returnKey] =
-        withJsDates(result?.records[0]?.get(returnKey)) || null
-    })
-
-    return returnObject
-  }
-
-  // 3️⃣ Return the database data without any transforms.
-  if (options?.returnFormat === "raw") {
-    return result
-  }
-
-  return null
 }
 
 export { neo4jToSafeNumber, neo4jDateToJs, neo4jWrap }
