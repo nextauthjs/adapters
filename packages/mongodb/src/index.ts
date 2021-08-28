@@ -32,11 +32,10 @@ export const format = {
 }
 
 export function MongoDBAdapter(options: {
-  db: () => MongoDB.Db
+  db: MongoDB.Db
   ObjectId: typeof MongoDB.ObjectId
 }): Adapter {
-  const { db, ObjectId } = options
-  const m = db()
+  const { db: m, ObjectId } = options
   const { from } = format
 
   // Converts from string to ObjectId

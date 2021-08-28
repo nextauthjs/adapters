@@ -26,32 +26,71 @@ You can find the mongoDB schema in the docs at [next-auth.js.org/adapters/mongod
 npm install next-auth @next-auth/mongodb-adapter
 ```
 
-2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
+2. Add `lib/mongodb.js`
+
+```js
+// This approach is taken from https://github.com/vercel/next.js/tree/canary/examples/with-mongodb
+import { MongoClient } from "mongodb"
+
+const uri = process.env.MONGODB_URI
+const options = {
+  useUnifiedTopology: true,
+  useNewUrlParser: true,
+}
+
+let client
+let clientPromise
+
+if (!process.env.MONGODB_URI) {
+  throw new Error("Please add your Mongo URI to .env.local")
+}
+
+if (process.env.NODE_ENV === "development") {
+  // In development mode, use a global variable so that the value
+  // is preserved across module reloads caused by HMR (Hot Module Replacement).
+  if (!global._mongoClientPromise) {
+    client = new MongoClient(uri, options)
+    global._mongoClientPromise = client.connect()
+  }
+  clientPromise = global._mongoClientPromise
+} else {
+  // In production mode, it's best to not use a global variable.
+  client = new MongoClient(uri, options)
+  clientPromise = client.connect()
+}
+
+// Export a module-scoped MongoClient promise. By doing this in a
+// separate module, the client can be shared across functions.
+export default clientPromise
+```
+
+3. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter"
-import { MongoClient, ObjectId } from "mongodb"
-
-const client = new MongoClient(process.env.MONGODB_URL)
+import { ObjectId } from "mongodb"
+import clientPromise from "lib/mongodb"
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
-export default NextAuth({
-  // https://next-auth.js.org/configuration/providers
-  providers: [
-    Providers.Google({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
+export default async function auth(req, res) {
+  return await NextAuth(req, res, {
+    adapter: MongoDBAdapter({
+      db: (await clientPromise).db("your-database"),
+      ObjectId,
     }),
-  ],
-  adapter: MongoDBAdapter({
-    db: () => client.db("your-database"),
-    ObjectId
+    // https://next-auth.js.org/configuration/providers
+    providers: [
+      Providers.Google({
+        clientId: process.env.GOOGLE_ID,
+        clientSecret: process.env.GOOGLE_SECRET,
+      }),
+    ],
+    ...
   })
-  ...
-})
+}
 ```
 
 ## Contributing
