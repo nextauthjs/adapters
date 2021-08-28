@@ -72,7 +72,7 @@ export function MongoDBAdapter(options: {
     async getUserByAccount(provider_providerAccountId) {
       const account = await Accounts.findOne(provider_providerAccountId)
       if (!account) return null
-      const user = await this.getUser(account.userId)
+      const user = await Users.findOne({ _id: _id(account.userId) })
       if (!user) return null
       return from<AdapterUser>(user)
     },
@@ -106,9 +106,12 @@ export function MongoDBAdapter(options: {
         sessionToken,
       })
       if (!session) return null
-      const user = await this.getUser(session.userId)
+      const user = await Users.findOne({ _id: _id(session.userId) })
       if (!user) return null
-      return { user, session: from<AdapterSession>(session) }
+      return {
+        user: from<AdapterUser>(user),
+        session: from<AdapterSession>(session),
+      }
     },
     async createSession(data) {
       const session = { _id: _id(), ...data }
