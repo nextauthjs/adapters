@@ -31,7 +31,7 @@ npm install next-auth @next-auth/mongodb-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import { mongoDBAdapter } from "@next-auth/mongodb-adapter"
+import { MongoDBAdapter } from "@next-auth/mongodb-adapter"
 import { MongoClient, ObjectId } from "mongodb"
 
 const client = new MongoClient(process.env.MONGODB_URL)
@@ -46,7 +46,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapter: mongoDBAdapter({
+  adapter: MongoDBAdapter({
     db: () => client.db("your-database"),
     ObjectId
   })
