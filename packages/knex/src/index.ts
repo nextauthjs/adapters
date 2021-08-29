@@ -62,12 +62,15 @@ export function KnexAdapter(p: Knex): any {
       return user
     },
     getUser: async (id: string) => {
-      console.log("GETUSER", id)
-      const a = await Users.select().where({ id })
-      console.log("a", format.from(a))
-      return format.from<AdapterUser>(a)
+      const user = await p(tables.Users).where({ id }).select()
+      if (!user.length) return null
+      return format.from<AdapterUser>(user[0])
     },
-    getUserByEmail: (email: string) => Users.where({ email }),
+    getUserByEmail: async (email: string) => {
+      const user = await p(tables.Users).where({ email }).select()
+      if (!user.length) return null
+      return format.from<AdapterUser>(user[0])
+    },
     // async getUserByAccount(provider_providerAccountId) {
     //   const account = await Accounts.findUnique({
     //     where: { provider_providerAccountId },
