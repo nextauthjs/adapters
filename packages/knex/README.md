@@ -1,29 +1,29 @@
 <p align="center">
    <br/>
-   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/main/packages/prisma/logo.svg" />
-   <h3 align="center"><b>Prisma Adapter</b> - NextAuth.js</h3>
+   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="./logo.svg" />
+   <h3 align="center"><b>Knex Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="CI Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/prisma-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/prisma-adapter" alt="@next-auth/prisma-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/knex-adapter" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/knex-adapter" alt="@next-auth/knex-adapter Version" />
    </p>
 </p>
 
 ## Overview
 
-This is the Prisma Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
+This is the Knex Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package. With the Knex Adapter, you can persist your next-auth data in any SQL flavoured database. See the [Knex.js](https://github.com/knex/knex) repository for more information.
 
-You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma](https://next-auth.js.org/adapters/prisma).
+You can find the Knex schema in the docs at [next-auth.js.org/adapters/knex](https://next-auth.js.org/adapters/knex).
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/prisma-adapter`
+1. Install `next-auth` and `@next-auth/knex-adapter`
 
 ```js
-npm install next-auth @next-auth/prisma-adapter
+npm install next-auth @next-auth/knex-adapter
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
@@ -31,24 +31,8 @@ npm install next-auth @next-auth/prisma-adapter
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import * as Prisma from "@prisma/client"
-
-const prisma = new Prisma.PrismaClient()
-
-// For more information on each option (and a full list of options) go to
-// https://next-auth.js.org/configuration/options
-export default NextAuth({
-  // https://next-auth.js.org/configuration/providers
-  providers: [
-    Providers.Google({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-  ],
-  adapter: PrismaAdapter(prisma)
-  ...
-})
+import { KnexAdapter } from "@next-auth/knex-adapter"
+// TODO
 ```
 
 ## Contributing
