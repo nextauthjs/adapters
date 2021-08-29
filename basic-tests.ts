@@ -95,7 +95,7 @@ export function runBasicTests(options: TestOptions) {
     })
   })
 
-  test("createUser", async () => {
+  test.only("createUser", async () => {
     const { id } = await adapter.createUser(user)
     const dbUser = await db.user(id)
     expect(dbUser).toEqual({ ...user, id })
@@ -104,17 +104,17 @@ export function runBasicTests(options: TestOptions) {
     account.userId = dbUser.id
   })
 
-  test("getUser", async () => {
+  test.only("getUser", async () => {
     expect(await adapter.getUser("non-existent-user-id")).toBeNull()
     expect(await adapter.getUser(user.id)).toEqual(user)
   })
 
-  test("getUserByEmail", async () => {
+  test.only("getUserByEmail", async () => {
     expect(await adapter.getUserByEmail("non-existent-email")).toBeNull()
     expect(await adapter.getUserByEmail(user.email)).toEqual(user)
   })
 
-  test("createSession", async () => {
+  test.only("createSession", async () => {
     const { sessionToken } = await adapter.createSession(session)
     const dbSession = await db.session(sessionToken)
 

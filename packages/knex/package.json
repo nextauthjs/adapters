@@ -1,0 +1,45 @@
+{
+  "name": "@next-auth/knex-adapter",
+  "version": "0.0.1",
+  "description": "knex adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "author": "Nico <yo@ndo.dev>",
+  "contributors": [
+    "Balazs <info@balazsorban.com>"
+  ],
+  "main": "dist/index.js",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "knex"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf ./knex/migrations && rm ./knex/dev.db*",
+    "test": "./tests/test.sh",
+    "build": "yarn reset && tsc"
+  },
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "peerDependencies": {
+    "knex": "^0.95.10",
+    "next-auth": ">=4"
+  },
+  "devDependencies": {
+    "@types/uuid": "^8.3.1",
+    "knex": "^0.95.10",
+    "sqlite3": "^5.0.2",
+    "uuid": "^3.4.0"
+  }
+}
