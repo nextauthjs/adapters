@@ -1,4 +1,5 @@
-exports.up = function (knex) {
+/** @param {import("knex").Knex} knex */
+exports.up = function up(knex) {
   return knex.schema
     .createTable("users", function (table) {
       table.uuid("id").notNullable().primary()
@@ -9,7 +10,11 @@ exports.up = function (knex) {
     })
     .createTable("accounts", function (table) {
       table.uuid("id").notNullable().primary()
-      table.string("userId").notNullable()
+      table
+        .string("userId")
+        .notNullable()
+        .references("users.id")
+        .onDelete("CASCADE")
       table.string("type").notNullable()
       table.string("provider").notNullable()
       table.string("providerAccountId").notNullable()
@@ -25,8 +30,12 @@ exports.up = function (knex) {
     })
     .createTable("sessions", function (table) {
       table.uuid("id").notNullable().primary()
+      table
+        .string("userId")
+        .notNullable()
+        .references("users.id")
+        .onDelete("CASCADE")
       table.string("sessionToken").unique().notNullable()
-      table.string("userId").notNullable()
       table.timestamp("expires").notNullable()
     })
     .createTable("verification_tokens", function (table) {
@@ -36,7 +45,8 @@ exports.up = function (knex) {
     })
 }
 
-exports.down = function (knex) {
+/** @param {import("knex").Knex} knex */
+exports.down = function down(knex) {
   return knex.schema
     .dropTableIfExists("users")
     .dropTableIfExists("accounts")
