@@ -1,8 +1,8 @@
 import type { Knex } from "knex"
-// import type { Account } from "next-auth"
-import type { AdapterUser, AdapterSession } from "next-auth/adapters"
-// import type { Adapter, AdapterUser, AdapterSession, VerificationToken } from "next-auth/adapters"
+import type { AdapterUser } from "next-auth/adapters"
 import { v4 as uuidv4 } from "uuid"
+// import type { Account } from "next-auth"
+// import type { Adapter, AdapterUser, AdapterSession, VerificationToken } from "next-auth/adapters"
 
 export const tables = {
   Users: "users",
@@ -45,12 +45,12 @@ export const format = {
 
 export function KnexAdapter(p: Knex): any {
   // const { Users, Accounts, Sessions, VerificationTokens } = {
-  const { Users, Sessions } = {
-    Users: p<AdapterUser>(tables.Users),
-    // Accounts: p<Account>(tables.Accounts),
-    Sessions: p<AdapterSession>(tables.Sessions),
-    // VerificationTokens: p<VerificationToken>(tables.VerificationTokens),
-  }
+  // const { Users, Sessions } = {
+  //   Users: p<AdapterUser>(tables.Users),
+  //   Accounts: p<Account>(tables.Accounts),
+  //   Sessions: p<AdapterSession>(tables.Sessions),
+  //   VerificationTokens: p<VerificationToken>(tables.VerificationTokens),
+  // }
 
   return {
     createUser: async (data: any) => {
@@ -58,7 +58,7 @@ export function KnexAdapter(p: Knex): any {
         id: uuidv4(),
         ...data,
       }
-      await Users.insert(format.to(user))
+      await p(tables.Users).insert(format.to(user))
       return user
     },
     getUser: async (id: string) => {
@@ -88,7 +88,10 @@ export function KnexAdapter(p: Knex): any {
     },
     updateUser: (data: any) =>
       p(tables.Users).update(data).where({ id: data.id }),
-    deleteUser: (id: any) => p(tables.Users).del().where({ id }),
+    deleteUser: async (id: any) => {
+      await p(tables.Users).del().where({ id })
+      return id
+    },
     linkAccount: async (data: any) => {
       const account = {
         id: uuidv4(),
@@ -99,13 +102,12 @@ export function KnexAdapter(p: Knex): any {
     },
     unlinkAccount: (provider_providerAccountId: any) =>
       p(tables.Accounts).del().where(provider_providerAccountId) as any,
-    getSessionAndUser: async (sessionToken: any) => {
-      console.log("STTTT", sessionToken)
+    getSessionAndUser: async (token: any) => {
       const userAndSession = await p(tables.Sessions)
         .join("users", "sessions.userId", "users.id")
-        .where(sessionToken)
+        .where({ sessionToken: token })
         .select(
-          "users.id",
+          "users.id as userId",
           "users.name",
           "users.email",
           "users.image",
@@ -115,18 +117,40 @@ export function KnexAdapter(p: Knex): any {
           "sessions.expires"
         )
 
-      console.log("uAS", userAndSession)
       if (!userAndSession.length) return null
 
-      const { user, ...session } = userAndSession[0]
-      return { user, session }
+      const {
+        userId,
+        name,
+        email,
+        image,
+        emailVerified,
+        id,
+        sessionToken,
+        expires,
+      } = userAndSession[0]
+      return {
+        user: {
+          id: userId,
+          name,
+          email,
+          emailVerified,
+          image,
+        },
+        session: {
+          id,
+          sessionToken,
+          expires,
+          userId,
+        },
+      }
     },
     createSession: async (data: any) => {
       const session = {
         id: uuidv4(),
         ...data,
       }
-      await Sessions.insert(format.to(session))
+      await p(tables.Sessions).insert(format.to(session))
       return session
     },
     updateSession: (data: any) =>
