@@ -10,8 +10,8 @@
   "author": "Iain Collins",
   "main": "dist/index.js",
   "files": [
-    "dist",
-    "index.d.ts"
+    "README.md",
+    "dist"
   ],
   "license": "ISC",
   "keywords": [
@@ -25,7 +25,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "babel src --out-dir dist",
+    "build": "tsc",
     "test": "yarn sqlite:memory && yarn postgres && yarn mysql",
     "mysql": "./tests/mysql/test.sh",
     "postgres": "./tests/postgresql/test.sh",
