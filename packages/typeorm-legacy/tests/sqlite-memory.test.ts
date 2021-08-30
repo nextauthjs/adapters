@@ -1,13 +1,16 @@
 import { ConnectionManager } from "typeorm"
-import { runBasicTests } from "../../../../basic-tests"
-import { TypeORMLegacyAdapter } from "../../src"
-import { parseConnectionConfig } from "../../src/utils"
-import * as entities from "../../src/entities"
+import { runBasicTests } from "../../../basic-tests"
+import { TypeORMLegacyAdapter } from "../src"
+import * as entities from "../src/entities"
+import { parseConnectionConfig } from "../src/utils"
 
 const connection = new ConnectionManager().create(
-  parseConnectionConfig(
-    "postgres://nextauth:password@localhost:5432/nextauth?synchronize=true"
-  )
+  parseConnectionConfig({
+    type: "sqlite",
+    name: "next-auth-test-memory",
+    database: ":memory:",
+    synchronize: true,
+  })
 )
 
 const adapter = TypeORMLegacyAdapter({ connection })

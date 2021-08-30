@@ -105,7 +105,7 @@ export function runBasicTests(options: TestOptions) {
   })
 
   test("getUser", async () => {
-    expect(await adapter.getUser("non-existent-user-id")).toBeNull()
+    expect(await adapter.getUser(randomUUID())).toBeNull()
     expect(await adapter.getUser(user.id)).toEqual(user)
   })
 

@@ -1,87 +1,54 @@
+import { ConnectionManager } from "typeorm"
 import { runBasicTests } from "../../../../basic-tests"
+import { TypeORMLegacyAdapter } from "../../src"
+import * as entities from "../../src/entities"
 
-import { createConnection, ConnectionOptions, Connection } from "typeorm"
-// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
-// @ts-ignore
-import { TypeORMLegacyAdapter, Models as models } from "../../src"
-// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
-// @ts-ignore
-import adapterTransform from "../../src/lib/transform"
-// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
-// @ts-ignore
-import { loadConfig } from "../../src/lib/config"
-
-const config: ConnectionOptions = {
+const connection = new ConnectionManager().create({
   type: "mysql",
   host: "localhost",
   port: 3306,
   username: "root",
   password: "password",
   database: "next-auth",
-}
+  synchronize: true,
+  entities: Object.values(entities),
+})
 
-const adapter = new TypeORMLegacyAdapter(config)
-
-let _connection: Connection
-async function connection() {
-  if (_connection) {
-    return _connection
-  }
-
-  const options = {}
-  adapterTransform(config, models, options)
-  _connection = await createConnection(
-    loadConfig({ ...config, name: "next-auth-test" }, { ...options, models })
-  )
-  return _connection
-}
+const adapter = TypeORMLegacyAdapter({ connection })
+const m = connection.manager
 
 runBasicTests({
   adapter,
   db: {
+    async connect() {
+      return await connection.connect()
+    },
     async disconnect() {
-      const c = await connection()
-      await c.close()
+      return await connection.close()
     },
     async user(id) {
-      const c = await connection()
-      const user = await c.manager.findOne(models.User.model, {
-        where: { id },
-      })
+      const user = await m.findOne(entities.User, id)
       return user ?? null
     },
+    async account(provider_providerAccountId) {
+      const account = await m.findOne(
+        entities.Account,
+        provider_providerAccountId
+      )
+      return account ?? null
+    },
     async session(sessionToken) {
-      const c = await connection()
-      const session = await c.manager.findOne(models.Session.model, {
-        where: { sessionToken },
-      })
+      const session = await m.findOne(entities.Session, { sessionToken })
       return session ?? null
     },
-    async expireSession(sessionToken, expires) {
-      const c = await connection()
-      await c.manager.update(
-        models.Session.model,
-        { sessionToken },
-        { expires }
+    async verificationToken(token_identifier) {
+      const verificationToken = await m.findOne(
+        entities.VerificationToken,
+        token_identifier
       )
-    },
-    async account(providerId, providerAccountId) {
-      const c = await connection()
-      return await c.manager.findOne(models.Account.model, {
-        providerId,
-        providerAccountId,
-      })
-    },
-    async verificationRequest(identifier, hashedToken) {
-      const c = await connection()
-      const verificationRequest = await c.manager.findOne(
-        models.VerificationRequest.model,
-        {
-          identifier,
-          token: hashedToken,
-        }
-      )
-      return verificationRequest ?? null
+      if (!verificationToken) return null
+      const { id: _, ...rest } = verificationToken
+      return rest
     },
   },
 })

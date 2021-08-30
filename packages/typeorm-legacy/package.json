@@ -26,10 +26,10 @@
   },
   "scripts": {
     "build": "babel src --out-dir dist",
-    "test": "yarn mysql && yarn postgres",
-    "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
+    "test": "yarn sqlite:memory && yarn postgres && yarn mysql",
     "mysql": "./tests/mysql/test.sh",
     "postgres": "./tests/postgresql/test.sh",
+    "sqlite:memory": "jest tests/sqlite-memory.test.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -39,24 +39,19 @@
     "typeorm": "^0.2.30"
   },
   "devDependencies": {
-    "assert": "^2.0.0",
-    "mongodb": "^3.6.3",
     "mssql": "^6.3.1",
     "mysql": "^2.18.1",
     "pg": "^8.5.1",
-    "typeorm-adapter": "^1.2.0"
+    "sqlite3": "^5.0.2"
   },
   "peerDependencies": {
-    "mongodb": "^3.5.9",
     "mssql": "^6.2.1",
     "mysql": "^2.18.1",
-    "next-auth": "^3.1.0",
-    "pg": "^8.2.1"
+    "next-auth": ">=4",
+    "pg": "^8.2.1",
+    "sqlite3": "^5.0.2"
   },
   "peerDependenciesMeta": {
-    "mongodb": {
-      "optional": true
-    },
     "mysql": {
       "optional": true
     },
@@ -64,6 +59,9 @@
       "optional": true
     },
     "pg": {
+      "optional": true
+    },
+    "sqlite3": {
       "optional": true
     }
   }

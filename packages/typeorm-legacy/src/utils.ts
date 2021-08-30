@@ -1,12 +1,15 @@
-import { EntitySchema } from "typeorm"
-import { ConnectParams } from "./connect"
+import { ConnectionOptions } from "typeorm"
+import * as defaultEntities from "./entities"
 
 /** Ensure configOrString is normalized to an object. */
-export function parseConnectionString(
-  configOrString: string | ConnectParams
-): ConnectParams {
+export function parseConnectionConfig(
+  configOrString: string | ConnectionOptions
+): ConnectionOptions {
   if (typeof configOrString !== "string") {
-    return configOrString
+    return {
+      ...configOrString,
+      entities: configOrString.entities ?? Object.values(defaultEntities),
+    }
   }
 
   // If the input is URL string, automatically convert the string to an object
@@ -17,7 +20,9 @@ export function parseConnectionString(
   // parsing it in this function.
   try {
     const parsedUrl = new URL(configOrString)
-    const config: any = {}
+    const config: any = {
+      entities: Object.values(defaultEntities),
+    }
 
     if (parsedUrl.protocol.startsWith("mongodb+srv")) {
       // Special case handling is required for mongodb+srv with TypeORM
@@ -68,22 +73,4 @@ export function parseConnectionString(
     // If URL parsing fails for any reason, try letting TypeORM handle it
     return { url: configOrString } as any
   }
-}
-
-export function loadConfig(config: any, { models, namingStrategy }: any) {
-  const defaultConfig = {
-    name: "nextauth",
-    autoLoadEntities: true,
-    entities: [
-      new EntitySchema(models.User.schema),
-      new EntitySchema(models.Account.schema),
-      new EntitySchema(models.Session.schema),
-      new EntitySchema(models.VerificationToken.schema),
-    ],
-    timezone: "Z",
-    logging: false,
-    namingStrategy,
-  }
-
-  return { ...defaultConfig, ...config }
 }

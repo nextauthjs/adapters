@@ -1,140 +1,110 @@
-import { loadConfig, parseConnectionString } from "./lib/config"
-import adapterTransform from "./lib/transform"
-import defaultModels from "./models"
 import {
   Adapter,
   AdapterSession,
   AdapterUser,
   VerificationToken,
 } from "next-auth/adapters"
-import { Connection, ConnectionOptions } from "typeorm"
-import { connect } from "./lib/connect"
+import { Connection, EntitySchema } from "typeorm"
 import { Account } from "next-auth"
+import * as defaultEntities from "./entities"
 
-export const Models = defaultModels
+export interface Entities {
+  User: EntitySchema<AdapterUser>
+  Session: EntitySchema<AdapterSession>
+  Account: EntitySchema<Account>
+  VerificationToken: EntitySchema<VerificationToken>
+}
 
-export function TypeORMLegacyAdapter(options: {
-  config: string | ConnectionOptions
-  models?: any
-  namingStrategy?: string
-}): Adapter {
-  const { config: configOrString, models: customModels } = options
+export interface TypeORMLegacyAdapterOptions {
+  connection: Connection
+  entities?: Entities
+}
 
-  // Load any custom models passed as an option, default to built-in models
-  /** @type {import("..").TypeORMAdapterModels} */
-  const models = { ...defaultModels, ...customModels }
-  // The models are designed for ANSI SQL databases first (as a baseline).
-  // For databases that use a different pragma, we transform the models at run
-  // time *unless* the models are user supplied (in which case we don't do
-  // anything to do them). This function updates arguments by reference.
-  //
-  const configObject = parseConnectionString(configOrString)
-  adapterTransform(configObject, models, options)
-  const config = loadConfig(configObject, { ...options, models })
-  // Create objects from models that can be consumed by functions in the adapter
+export function TypeORMLegacyAdapter(
+  options: TypeORMLegacyAdapterOptions
+): Adapter {
   const {
-    User: { model: UserModel },
-    Account: { model: AccountModel },
-    Session: { model: Session },
-    VerificationToken: { model: VerificationTokenModel },
-  } = models
+    connection: { manager: m },
+  } = options
+  const {
+    User: UserEntity,
+    Account: AccountEntity,
+    Session: SessionEntity,
+    VerificationToken: VerificationTokenEntity,
+  } = options.entities ?? defaultEntities
 
-  // This is set lazily, so that the connection is not created until the first call.
-  // @ts-expect-error
-  // eslint-disable-next-line
-  let connection: Connection = undefined
-  config.connection = connection
-  const { client, idKey, getId } = connect(config)
   return {
-    async createUser(user) {
-      const c = await client()
-      const newUser = await c.save<AdapterUser>(new UserModel(user))
-      return newUser[0]
+    createUser: async (data) => {
+      return await m.save(UserEntity, data)
     },
     async getUser(id) {
-      const c = await client()
-      const user = await c.findOne<AdapterUser>(UserModel, {
-        [idKey]: getId(id),
-      })
+      const user = await m.findOne(UserEntity, { id })
       return user ?? null
     },
     async getUserByEmail(email) {
-      const c = await client()
-      const user = await c.findOne<AdapterUser>(UserModel, { email })
+      const user = await m.findOne(UserEntity, { email })
       return user ?? null
     },
-    async getUserByAccount(providerAccountId) {
-      const c = await client()
-      const account = await c.findOne<Account>(AccountModel, providerAccountId)
+    async getUserByAccount(provider_providerAccountId) {
+      const account = await m.findOne<Account & { user: AdapterUser }>(
+        AccountEntity,
+        provider_providerAccountId,
+        { relations: ["user"] }
+      )
       if (!account) return null
-      const user = await c.findOne<AdapterUser>(UserModel, {
-        [idKey]: account.userId,
-      })
-      return user ?? null
+      return account.user ?? null
     },
     async updateUser(data) {
-      const c = await client()
-      const user = await c.save<AdapterUser>(UserModel, { data })
-      return user[0]
+      return await m.save(UserEntity, data)
     },
-    async deleteUser(userId) {
-      const c = await client()
-      await c.transaction(async (m) => {
-        await m.delete<AdapterUser>(UserModel, { [idKey]: getId(userId) })
-        // @TODO Delete Accounts, Sessions
+    async deleteUser(id) {
+      await m.transaction(async (tm) => {
+        await tm.delete(AccountEntity, { userId: id })
+        await tm.delete(SessionEntity, { userId: id })
+        await tm.delete(UserEntity, { id })
       })
     },
-    async linkAccount(account) {
-      const c = await client()
-      return await c.save(new AccountModel(account))
+    async linkAccount(data) {
+      return await m.save(AccountEntity, data)
     },
     async unlinkAccount(providerAccountId) {
-      const c = await client()
-      await c.delete<Account>(AccountModel, providerAccountId)
+      await m.delete<Account>(AccountEntity, providerAccountId)
     },
-    async createSession(session) {
-      const c = await client()
-      const newSession = await c.save<AdapterSession>(new Session(session))
-      return newSession[0]
+    async createSession(data) {
+      return await m.save(SessionEntity, data)
     },
     async getSessionAndUser(sessionToken) {
-      const c = await client()
-      const session = await c.findOne<AdapterSession>(Session, { sessionToken })
-      if (!session) return null
-      const user = await c.findOne<AdapterUser>(UserModel, {
-        [idKey]: session.userId,
-      })
-      if (!user) return null
+      const sessionAndUser = await m.findOne<
+        AdapterSession & { user: AdapterUser }
+      >(SessionEntity, { sessionToken }, { relations: ["user"] })
 
+      if (!sessionAndUser) return null
+      const { user, ...session } = sessionAndUser
       return { session, user }
     },
     async updateSession(data) {
-      const c = await client()
-      const newSession = await c.save<AdapterSession>(Session, {
-        data,
-      })
-      return newSession[0]
+      await m.update(SessionEntity, { sessionToken: data.sessionToken }, data)
+      // TODO: Try to return?
+      return null
     },
     async deleteSession(sessionToken) {
-      const c = await client()
-      await c.delete(Session, { sessionToken })
+      await m.delete(SessionEntity, { sessionToken })
     },
-    async createVerificationToken(verificationToken) {
-      const c = await client()
-      await c.save(new VerificationTokenModel(verificationToken))
+    async createVerificationToken(data) {
+      const verificationToken = await m.save(VerificationTokenEntity, data)
+      // @ts-expect-error
+      delete verificationToken.id
       return verificationToken
     },
     async useVerificationToken(identifier_token) {
-      const c = await client()
-      const verificationToken = await c.findOne<VerificationToken>(
-        VerificationTokenModel,
+      const verificationToken = await m.findOne(
+        VerificationTokenEntity,
         identifier_token
       )
-
       if (!verificationToken) return null
-
-      await c.delete(VerificationTokenModel, identifier_token)
-
+      await m.delete(VerificationTokenEntity, identifier_token)
+      // @ts-expect-error
+      delete verificationToken.id
       return verificationToken
     },
   }
