@@ -35,18 +35,17 @@
     "sqlite:memory": "jest tests/sqlite-memory.test.ts"
   },
   "dependencies": {
-    "@babel/runtime": "^7.14.0",
-    "require_optional": "^1.0.1",
-    "typeorm": "^0.2.30"
+    "@babel/runtime": "^7.15.3",
+    "typeorm": "^0.2.37"
   },
   "devDependencies": {
-    "mssql": "^6.3.1",
+    "mssql": "^7.2.1",
     "mysql": "^2.18.1",
-    "pg": "^8.5.1",
+    "pg": "^8.7.1",
     "sqlite3": "^5.0.2"
   },
   "peerDependencies": {
-    "mssql": "^6.2.1",
+    "mssql": "^6.2.1 || 7",
     "mysql": "^2.18.1",
     "next-auth": ">=4",
     "pg": "^8.2.1",
