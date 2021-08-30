@@ -28,7 +28,7 @@ export class User {
   @Column({ nullable: true, unique: true })
   email?: string
 
-  @Column({ nullable: true, type: "text", transformer: dateTransformer })
+  @Column({ nullable: true, transformer: dateTransformer })
   emailVerified!: string
 
   @Column({ nullable: true })
@@ -102,7 +102,7 @@ export class Session {
   @Column({ type: "uuid" })
   userId!: string
 
-  @Column({ type: "text", transformer: dateTransformer })
+  @Column({ transformer: dateTransformer })
   expires!: string
 
   @ManyToOne(() => User, (user) => user.sessions)
@@ -120,6 +120,6 @@ export class VerificationToken {
   @Column()
   identifier!: string
 
-  @Column({ type: "text", transformer: dateTransformer })
+  @Column({ transformer: dateTransformer })
   expires!: string
 }
