@@ -34,22 +34,20 @@
     "postgres": "./tests/postgresql/test.sh",
     "sqlite:memory": "jest tests/sqlite-memory.test.ts"
   },
-  "dependencies": {
-    "@babel/runtime": "^7.15.3",
-    "typeorm": "^0.2.37"
-  },
   "devDependencies": {
     "mssql": "^7.2.1",
     "mysql": "^2.18.1",
     "pg": "^8.7.1",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "typeorm": "^0.2.37"
   },
   "peerDependencies": {
     "mssql": "^6.2.1 || 7",
     "mysql": "^2.18.1",
     "next-auth": ">=4",
     "pg": "^8.2.1",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "typeorm": "^0.2.31"
   },
   "peerDependenciesMeta": {
     "mysql": {
