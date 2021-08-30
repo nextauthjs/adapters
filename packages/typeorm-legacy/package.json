@@ -8,6 +8,9 @@
     "url": "https://github.com/nextauthjs/adapters/issues"
   },
   "author": "Iain Collins",
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
   "main": "dist/index.js",
   "files": [
     "README.md",
@@ -29,9 +32,7 @@
     "test": "yarn sqlite:memory && yarn postgres && yarn mysql",
     "mysql": "./tests/mysql/test.sh",
     "postgres": "./tests/postgresql/test.sh",
-    "sqlite:memory": "jest tests/sqlite-memory.test.ts",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "sqlite:memory": "jest tests/sqlite-memory.test.ts"
   },
   "dependencies": {
     "@babel/runtime": "^7.14.0",
