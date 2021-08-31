@@ -1,30 +1,18 @@
-import { ConnectionManager } from "typeorm"
-import { runBasicTests } from "../../../basic-tests"
-import { TypeORMLegacyAdapter } from "../src"
+import { ConnectionManager, ConnectionOptions } from "typeorm"
+import { TestOptions } from "../../../basic-tests"
 import * as entities from "../src/entities"
 import { parseConnectionConfig } from "../src/utils"
 
-const connection = new ConnectionManager().create(
-  parseConnectionConfig({
-    type: "sqlite",
-    name: "next-auth-test-memory",
-    database: ":memory:",
-    synchronize: true,
-  })
-)
+/** Set up Test Database */
+export function db(config: string | ConnectionOptions): TestOptions["db"] {
+  const connection = new ConnectionManager().create(
+    parseConnectionConfig(config)
+  )
 
-const adapter = TypeORMLegacyAdapter({ connection })
-const m = connection.manager
-
-runBasicTests({
-  adapter,
-  db: {
-    async connect() {
-      return await connection.connect()
-    },
-    async disconnect() {
-      return await connection.close()
-    },
+  const m = connection.manager
+  return {
+    connect: async () => await connection.connect(),
+    disconnect: async () => await connection.close(),
     async user(id) {
       const user = await m.findOne(entities.User, id)
       return user ?? null
@@ -49,5 +37,5 @@ runBasicTests({
       const { id: _, ...rest } = verificationToken
       return rest
     },
-  },
-})
+  }
+}

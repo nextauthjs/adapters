@@ -8,7 +8,7 @@ export function parseConnectionConfig(
   if (typeof configOrString !== "string") {
     return {
       ...configOrString,
-      entities: configOrString.entities ?? Object.values(defaultEntities),
+      entities: Object.values(configOrString.entities ?? defaultEntities),
     }
   }
 
