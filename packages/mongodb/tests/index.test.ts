@@ -1,18 +1,12 @@
 import { runBasicTests } from "../../../basic-tests"
-import { collections, format, MongoDBAdapter } from "../src"
-import { MongoClient, ObjectId } from "mongodb"
-
-const _id = (hex?: string) => {
-  if (hex?.length !== 24) return new ObjectId()
-  return new ObjectId(hex)
-}
-
+import { collections, format, MongoDBAdapter, _id } from "../src"
+import { MongoClient } from "mongodb"
 const client = new MongoClient("mongodb://localhost:27017")
 const databaseName = "test"
 const db = client.db(databaseName)
 
 runBasicTests({
-  adapter: MongoDBAdapter({ db, ObjectId }),
+  adapter: MongoDBAdapter({ db }),
   db: {
     async connect() {
       return await client.connect()

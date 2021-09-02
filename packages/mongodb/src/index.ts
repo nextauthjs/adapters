@@ -6,6 +6,7 @@ import type {
   VerificationToken,
 } from "next-auth/adapters"
 import type * as MongoDB from "mongodb"
+import { ObjectId } from "mongodb"
 import { Account } from "next-auth"
 
 export const collections = {
@@ -31,18 +32,15 @@ export const format = {
   },
 }
 
-export function MongoDBAdapter(options: {
-  db: MongoDB.Db
-  ObjectId: typeof MongoDB.ObjectId
-}): Adapter {
-  const { db: m, ObjectId } = options
-  const { from } = format
+/** Converts from string to ObjectId */
+export function _id(hex?: string) {
+  if (hex?.length !== 24) return new ObjectId()
+  return new ObjectId(hex)
+}
 
-  // Converts from string to ObjectId
-  const _id = (hex?: string) => {
-    if (hex?.length !== 24) return new ObjectId()
-    return new ObjectId(hex)
-  }
+export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
+  const { db: m } = options
+  const { from } = format
 
   const { Users, Accounts, Sessions, VerificationTokens } = {
     Users: m.collection<AdapterUser>(collections.Users),
@@ -90,7 +88,7 @@ export function MongoDBAdapter(options: {
       ])
     },
     linkAccount: async (data) => {
-      const account = { _id: _id(), ...(data as any) }
+      const account = { _id: _id(), ...data }
       await Accounts.insertOne(account)
       return account
     },

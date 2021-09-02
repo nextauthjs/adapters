@@ -23,7 +23,7 @@ You can find the mongoDB schema in the docs at [next-auth.js.org/adapters/mongod
 1. Install `next-auth` and `@next-auth/mongodb-adapter`
 
 ```js
-npm install next-auth @next-auth/mongodb-adapter
+npm install next-auth mongodb @next-auth/mongodb-adapter
 ```
 
 2. Add `lib/mongodb.js`
@@ -70,7 +70,6 @@ export default clientPromise
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter"
-import { ObjectId } from "mongodb"
 import clientPromise from "lib/mongodb"
 
 // For more information on each option (and a full list of options) go to
@@ -78,8 +77,7 @@ import clientPromise from "lib/mongodb"
 export default async function auth(req, res) {
   return await NextAuth(req, res, {
     adapter: MongoDBAdapter({
-      db: (await clientPromise).db("your-database"),
-      ObjectId,
+      db: (await clientPromise).db("your-database")
     }),
     // https://next-auth.js.org/configuration/providers
     providers: [
