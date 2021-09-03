@@ -285,15 +285,18 @@ export function runBasicTests(options: TestOptions) {
 
     await adapter.deleteUser?.(user.id)
     dbUser = await db.user(user.id)
+    // User should not exist after it is deleted
     expect(dbUser).toBeNull()
 
     const dbSession = await db.session(session.sessionToken)
+    // Session should not exist after user is deleted
     expect(dbSession).toBeNull()
 
     const dbAccount = await db.account({
       provider: account.provider,
       providerAccountId: account.providerAccountId,
     })
+    // Account should not exist after user is deleted
     expect(dbAccount).toBeNull()
   })
 }
