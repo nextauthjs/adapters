@@ -24,6 +24,23 @@ export const format = {
       const value = object[key]
       if (key === "_id") {
         newObject.id = value.toHexString()
+      } else if (key === "userId") {
+        newObject[key] = value.toHexString()
+      } else {
+        newObject[key] = value
+      }
+    }
+    return newObject as T
+  },
+  /** Takes a plain old JavaScript object and turns it into a mongoDB object */
+  to<T = Record<string, unknown>>(object: Record<string, any>) {
+    const newObject: Record<string, unknown> = {
+      _id: _id(object.id),
+    }
+    for (const key in object) {
+      const value = object[key]
+      if (key === "userId") {
+        newObject[key] = _id(value)
       } else {
         newObject[key] = value
       }
@@ -40,7 +57,7 @@ export function _id(hex?: string) {
 
 export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
   const { db: m } = options
-  const { from } = format
+  const { from, to } = format
 
   const { Users, Accounts, Sessions, VerificationTokens } = {
     Users: m.collection<AdapterUser>(collections.Users),
@@ -52,7 +69,7 @@ export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
   }
   return {
     async createUser(data) {
-      const user = { _id: _id(), ...(data as any) }
+      const user = to<AdapterUser>(data)
       await Users.insertOne(user)
       return from<AdapterUser>(user)
     },
@@ -69,7 +86,7 @@ export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
     async getUserByAccount(provider_providerAccountId) {
       const account = await Accounts.findOne(provider_providerAccountId)
       if (!account) return null
-      const user = await Users.findOne({ _id: _id(account.userId) })
+      const user = await Users.findOne({ _id: account.userId })
       if (!user) return null
       return from<AdapterUser>(user)
     },
@@ -81,14 +98,15 @@ export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
       return from<AdapterUser>(user!)
     },
     async deleteUser(id) {
+      const userId = _id(id)
       await Promise.all([
-        m.collection(collections.Accounts).deleteMany({ userId: id }),
-        m.collection(collections.Sessions).deleteMany({ userId: id }),
-        m.collection(collections.Users).deleteOne({ _id: _id(id) }),
+        m.collection(collections.Accounts).deleteMany({ userId }),
+        m.collection(collections.Sessions).deleteMany({ userId }),
+        m.collection(collections.Users).deleteOne({ _id: userId }),
       ])
     },
     linkAccount: async (data) => {
-      const account = { _id: _id(), ...data }
+      const account = to<Account>(data)
       await Accounts.insertOne(account)
       return account
     },
@@ -99,11 +117,9 @@ export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
       return from<Account>(account!)
     },
     async getSessionAndUser(sessionToken) {
-      const session = await Sessions.findOne({
-        sessionToken,
-      })
+      const session = await Sessions.findOne({ sessionToken })
       if (!session) return null
-      const user = await Users.findOne({ _id: _id(session.userId) })
+      const user = await Users.findOne({ _id: session.userId })
       if (!user) return null
       return {
         user: from<AdapterUser>(user),
@@ -111,8 +127,8 @@ export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
       }
     },
     async createSession(data) {
-      const session = { _id: _id(), ...data }
-      await Sessions.insertOne(session as any)
+      const session = to<AdapterSession>(data)
+      await Sessions.insertOne(session)
       return from<AdapterSession>(session)
     },
     async updateSession(data) {
@@ -129,8 +145,7 @@ export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
       return from<AdapterSession>(session!)
     },
     async createVerificationToken(data) {
-      const token = { _id: _id(), ...data }
-      await VerificationTokens.insertOne(token)
+      await VerificationTokens.insertOne(to(data))
       return data
     },
     async useVerificationToken(identifier_token) {
