@@ -4,45 +4,35 @@ import {
   Column,
   ManyToOne,
   OneToMany,
-  ValueTransformer,
 } from "typeorm"
+import { bigIntTransformer, dateTransformer } from "./utils"
 
-const dateTransformer: ValueTransformer = {
-  from: (date: string) => new Date(date),
-  to: (date?: Date) => date?.toISOString(),
-}
-
-const bigIntTransformer: ValueTransformer = {
-  from: (bigInt: string) => parseInt(bigInt, 10),
-  to: (bigInt?: number) => bigInt?.toString(),
-}
-
-@Entity()
-export class User {
+@Entity({ name: "users" })
+export class UserEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string
 
-  @Column({ nullable: true })
-  name?: string
+  @Column({ type: "varchar", nullable: true })
+  name!: string | null
 
-  @Column({ nullable: true, unique: true })
-  email?: string
+  @Column({ type: "varchar", nullable: true, unique: true })
+  email!: string | null
 
-  @Column({ nullable: true, transformer: dateTransformer })
-  emailVerified!: string
+  @Column({ type: "varchar", nullable: true, transformer: dateTransformer })
+  emailVerified!: string | null
 
-  @Column({ nullable: true })
-  image?: string
+  @Column({ type: "varchar", nullable: true })
+  image!: string | null
 
-  @OneToMany(() => Session, (session) => session.userId)
-  sessions!: Session[]
+  @OneToMany(() => SessionEntity, (session) => session.userId)
+  sessions!: SessionEntity[]
 
-  @OneToMany(() => Account, (account) => account.userId)
-  accounts!: Account[]
+  @OneToMany(() => AccountEntity, (account) => account.userId)
+  accounts!: AccountEntity[]
 }
 
-@Entity()
-export class Account {
+@Entity({ name: "accounts" })
+export class AccountEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string
 
@@ -58,41 +48,45 @@ export class Account {
   @Column()
   providerAccountId!: string
 
-  @Column({ nullable: true })
-  refresh_token?: string
+  @Column({ type: "varchar", nullable: true })
+  refresh_token!: string
 
-  @Column({ nullable: true })
-  access_token?: string
+  @Column({ type: "varchar", nullable: true })
+  access_token!: string | null
 
-  @Column({ nullable: true, type: "bigint", transformer: bigIntTransformer })
-  expires_at?: number
+  @Column({
+    nullable: true,
+    type: "bigint",
+    transformer: bigIntTransformer,
+  })
+  expires_at!: number | null
 
-  @Column({ nullable: true })
-  token_type?: string
+  @Column({ type: "varchar", nullable: true })
+  token_type!: string | null
 
-  @Column({ nullable: true })
-  scope?: string
+  @Column({ type: "varchar", nullable: true })
+  scope!: string | null
 
-  @Column({ nullable: true })
-  id_token?: string
+  @Column({ type: "varchar", nullable: true })
+  id_token!: string | null
 
-  @Column({ nullable: true })
-  session_state?: string
+  @Column({ type: "varchar", nullable: true })
+  session_state!: string | null
 
-  @Column({ nullable: true })
-  oauth_token_secret?: string
+  @Column({ type: "varchar", nullable: true })
+  oauth_token_secret!: string | null
 
-  @Column({ nullable: true })
-  oauth_token?: string
+  @Column({ type: "varchar", nullable: true })
+  oauth_token!: string | null
 
-  @ManyToOne(() => User, (user) => user.accounts, {
+  @ManyToOne(() => UserEntity, (user) => user.accounts, {
     createForeignKeyConstraints: true,
   })
-  user!: User
+  user!: UserEntity
 }
 
-@Entity()
-export class Session {
+@Entity({ name: "sessions" })
+export class SessionEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string
 
@@ -105,12 +99,12 @@ export class Session {
   @Column({ transformer: dateTransformer })
   expires!: string
 
-  @ManyToOne(() => User, (user) => user.sessions)
-  user!: User
+  @ManyToOne(() => UserEntity, (user) => user.sessions)
+  user!: UserEntity
 }
 
-@Entity()
-export class VerificationToken {
+@Entity({ name: "verification_tokens" })
+export class VerificationTokenEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string
 

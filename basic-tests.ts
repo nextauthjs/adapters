@@ -42,11 +42,13 @@ export function runBasicTests(options: TestOptions) {
     await options.db.connect?.()
   })
 
+  const { adapter, db } = options
+
   afterAll(async () => {
+    // @ts-expect-error This is only used for the TypeORM adapter
+    await adapter.__disconnect?.()
     await options.db.disconnect?.()
   })
-
-  const { adapter, db } = options
 
   let user: any = {
     email: "fill@murray.com",
