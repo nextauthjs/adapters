@@ -1,4 +1,4 @@
-import { ConnectionOptions, ValueTransformer } from "typeorm"
+import { ConnectionOptions } from "typeorm"
 import * as defaultEntities from "./entities"
 
 /** Ensure configOrString is normalized to an object. */
@@ -73,19 +73,4 @@ export function parseConnectionConfig(
     // If URL parsing fails for any reason, try letting TypeORM handle it
     return { url: configOrString } as any
   }
-}
-
-export const dateTransformer: ValueTransformer = {
-  from: (date: string | null) => {
-    if (date) {
-      return new Date(parseInt(date, 10))
-    }
-    return null
-  },
-  to: (date?: Date) => date?.valueOf().toString(),
-}
-
-export const bigIntTransformer: ValueTransformer = {
-  from: (bigInt: string) => parseInt(bigInt, 10),
-  to: (bigInt?: number) => bigInt?.toString(),
 }
