@@ -15,7 +15,7 @@ export const entities = defaultEntities
 export type Entities = typeof entities
 
 export interface TypeORMLegacyAdapterOptions {
-  entities?: Partial<Entities>
+  entities?: Entities
 }
 
 let _connection: Connection
