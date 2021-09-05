@@ -1,6 +1,6 @@
 import { DgraphAdapter } from "../src"
 import { DgraphClient } from "../src/dgraphClient"
-import { runBasicTests } from "./basic-tests"
+import { runBasicTests } from "../../../basic-tests"
 
 const dgraph = new DgraphClient({
   endpoint: "https://wild-grass.us-east-1.aws.cloud.dgraph.io/graphql",
