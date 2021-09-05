@@ -12,10 +12,10 @@ docker run -d --rm \
 -e POSTGRES_HOST_AUTH_METHOD=trust \
 --name "${CONTAINER_NAME}" \
 -p ${PGPORT}:5432 \
--v "$(pwd)/tests/postgresql/schema.sql":/docker-entrypoint-initdb.d/schema.sql \
-postgres:13.3 
+postgres:13.3
 
-echo \"Waiting 20 sec for db to start...\" && sleep 20
+echo "Waiting 10 sec for db to start..."
+sleep 10
 
 # Always stop container, but exit with 1 when tests are failing
 if npx jest tests/postgresql --detectOpenHandles --forceExit;then
