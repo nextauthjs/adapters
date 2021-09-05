@@ -1,0 +1,46 @@
+type Account {
+  id: ID
+  type: String
+  provider: String @search(by: [hash])
+  providerAccountId: String @search(by: [hash])
+  refreshToken: String
+  expires_at: DateTime
+  accessToken: String
+  token_type: String
+  scope: String
+  id_token: String
+  session_state: String
+  oauth_token_secret: String
+  oauth_token: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  user: User @hasInverse(field: "accounts")
+}
+type Session {
+  id: ID
+  expires: DateTime
+  sessionToken: String @search(by: [hash])
+  createdAt: DateTime
+  updatedAt: DateTime
+  user: User @hasInverse(field: "sessions")
+}
+type User {
+  id: ID
+  name: String
+  email: String @search(by: [hash])
+  emailVerified: DateTime
+  image: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  accounts: [Account] @hasInverse(field: "user")
+  sessions: [Session] @hasInverse(field: "user")
+}
+
+type VerificationRequest {
+  id: ID
+  identifier: String @search(by: [hash])
+  token: String @search(by: [hash])
+  expires: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+}
