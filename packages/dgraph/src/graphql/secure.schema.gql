@@ -13,6 +13,8 @@ type Account
   expires_at: DateTime
   accessToken: String
   token_type: String
+  refresh_token: String
+  access_token: String
   scope: String
   id_token: String
   session_state: String
