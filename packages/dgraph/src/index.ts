@@ -1,8 +1,6 @@
 import type { Adapter } from "next-auth/adapters"
 import { DgraphClient } from "./dgraphClient"
 
-// TODO check account and provider and providerId in here and inside the mutation / queries providerId is becomming provider
-
 export function DgraphAdapter(d: DgraphClient): Adapter {
   return {
     // USERS
@@ -36,7 +34,6 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
       const userAndSession = await d.getSession(sessionToken)
       if (!userAndSession) return null
       const { user, ...session } = userAndSession
-
       return {
         user: { ...user, emailVerified: new Date(user.emailVerified) },
         session: { ...session, expires: new Date(session.expires) },
@@ -54,7 +51,6 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
       })
     },
     updateSession: async ({ sessionToken, ...rest }) => {
-      console.log({ rest })
       return await d.updateSession(sessionToken, {
         ...rest,
         updatedAt: new Date(),

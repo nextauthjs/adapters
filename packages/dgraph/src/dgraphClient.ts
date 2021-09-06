@@ -202,9 +202,7 @@ export class DgraphClient {
       sessionToken,
       input,
     })
-    console.log({ updatedSession, input })
     if (!updatedSession) return null
-
     return { ...updatedSession, userId: updatedSession.user.id }
   }
 
@@ -217,7 +215,7 @@ export class DgraphClient {
   }
 
   getVerificationRequest = async ({ identifier, token }: any) => {
-    let [verificationRequest] = await this.dgraph(
+    const [verificationRequest] = await this.dgraph(
       queries.getVerificationRequest,
       {
         identifier,
@@ -225,13 +223,10 @@ export class DgraphClient {
       }
     )
     if (!verificationRequest) return null
-
-    verificationRequest = {
+    return {
       ...verificationRequest,
       expires: new Date(verificationRequest.expires),
     }
-
-    return verificationRequest
   }
 
   deleteVerificationRequest = async ({
@@ -250,7 +245,6 @@ export class DgraphClient {
   }
 
   // for testing purpose
-
   clean = async () => {
     return await this.dgraph(mutations.clean)
   }
