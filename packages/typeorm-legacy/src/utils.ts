@@ -1,4 +1,4 @@
-import { ConnectionOptions } from "typeorm"
+import { Connection, ConnectionOptions } from "typeorm"
 import * as defaultEntities from "./entities"
 
 /** Ensure configOrString is normalized to an object. */
@@ -72,5 +72,37 @@ export function parseConnectionConfig(
   } catch (error) {
     // If URL parsing fails for any reason, try letting TypeORM handle it
     return { url: configOrString } as any
+  }
+}
+
+function entitiesChanged(
+  prevEntities: any[] | undefined,
+  newEntities: any[]
+): boolean {
+  if (prevEntities?.length !== newEntities?.length) return true
+
+  for (let i = 0; i < prevEntities?.length; i++) {
+    if (prevEntities[i] !== newEntities[i]) return true
+  }
+
+  return false
+}
+
+export async function updateConnectionEntities(
+  connection: Connection,
+  entities: any[]
+) {
+  if (!entitiesChanged(connection.options.entities, entities)) return
+
+  // @ts-expect-error
+  connection.options.entities = entities
+
+  console.warn("[next-auth] ADAPTER_TYPEORM_REBUILDING_METADATA")
+  // @ts-expect-error
+  connection.buildMetadatas()
+
+  if (connection.options.synchronize) {
+    console.warn("[next-auth] ADAPTER_TYPEORM_UPDATING_ENTITIES")
+    await connection.synchronize()
   }
 }
