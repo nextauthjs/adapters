@@ -1,5 +1,5 @@
 import { Adapter } from "next-auth/adapters"
-import { createHash, randomUUID as cryptoRandomUUID, randomBytes } from "crypto"
+import { createHash, randomUUID } from "crypto"
 
 export interface TestOptions {
   adapter: Adapter
@@ -308,10 +308,7 @@ export function hashToken(token: string) {
   return createHash("sha256").update(`${token}anything`).digest("hex")
 }
 
-function randomUUID() {
-  // Use `randomUUID` if available. (Node 15.6++)
-  return cryptoRandomUUID?.() ?? randomBytes(16).toString("hex")
-}
+export { randomUUID }
 
 export const ONE_WEEK_FROM_NOW = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
 export const FIFTEEN_MINUTES_FROM_NOW = new Date(Date.now() + 15 * 60 * 1000)
