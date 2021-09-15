@@ -97,11 +97,10 @@ export async function updateConnectionEntities(
   // @ts-expect-error
   connection.options.entities = entities
 
-  console.warn("[next-auth] ADAPTER_TYPEORM_REBUILDING_METADATA")
   // @ts-expect-error
   connection.buildMetadatas()
 
-  if (connection.options.synchronize) {
+  if (connection.options.synchronize !== false) {
     console.warn("[next-auth] ADAPTER_TYPEORM_UPDATING_ENTITIES")
     await connection.synchronize()
   }
