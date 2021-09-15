@@ -33,7 +33,7 @@ export async function getManager(options: {
   const connectionManager = getConnectionManager()
 
   if (connectionManager.has(config.name ?? "default")) {
-    _connection = connectionManager.get()
+    _connection = connectionManager.get(config.name ?? "default")
 
     if (_connection.isConnected) return _connection.manager
 
