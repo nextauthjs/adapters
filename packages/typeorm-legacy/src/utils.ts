@@ -101,7 +101,10 @@ export async function updateConnectionEntities(
   connection.buildMetadatas()
 
   if (connection.options.synchronize !== false) {
-    console.warn("[next-auth] ADAPTER_TYPEORM_UPDATING_ENTITIES")
+    console.warn(
+      "[next-auth][warn][adapter_typeorm_updating_entities]",
+      "\nhttps://next-auth.js.org/warnings#adapter_typeorm_updating_entities"
+    )
     await connection.synchronize()
   }
 }
