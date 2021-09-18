@@ -36,7 +36,7 @@
     "next-auth": ">=4"
   },
   "devDependencies": {
-    "@prisma/client": "^2.29.1",
-    "prisma": "^2.29.1"
+    "@prisma/client": "^3.0.2",
+    "prisma": "^3.0.2"
   }
 }
