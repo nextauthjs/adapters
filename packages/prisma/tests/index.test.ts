@@ -6,7 +6,23 @@ const prisma = new PrismaClient()
 runBasicTests({
   adapter: PrismaAdapter(prisma),
   db: {
-    disconnect: async () => await prisma.$disconnect(),
+    connect: async () => {
+      await Promise.all([
+        prisma.user.deleteMany({}),
+        prisma.account.deleteMany({}),
+        prisma.session.deleteMany({}),
+        prisma.verificationToken.deleteMany({}),
+      ])
+    },
+    disconnect: async () => {
+      await Promise.all([
+        prisma.user.deleteMany({}),
+        prisma.account.deleteMany({}),
+        prisma.session.deleteMany({}),
+        prisma.verificationToken.deleteMany({}),
+      ])
+      await prisma.$disconnect()
+    },
     verificationToken: (identifier_token) =>
       prisma.verificationToken.findUnique({
         where: { identifier_token },

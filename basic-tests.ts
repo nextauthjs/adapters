@@ -57,6 +57,11 @@ export function runBasicTests(options: TestOptions) {
     emailVerified: new Date(),
   }
 
+  if (process.env.CUSTOM_MODEL === "1") {
+    user.role = "admin"
+    user.phone = "00000000000"
+  }
+
   const session: any = {
     sessionToken: randomUUID(),
     expires: ONE_WEEK_FROM_NOW,
