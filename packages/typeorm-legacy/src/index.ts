@@ -2,13 +2,12 @@ import { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters"
 import {
   Connection,
   ConnectionOptions,
-  createConnection,
   EntityManager,
-  getConnection,
+  getConnectionManager,
 } from "typeorm"
 import { Account } from "next-auth"
 import * as defaultEntities from "./entities"
-import { parseConnectionConfig } from "./utils"
+import { parseConnectionConfig, updateConnectionEntities } from "./utils"
 
 export const entities = defaultEntities
 
@@ -31,19 +30,19 @@ export async function getManager(options: {
     entities: Object.values(entities),
   }
 
-  if (_connection) {
-    try {
-      const c = getConnection(config.name)
-      if (c.isConnected) return c.manager
-      await c.connect()
-      return c.manager
-    } catch (error) {
-      _connection = await createConnection(config)
-      return _connection.manager
-    }
-  }
+  const connectionManager = getConnectionManager()
 
-  _connection = await createConnection(config)
+  if (connectionManager.has(config.name ?? "default")) {
+    _connection = connectionManager.get(config.name ?? "default")
+
+    if (_connection.isConnected) return _connection.manager
+
+    if (process.env.NODE_ENV !== "production") {
+      await updateConnectionEntities(_connection, config.entities)
+    }
+  } else {
+    _connection = await connectionManager.create(config).connect()
+  }
 
   return _connection.manager
 }
