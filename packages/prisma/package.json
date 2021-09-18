@@ -27,7 +27,7 @@
     "test:default": "yarn init:default && jest",
     "test:custom": "yarn init:custom && CUSTOM_MODEL=1 jest",
     "test": "yarn test:default && yarn test:custom",
-    "build": "yarn reset && tsc",
+    "build": "prisma generate && tsc",
     "studio": "prisma studio"
   },
   "files": [
