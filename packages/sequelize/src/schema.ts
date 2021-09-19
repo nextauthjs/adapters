@@ -1,7 +1,11 @@
 import { DataTypes } from "sequelize"
 
 export const accountSchema = {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
   type: { type: DataTypes.STRING, allowNull: false },
   provider: { type: DataTypes.STRING, allowNull: false },
   providerAccountId: { type: DataTypes.STRING, allowNull: false },
@@ -14,11 +18,15 @@ export const accountSchema = {
   oauth_token_secret: { type: DataTypes.STRING },
   oauth_token: { type: DataTypes.STRING },
   session_state: { type: DataTypes.STRING },
-  userId: { type: DataTypes.INTEGER },
+  userId: { type: DataTypes.UUID },
 }
 
 export const userSchema = {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
   name: { type: DataTypes.STRING },
   email: { type: DataTypes.STRING, unique: true },
   emailVerified: { type: DataTypes.DATE },
@@ -26,10 +34,14 @@ export const userSchema = {
 }
 
 export const sessionSchema = {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
   expires: { type: DataTypes.DATE, allowNull: false },
   sessionToken: { type: DataTypes.STRING, unique: true, allowNull: false },
-  userId: { type: DataTypes.INTEGER },
+  userId: { type: DataTypes.UUID },
 }
 
 export const verificationTokenSchema = {
