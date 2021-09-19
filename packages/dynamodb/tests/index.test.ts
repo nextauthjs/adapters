@@ -11,6 +11,6 @@ runBasicTests({
     async user(id) {},
     async session(token) {},
     async account(id) {},
-    async verificationRequest(id) {},
+    async verificationToken(id) {},
   },
 })
