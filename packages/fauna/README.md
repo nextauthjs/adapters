@@ -8,8 +8,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="Build Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/fauna-adapter/latest" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/fauna-adapter" alt="@next-auth/fauna-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/fauna-adapter/next" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/fauna-adapter/next" alt="@next-auth/fauna-adapter Version" />
    </p>
 </p>
 
@@ -21,17 +21,16 @@ You can find the Fauna schema and seed information in the docs at [next-auth.js.
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/fauna-adapter`
+1. Install `faunadb`, `next-auth@beta` and `@next-auth/fauna-adapter@next`
 
 ```js
-npm install next-auth @next-auth/fauna-adapter
+npm install faunadb next-auth@beta @next-auth/fauna-adapter@next
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
 ```js
 import NextAuth from "next-auth"
-import Providers from "next-auth/providers"
 import * as Fauna from "faunadb"
 import { FaunaAdapter } from "@next-auth/fauna-adapter"
 
@@ -46,13 +45,8 @@ const client = new Fauna.Client({
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
   // https://next-auth.js.org/configuration/providers
-  providers: [
-    Providers.Google({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-  ],
-  adapter: FaunaAdapter({ faunaClient: client})
+  providers: [],
+  adapter: FaunaAdapter({ faunaClient: client })
   ...
 })
 ```
