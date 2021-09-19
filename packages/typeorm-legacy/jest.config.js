@@ -1,6 +1,1 @@
-module.exports = {
-  ...require("../../jest.config"),
-  transform: {
-    "^.+\\.jsx?$": "babel-jest",
-  },
-}
+module.exports = require("../../jest.config")
