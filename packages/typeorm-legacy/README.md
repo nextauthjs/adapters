@@ -20,7 +20,7 @@ You can find more TypeORM information in the docs at [next-auth.js.org/adapters/
 
 ## Getting Started
 
-1. Install `typorm`, `next-auth@beta` and `@next-auth/typeorm-legacy-adapter@next`
+1. Install `typeorm`, `next-auth@beta` and `@next-auth/typeorm-legacy-adapter@next`
 
 ```js
 npm install next-auth@beta @next-auth/typeorm-legacy-adapter@next typeorm
@@ -44,7 +44,7 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
   ],
-  adapter: TypeORMLegacyAdapter(({
+  adapter: TypeORMLegacyAdapter({
     type: 'sqlite',  // or mysql, postgresql, mssql
     database: ':memory:',
     synchronize: true
