@@ -32,7 +32,7 @@
     "test": "yarn sqlite && yarn postgres && yarn mysql",
     "mysql": "tests/mysql/test.sh",
     "postgres": "tests/postgresql/test.sh",
-    "sqlite": "rm -f tests/sqlite/dev.db && jest tests/sqlite/index.test.ts"
+    "sqlite": "tests/sqlite/test.sh"
   },
   "devDependencies": {
     "mssql": "^7.2.1",
