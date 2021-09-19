@@ -2,7 +2,6 @@
 
 set -eu
 
-
 rm -f tests/sqlite/dev.db
 
 echo "Started running SQLite tests with default models."

@@ -2,6 +2,7 @@
 #
 # Run parallel commands and fail if any of them fails.
 # shellcheck disable=SC2046
+# Based on: https://gist.github.com/mjambon/79adfc5cf6b11252e78b75df50793f24#gistcomment-3861511
 
 set -eu
 
