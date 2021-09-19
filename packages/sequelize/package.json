@@ -5,7 +5,7 @@
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
   "bugs": {
-    "url": "https://github.com/nextauthjs/next-auth/issues"
+    "url": "https://github.com/nextauthjs/adapters/issues"
   },
   "author": "github.com/luke-j",
   "main": "dist/index.js",
