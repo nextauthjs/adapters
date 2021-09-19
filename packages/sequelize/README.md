@@ -31,7 +31,6 @@ npm install --save-dev sequelize
 
 ```js
 import NextAuth from "next-auth"
-import Providers from "next-auth/providers"
 import SequelizeAdapter from "@next-auth/sequelize-adapter"
 
 const sequelize = new Sequelize("sqlite::memory:")
@@ -41,6 +40,29 @@ const sequelize = new Sequelize("sqlite::memory:")
 export default NextAuth({
   ...
   adapter: SequelizeAdapter(sequelize)
+  ...
+})
+```
+
+## Updating the database schema
+
+By default, the sequelize adapter will not create tables in your database. In production, best practice is to create the [required tables](https://next-auth.js.org/adapters/models) in your database via [migrations](https://sequelize.org/master/manual/migrations.html). In development, you are able to call [`sequelize.sync()`](https://sequelize.org/master/manual/model-basics.html#model-synchronization) to have sequelize create the necessary tables, foreign keys and indexes:
+
+```js
+import NextAuth from "next-auth"
+import SequelizeAdapter from "@next-auth/sequelize-adapter"
+
+const sequelize = new Sequelize("sqlite::memory:")
+const adapter = SequelizeAdapter(sequelize)
+
+// Calling sync() is not recommended in production
+sequelize.sync()
+
+// For more information on each option (and a full list of options) go to
+// https://next-auth.js.org/configuration/options
+export default NextAuth({
+  ...
+  adapter
   ...
 })
 ```
