@@ -31,7 +31,6 @@ npm install faunadb next-auth@beta @next-auth/fauna-adapter@next
 
 ```js
 import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
 import * as Fauna from "faunadb"
 import { FaunaAdapter } from "@next-auth/fauna-adapter"
 
@@ -46,12 +45,7 @@ const client = new Fauna.Client({
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
   // https://next-auth.js.org/configuration/providers
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-  ],
+  providers: [],
   adapter: FaunaAdapter({ faunaClient: client })
   ...
 })
