@@ -7,8 +7,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="CI Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/prisma-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/prisma-adapter" alt="@next-auth/prisma-adapter Version" />
+      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/prisma-adapter/next" alt="Bundle Size"/>
+      <img src="https://img.shields.io/npm/v/@next-auth/prisma-adapter/next" alt="@next-auth/prisma-adapter Version" />
    </p>
 </p>
 
@@ -20,17 +20,16 @@ You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma]
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/prisma-adapter`
+1. Install `next-auth@beta` and `@next-auth/prisma-adapter@next`
 
 ```js
-npm install next-auth @next-auth/prisma-adapter
+npm install next-auth@beta @next-auth/prisma-adapter@next
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
 ```js
 import NextAuth from "next-auth"
-import Providers from "next-auth/providers"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import * as Prisma from "@prisma/client"
 
@@ -40,12 +39,7 @@ const prisma = new Prisma.PrismaClient()
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
   // https://next-auth.js.org/configuration/providers
-  providers: [
-    Providers.Google({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-  ],
+  providers: [],
   adapter: PrismaAdapter(prisma)
   ...
 })
