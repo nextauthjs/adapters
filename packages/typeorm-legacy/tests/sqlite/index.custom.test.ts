@@ -1,6 +1,6 @@
 import { runBasicTests } from "../../../../basic-tests"
 import { TypeORMLegacyAdapter } from "../../src"
-import * as customEntities from "../custom-entities"
+import * as entities from "../custom-entities"
 import { db } from "../helpers"
 
 const sqliteConfig = {
@@ -12,9 +12,7 @@ const sqliteConfig = {
 
 runBasicTests({
   adapter: TypeORMLegacyAdapter(sqliteConfig, {
-    entities: {
-      ...customEntities,
-    },
+    entities,
   }),
-  db: db(sqliteConfig),
+  db: db(sqliteConfig, entities),
 })
