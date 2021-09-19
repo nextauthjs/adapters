@@ -29,9 +29,11 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "yarn sqlite && yarn postgres && yarn mysql",
-    "mysql": "tests/mysql/test.sh",
-    "postgres": "tests/postgresql/test.sh",
+    "init:db": "tests/init.sh",
+    "test:containers": "tests/test.sh",
+    "test": "tests/test.sh",
+    "mysql": "yarn init:db && tests/mysql/test.sh",
+    "postgres": "yarn init:db && tests/postgresql/test.sh",
     "sqlite": "tests/sqlite/test.sh"
   },
   "devDependencies": {
