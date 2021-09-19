@@ -32,23 +32,14 @@ npm install --save-dev sequelize
 ```js
 import NextAuth from "next-auth"
 import Providers from "next-auth/providers"
-import SequelizeAdapter, { userSchema } from "@next-auth/sequelize-adapter"
+import SequelizeAdapter from "@next-auth/sequelize-adapter"
 
 const sequelize = new Sequelize("sqlite::memory:")
-
-// To override the existing models, make your new models available like so:
-sequelize.models.User = sequelize.define("user", { ...userSchema, ...myCustomUserSchema })
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
-  // https://next-auth.js.org/configuration/providers
-  providers: [
-    Providers.Google({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-  ],
+  ...
   adapter: SequelizeAdapter(sequelize)
   ...
 })
