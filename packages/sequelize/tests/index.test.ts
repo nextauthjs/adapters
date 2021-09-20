@@ -14,11 +14,9 @@ runBasicTests({
     connect: async () => {
       return await sequelize.sync({ force: true })
     },
-    verificationToken: async ({ identifier, token }) => {
+    verificationToken: async (where) => {
       const verificationToken =
-        await sequelize.models.verificationToken.findOne({
-          where: { identifier, token },
-        })
+        await sequelize.models.verificationToken.findOne({ where })
 
       return verificationToken?.get({ plain: true }) || null
     },
@@ -27,10 +25,8 @@ runBasicTests({
 
       return user?.get({ plain: true }) || null
     },
-    account: async ({ provider, providerAccountId }) => {
-      const account = await sequelize.models.account.findOne({
-        where: { provider, providerAccountId },
-      })
+    account: async (where) => {
+      const account = await sequelize.models.account.findOne({ where })
 
       return account?.get({ plain: true }) || null
     },
