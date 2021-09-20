@@ -7,8 +7,8 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="CI Test" />
-      <img src="https://img.shields.io/bundlephobia/minzip/@next-auth/mongodb-adapter" alt="Bundle Size"/>
-      <img src="https://img.shields.io/npm/v/@next-auth/mongodb-adapter" alt="@next-auth/mongodb-adapter Version" />
+      <a href="https://www.npmjs.com/package/@next-auth/mongodb-adapter" target="_blank"><img src="https://img.shields.io/bundlephobia/minzip/@next-auth/mongodb-adapter" alt="Bundle Size"/></a>
+      <a href="https://www.npmjs.com/package/@next-auth/mongodb-adapter" target="_blank"><img src="https://img.shields.io/npm/v/@next-auth/mongodb-adapter" alt="@next-auth/mongodb-adapter Version" /></a>
    </p>
 </p>
 
@@ -20,10 +20,10 @@ You can find the mongoDB schema in the docs at [next-auth.js.org/adapters/mongod
 
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/mongodb-adapter`
+1. Install `mongodb`, `next-auth@beta` and `@next-auth/mongodb-adapter@next`
 
 ```js
-npm install next-auth mongodb @next-auth/mongodb-adapter
+npm install mongodb next-auth@beta @next-auth/mongodb-adapter@next
 ```
 
 2. Add `lib/mongodb.js`
@@ -68,7 +68,6 @@ export default clientPromise
 
 ```js
 import NextAuth from "next-auth"
-import Providers from "next-auth/providers"
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter"
 import clientPromise from "lib/mongodb"
 
@@ -80,12 +79,7 @@ export default async function auth(req, res) {
       db: (await clientPromise).db("your-database")
     }),
     // https://next-auth.js.org/configuration/providers
-    providers: [
-      Providers.Google({
-        clientId: process.env.GOOGLE_ID,
-        clientSecret: process.env.GOOGLE_SECRET,
-      }),
-    ],
+    providers: [],
     ...
   })
 }
