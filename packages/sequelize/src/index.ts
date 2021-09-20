@@ -106,11 +106,8 @@ export default function SequelizeAdapter(
       await User.update(user, { where: { id: user.id } })
       const userInstance = await User.findByPk(user.id)
 
-      if (!userInstance) {
-        throw new Error("User does not exist")
-      }
-
-      return userInstance
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return userInstance!
     },
     async deleteUser(userId) {
       const userInstance = await User.findByPk(userId)
