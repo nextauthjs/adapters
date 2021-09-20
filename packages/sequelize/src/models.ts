@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize"
 
-export const accountSchema = {
+export const Account = {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -21,7 +21,7 @@ export const accountSchema = {
   userId: { type: DataTypes.UUID },
 }
 
-export const userSchema = {
+export const User = {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -33,7 +33,7 @@ export const userSchema = {
   image: { type: DataTypes.STRING },
 }
 
-export const sessionSchema = {
+export const Session = {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -44,7 +44,7 @@ export const sessionSchema = {
   userId: { type: DataTypes.UUID },
 }
 
-export const verificationTokenSchema = {
+export const VerificationToken = {
   token: { type: DataTypes.STRING, primaryKey: true },
   identifier: { type: DataTypes.STRING, allowNull: false },
   expires: { type: DataTypes.DATE, allowNull: false },

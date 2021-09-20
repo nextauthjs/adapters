@@ -6,12 +6,9 @@ import type {
   VerificationToken,
 } from "next-auth/adapters"
 import { Sequelize, Model, ModelCtor } from "sequelize"
-import {
-  accountSchema,
-  userSchema,
-  sessionSchema,
-  verificationTokenSchema,
-} from "./schema"
+import * as defaultModels from "./models"
+
+export { defaultModels as models }
 
 // @see https://sequelize.org/master/manual/typescript.html
 interface AccountInstance
@@ -27,27 +24,51 @@ interface VerificationTokenInstance
   extends Model<VerificationToken, Partial<VerificationToken>>,
     VerificationToken {}
 
-export { accountSchema, userSchema, sessionSchema, verificationTokenSchema }
+interface SequelizeAdapterOptions {
+  models?: Partial<{
+    User: ModelCtor<UserInstance>
+    Account: ModelCtor<AccountInstance>
+    Session: ModelCtor<SessionInstance>
+    VerificationToken: ModelCtor<VerificationTokenInstance>
+  }>
+}
 
-export default function SequelizeAdapter(client: Sequelize): Adapter {
-  const tableOptions = { underscored: true, timestamps: false }
-
-  const Account =
-    (client.models.Account as ModelCtor<any>) ||
-    client.define<AccountInstance>("account", accountSchema, tableOptions)
-  const User =
-    (client.models.User as ModelCtor<any>) ||
-    client.define<UserInstance>("user", userSchema, tableOptions)
-  const Session =
-    (client.models.Session as ModelCtor<any>) ||
-    client.define<SessionInstance>("session", sessionSchema, tableOptions)
-  const VerificationToken =
-    (client.models.VerificationToken as ModelCtor<any>) ||
-    client.define<VerificationTokenInstance>(
-      "verificationToken",
-      verificationTokenSchema,
-      tableOptions
-    )
+export default function SequelizeAdapter(
+  client: Sequelize,
+  options?: SequelizeAdapterOptions
+): Adapter {
+  const { models } = options ?? {}
+  const defaultModelOptions = { underscored: true, timestamps: false }
+  const { User, Account, Session, VerificationToken } = {
+    User:
+      models?.User ??
+      client.define<UserInstance>(
+        "user",
+        defaultModels.User,
+        defaultModelOptions
+      ),
+    Account:
+      models?.Account ??
+      client.define<AccountInstance>(
+        "account",
+        defaultModels.Account,
+        defaultModelOptions
+      ),
+    Session:
+      models?.Session ??
+      client.define<SessionInstance>(
+        "session",
+        defaultModels.Session,
+        defaultModelOptions
+      ),
+    VerificationToken:
+      models?.VerificationToken ??
+      client.define<VerificationTokenInstance>(
+        "verificationToken",
+        defaultModels.VerificationToken,
+        defaultModelOptions
+      ),
+  }
 
   Account.belongsTo(User, { onDelete: "cascade" })
   Session.belongsTo(User, { onDelete: "cascade" })
