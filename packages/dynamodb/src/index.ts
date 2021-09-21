@@ -144,6 +144,8 @@ export function DynamoDBAdapter(
         })
         .promise()
 
+      // TODO delete sessions and accounts
+
       return deleted
     },
     async linkAccount(data) {
