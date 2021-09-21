@@ -152,16 +152,21 @@ export function DynamoDBAdapter(
       const item = {
         pk: `USER#${data.userId}`,
         sk: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
-        GSI1SK: `ACCOUNT#${data.provider}`,
-        GSI1PK: `ACCOUNT#${data.providerAccountId}`,
+        GSI1PK: `ACCOUNT#${data.provider}`,
+        GSI1SK: `ACCOUNT#${data.providerAccountId}`,
+        userId: data.userId,
         provider: data.provider,
         providerAccountId: data.providerAccountId,
-        providerType: data.providerType,
-        refreshToken: data.refreshToken,
-        accessToken: data.accessToken,
-        accessTokenExpires: data.accessTokenExpires,
-        type: "ACCOUNT",
-        userId: data.userId,
+        type: data.type,
+        accessToken: data.access_token,
+        expiresAt: data.expires_at,
+        idToken: data.id_token,
+        oauthToken: data.oauth_token,
+        oauthTokenSecret: data.oauth_token_secret,
+        refreshToken: data.refresh_token,
+        tokenType: data.token_type,
+        scope: data.scope,
+        sessionState: data.session_state,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       }
@@ -248,7 +253,7 @@ export function DynamoDBAdapter(
         sessionToken,
         type: "SESSION",
         userId,
-        expires,
+        expires: expires.toISOString(),
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       }
@@ -319,14 +324,14 @@ export function DynamoDBAdapter(
         token,
         identifier,
         type: "VR",
-        expires,
+        expires: expires.toISOString(),
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       }
 
       await client.put({ TableName, Item: item }).promise()
 
-      return item
+      return { ...item, expires }
     },
     async useVerificationToken({ identifier, token }) {
       const data = await client
