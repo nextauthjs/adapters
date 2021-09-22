@@ -57,6 +57,7 @@ runBasicTests({
         expires: new Date(session.Items[0].expires),
         id: undefined, // DynamoDB does not set ID
         sessionToken: session.Items[0].sessionToken,
+        userId: session.Items[0].userId,
       }
     },
     async account({ provider, providerAccountId }) {

@@ -26,8 +26,8 @@ export function DynamoDBAdapter(
       }
 
       if (profile.email) {
-        item.GSI1SK = `USER#${profile.email as string}`
         item.GSI1PK = `USER#${profile.email as string}`
+        item.GSI1SK = `USER#${profile.email as string}`
       }
 
       await client.put({ TableName, Item: item }).promise()
@@ -97,36 +97,27 @@ export function DynamoDBAdapter(
       return user.Item || null
     },
     async updateUser(user) {
-      const now = new Date()
+      let updateExpression = "set"
+      const ExpressionAttributeNames: any = {}
+      const ExpressionAttributeValues: any = {}
+      for (const property in user) {
+        updateExpression += ` #${property} = :${property},`
+        ExpressionAttributeNames["#" + property] = property
+        ExpressionAttributeValues[":" + property] = user[property]
+      }
+
+      updateExpression = updateExpression.slice(0, -1)
+
       const data = await client
         .update({
           TableName,
           Key: {
-            pk: user.pk,
-            sk: user.sk,
+            pk: `USER#${user.id as string}`,
+            sk: `USER#${user.id as string}`,
           },
-          UpdateExpression:
-            "set #name = :name, #email = :email, #gsi1pk = :gsi1pk, #gsi1sk = :gsi1sk, #image = :image, #emailVerified = :emailVerified, #username = :username, #updatedAt = :updatedAt",
-          ExpressionAttributeNames: {
-            "#name": "name",
-            "#email": "email",
-            "#gsi1pk": "GSI1PK",
-            "#gsi1sk": "GSI1SK",
-            "#image": "image",
-            "#emailVerified": "emailVerified",
-            "#username": "username",
-            "#updatedAt": "updatedAt",
-          },
-          ExpressionAttributeValues: {
-            ":name": user.name,
-            ":email": user.email,
-            ":gsi1pk": `USER#${user.email as string}`,
-            ":gsi1sk": `USER#${user.email as string}`,
-            ":image": user.image,
-            ":emailVerified": user.emailVerified?.toISOString() ?? null,
-            ":username": user.username,
-            ":updatedAt": now.toISOString(),
-          },
+          UpdateExpression: updateExpression,
+          ExpressionAttributeNames: ExpressionAttributeNames,
+          ExpressionAttributeValues: ExpressionAttributeValues,
           ReturnValues: "UPDATED_NEW",
         })
         .promise()
@@ -263,13 +254,31 @@ export function DynamoDBAdapter(
       await client.put({ TableName, Item: item }).promise()
       return item as any
     },
-    async updateSession(data) {
+    async updateSession({ sessionToken, expires }) {
+      const data = await client
+        .query({
+          TableName,
+          IndexName: "GSI1",
+          KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+          ExpressionAttributeNames: {
+            "#gsi1pk": "GSI1PK",
+            "#gsi1sk": "GSI1SK",
+          },
+          ExpressionAttributeValues: {
+            ":gsi1pk": `SESSION#${sessionToken}`,
+            ":gsi1sk": `SESSION#${sessionToken}`,
+          },
+        })
+        .promise()
+
+      const session = data.Items[0]
+
       return client
         .update({
           TableName,
           Key: {
-            pk: `USER#${data.userId as string}`,
-            sk: `SESSION#${data.sessionToken}`,
+            pk: session.pk,
+            sk: session.sk,
           },
           UpdateExpression: "set #expires = :expires, #updatedAt = :updatedAt",
           ExpressionAttributeNames: {
@@ -277,7 +286,7 @@ export function DynamoDBAdapter(
             "#updatedAt": "updatedAt",
           },
           ExpressionAttributeValues: {
-            ":expires": (data.expires as Date).toISOString(),
+            ":expires": (expires as Date).toISOString(),
             ":updatedAt": new Date().toISOString(),
           },
           ReturnValues: "UPDATED_NEW",
@@ -347,7 +356,9 @@ export function DynamoDBAdapter(
         })
         .promise()
 
-      return data?.Item
+      return data
+        ? { ...data.Attributes, expires: new Date(data.Attributes.expires) }
+        : null
     },
   }
 }
