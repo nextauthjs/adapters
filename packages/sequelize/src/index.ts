@@ -25,6 +25,7 @@ interface VerificationTokenInstance
     VerificationToken {}
 
 interface SequelizeAdapterOptions {
+  synchronize?: boolean
   models?: Partial<{
     User: ModelCtor<UserInstance>
     Account: ModelCtor<AccountInstance>
@@ -37,7 +38,7 @@ export default function SequelizeAdapter(
   client: Sequelize,
   options?: SequelizeAdapterOptions
 ): Adapter {
-  const { models } = options ?? {}
+  const { models, synchronize } = options ?? {}
   const defaultModelOptions = { underscored: true, timestamps: false }
   const { User, Account, Session, VerificationToken } = {
     User:
@@ -69,20 +70,42 @@ export default function SequelizeAdapter(
         defaultModelOptions
       ),
   }
+  let _synced = false
+  const sync = async () => {
+    if (process.env.NODE_ENV !== "production" && synchronize && !_synced) {
+      const syncOptions =
+        typeof synchronize === "object" ? synchronize : undefined
+
+      await Promise.all([
+        User.sync(syncOptions),
+        Account.sync(syncOptions),
+        Session.sync(syncOptions),
+        VerificationToken.sync(syncOptions),
+      ])
+
+      _synced = true
+    }
+  }
 
   Account.belongsTo(User, { onDelete: "cascade" })
   Session.belongsTo(User, { onDelete: "cascade" })
 
   return {
     async createUser(user) {
+      await sync()
+
       return await User.create(user)
     },
     async getUser(id) {
+      await sync()
+
       const userInstance = await User.findByPk(id)
 
       return userInstance?.get({ plain: true }) ?? null
     },
     async getUserByEmail(email) {
+      await sync()
+
       const userInstance = await User.findOne({
         where: { email },
       })
@@ -90,6 +113,8 @@ export default function SequelizeAdapter(
       return userInstance?.get({ plain: true }) ?? null
     },
     async getUserByAccount({ provider, providerAccountId }) {
+      await sync()
+
       const accountInstance = await Account.findOne({
         where: { provider, providerAccountId },
       })
@@ -103,6 +128,8 @@ export default function SequelizeAdapter(
       return userInstance?.get({ plain: true }) ?? null
     },
     async updateUser(user) {
+      await sync()
+
       await User.update(user, { where: { id: user.id } })
       const userInstance = await User.findByPk(user.id)
 
@@ -110,6 +137,8 @@ export default function SequelizeAdapter(
       return userInstance!
     },
     async deleteUser(userId) {
+      await sync()
+
       const userInstance = await User.findByPk(userId)
 
       await User.destroy({ where: { id: userId } })
@@ -117,17 +146,25 @@ export default function SequelizeAdapter(
       return userInstance
     },
     async linkAccount(account) {
+      await sync()
+
       await Account.create(account)
     },
     async unlinkAccount({ provider, providerAccountId }) {
+      await sync()
+
       await Account.destroy({
         where: { provider, providerAccountId },
       })
     },
     async createSession(session) {
+      await sync()
+
       return await Session.create(session)
     },
     async getSessionAndUser(sessionToken) {
+      await sync()
+
       const sessionInstance = await Session.findOne({
         where: { sessionToken },
       })
@@ -148,6 +185,8 @@ export default function SequelizeAdapter(
       }
     },
     async updateSession({ sessionToken, expires }) {
+      await sync()
+
       await Session.update(
         { expires, sessionToken },
         { where: { sessionToken } }
@@ -156,12 +195,18 @@ export default function SequelizeAdapter(
       return await Session.findOne({ where: { sessionToken } })
     },
     async deleteSession(sessionToken) {
+      await sync()
+
       await Session.destroy({ where: { sessionToken } })
     },
     async createVerificationToken(token) {
+      await sync()
+
       return await VerificationToken.create(token)
     },
     async useVerificationToken({ identifier, token }) {
+      await sync()
+
       const tokenInstance = await VerificationToken.findOne({
         where: { identifier, token },
       })
