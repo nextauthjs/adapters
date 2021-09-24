@@ -10,7 +10,6 @@ export function DynamoDBAdapter(
   return {
     async createUser(profile: any) {
       const userId = randomBytes(16).toString("hex")
-      const now = new Date()
       const item: any = {
         pk: `USER#${userId}`,
         sk: `USER#${userId}`,
@@ -21,8 +20,6 @@ export function DynamoDBAdapter(
         image: profile.image,
         username: profile.username,
         emailVerified: profile.emailVerified?.toISOString() ?? null,
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
       }
 
       if (profile.email) {
@@ -140,8 +137,6 @@ export function DynamoDBAdapter(
       return deleted
     },
     async linkAccount(data) {
-      const now = new Date()
-
       const item = {
         pk: `USER#${data.userId}`,
         sk: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
@@ -160,8 +155,6 @@ export function DynamoDBAdapter(
         tokenType: data.token_type,
         scope: data.scope,
         sessionState: data.session_state,
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
       }
 
       await client.put({ TableName, Item: item }).promise()
@@ -236,8 +229,6 @@ export function DynamoDBAdapter(
       return { user, session }
     },
     async createSession({ sessionToken, userId, expires }) {
-      const now = new Date()
-
       const item = {
         pk: `USER#${userId}`,
         sk: `SESSION#${sessionToken}`,
@@ -247,8 +238,6 @@ export function DynamoDBAdapter(
         type: "SESSION",
         userId,
         expires: expires.toISOString(),
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
       }
 
       await client.put({ TableName, Item: item }).promise()
@@ -280,14 +269,12 @@ export function DynamoDBAdapter(
             pk: session.pk,
             sk: session.sk,
           },
-          UpdateExpression: "set #expires = :expires, #updatedAt = :updatedAt",
+          UpdateExpression: "set #expires = :expires",
           ExpressionAttributeNames: {
             "#expires": "expires",
-            "#updatedAt": "updatedAt",
           },
           ExpressionAttributeValues: {
             ":expires": (expires as Date).toISOString(),
-            ":updatedAt": new Date().toISOString(),
           },
           ReturnValues: "UPDATED_NEW",
         })
@@ -327,8 +314,6 @@ export function DynamoDBAdapter(
       return deleted
     },
     async createVerificationToken({ identifier, expires, token }) {
-      const now = new Date()
-
       const item = {
         pk: `VR#${identifier}`,
         sk: `VR#${token}`,
@@ -336,8 +321,6 @@ export function DynamoDBAdapter(
         identifier,
         type: "VR",
         expires: expires.toISOString(),
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
       }
 
       await client.put({ TableName, Item: item }).promise()
