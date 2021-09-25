@@ -23,8 +23,6 @@ import {
   errors,
 } from "faunadb"
 
-// import type { FaunaError } from "faunadb"
-
 import {
   Adapter,
   AdapterSession,
