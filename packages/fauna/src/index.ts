@@ -20,6 +20,7 @@ import {
   Lambda,
   Do,
   Foreach,
+  errors,
 } from "faunadb"
 
 import {
@@ -92,8 +93,12 @@ export function query(f: FaunaClient, format: (...args: any) => any) {
       if (!result) return null
       return format({ ...result.data, id: result.ref.id })
     } catch (error) {
-      if (error.name === "NotFound") return null
-      if (error.description?.includes("Number or numeric String expected"))
+      if ((error as errors.FaunaError).name === "NotFound") return null
+      if (
+        (error as errors.FaunaError).description?.includes(
+          "Number or numeric String expected"
+        )
+      )
         return null
 
       if (process.env.NODE_ENV === "test") console.error(error)
