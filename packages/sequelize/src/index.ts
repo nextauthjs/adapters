@@ -38,7 +38,7 @@ export default function SequelizeAdapter(
   client: Sequelize,
   options?: SequelizeAdapterOptions
 ): Adapter {
-  const { models, synchronize } = options ?? {}
+  const { models, synchronize = true } = options ?? {}
   const defaultModelOptions = { underscored: true, timestamps: false }
   const { User, Account, Session, VerificationToken } = {
     User:

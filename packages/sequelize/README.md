@@ -47,7 +47,7 @@ export default NextAuth({
 
 ## Updating the database schema
 
-By default, the sequelize adapter will not create tables in your database. In production, best practice is to create the [required tables](https://next-auth.js.org/adapters/models) in your database via [migrations](https://sequelize.org/master/manual/migrations.html). In development, you are able to pass `{ synchronize: true }` as the second option to `SequelizeAdapter` to have sequelize create the necessary tables, foreign keys and indexes:
+By default, the sequelize adapter will create the necessary tables, foreign keys and indexes in your database. In production, best practice is to create the [required tables](https://next-auth.js.org/adapters/models) in your database via [migrations](https://sequelize.org/master/manual/migrations.html). In development, if you do not want the adapter to automatically create tables, you are able to pass `{ synchronize: false }` as the second option to `SequelizeAdapter` to disable this behavior:
 
 ```js
 import NextAuth from "next-auth"
@@ -58,7 +58,7 @@ const sequelize = new Sequelize("sqlite::memory:")
 
 export default NextAuth({
   ...
-  adapter: SequelizeAdapter(sequelize, { synchronize: true })
+  adapter: SequelizeAdapter(sequelize, { synchronize: false })
   ...
 })
 ```
@@ -73,15 +73,14 @@ import SequelizeAdapter, { models } from "@next-auth/sequelize-adapter"
 import Sequelize, { DataTypes } from 'sequelize'
 
 const sequelize = new Sequelize("sqlite::memory:")
-const options = {
-  models: {
-    User: sequelize.define('user', { ...models.User, phoneNumber: DataTypes.STRING })
-  }
-}
 
 export default NextAuth({
   ...
-  adapter: SequelizeAdapter(sequelize, options)
+  adapter: SequelizeAdapter(sequelize, {
+    models: {
+      User: sequelize.define('user', { ...models.User, phoneNumber: DataTypes.STRING })
+    }
+  })
   ...
 })
 ```

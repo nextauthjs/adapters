@@ -48,7 +48,7 @@ describe("Additional Sequelize tests", () => {
     beforeEach(async () => {
       await sequelize.getQueryInterface().dropAllTables()
 
-      const { getUser } = SequelizeAdapter(sequelize, { synchronize: true })
+      const { getUser } = SequelizeAdapter(sequelize)
 
       await getUser("1")
     })
