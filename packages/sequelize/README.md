@@ -47,7 +47,9 @@ export default NextAuth({
 
 ## Updating the database schema
 
-By default, the sequelize adapter will create the necessary tables, foreign keys and indexes in your database. In production, best practice is to create the [required tables](https://next-auth.js.org/adapters/models) in your database via [migrations](https://sequelize.org/master/manual/migrations.html). In development, if you do not want the adapter to automatically create tables, you are able to pass `{ synchronize: false }` as the second option to `SequelizeAdapter` to disable this behavior:
+In development, the sequelize adapter will create the necessary tables, foreign keys and indexes in your database. In production, synchronization is disabled. Best practice is to create the [required tables](https://next-auth.js.org/adapters/models) in your database via [migrations](https://sequelize.org/master/manual/migrations.html).
+
+In development, if you do not want the adapter to automatically create tables, you are able to pass `{ synchronize: false }` as the second option to `SequelizeAdapter` to disable this behavior:
 
 ```js
 import NextAuth from "next-auth"
