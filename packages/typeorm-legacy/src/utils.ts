@@ -1,8 +1,15 @@
-import { EntitySchema } from "typeorm"
+import { Connection, ConnectionOptions } from "typeorm"
+import * as defaultEntities from "./entities"
 
-export function parseConnectionString(configOrString) {
+/** Ensure configOrString is normalized to an object. */
+export function parseConnectionConfig(
+  configOrString: string | ConnectionOptions
+): ConnectionOptions {
   if (typeof configOrString !== "string") {
-    return configOrString
+    return {
+      ...configOrString,
+      entities: Object.values(configOrString.entities ?? defaultEntities),
+    }
   }
 
   // If the input is URL string, automatically convert the string to an object
@@ -13,7 +20,9 @@ export function parseConnectionString(configOrString) {
   // parsing it in this function.
   try {
     const parsedUrl = new URL(configOrString)
-    const config = {}
+    const config: any = {
+      entities: Object.values(defaultEntities),
+    }
 
     if (parsedUrl.protocol.startsWith("mongodb+srv")) {
       // Special case handling is required for mongodb+srv with TypeORM
@@ -47,7 +56,7 @@ export function parseConnectionString(configOrString) {
         .replace(/^\?/, "")
         .split("&")
         .forEach((keyValuePair) => {
-          let [key, value] = keyValuePair.split("=")
+          let [key, value] = keyValuePair.split("=") as any
           // Converts true/false strings to actual boolean values
           if (value === "true") {
             value = true
@@ -62,29 +71,40 @@ export function parseConnectionString(configOrString) {
     return config
   } catch (error) {
     // If URL parsing fails for any reason, try letting TypeORM handle it
-    return {
-      url: configOrString,
-    }
+    return { url: configOrString } as any
   }
 }
 
-export function loadConfig(config, { models, namingStrategy }) {
-  const defaultConfig = {
-    name: "nextauth",
-    autoLoadEntities: true,
-    entities: [
-      new EntitySchema(models.User.schema),
-      new EntitySchema(models.Account.schema),
-      new EntitySchema(models.Session.schema),
-      new EntitySchema(models.VerificationRequest.schema),
-    ],
-    timezone: "Z",
-    logging: false,
-    namingStrategy,
+function entitiesChanged(
+  prevEntities: any[] | undefined,
+  newEntities: any[]
+): boolean {
+  if (prevEntities?.length !== newEntities?.length) return true
+
+  for (let i = 0; i < prevEntities?.length; i++) {
+    if (prevEntities[i] !== newEntities[i]) return true
   }
 
-  return {
-    ...defaultConfig,
-    ...config,
+  return false
+}
+
+export async function updateConnectionEntities(
+  connection: Connection,
+  entities: any[]
+) {
+  if (!entitiesChanged(connection.options.entities, entities)) return
+
+  // @ts-expect-error
+  connection.options.entities = entities
+
+  // @ts-expect-error
+  connection.buildMetadatas()
+
+  if (connection.options.synchronize !== false) {
+    console.warn(
+      "[next-auth][warn][adapter_typeorm_updating_entities]",
+      "\nhttps://next-auth.js.org/warnings#adapter_typeorm_updating_entities"
+    )
+    await connection.synchronize()
   }
 }

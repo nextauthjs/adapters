@@ -1,5 +1,6 @@
 import { runBasicTests } from "../../../../basic-tests"
 import { TypeORMLegacyAdapter } from "../../src"
+import * as entities from "../custom-entities"
 import { db } from "../helpers"
 
 const mysqlConfig = {
@@ -13,6 +14,8 @@ const mysqlConfig = {
 }
 
 runBasicTests({
-  adapter: TypeORMLegacyAdapter(mysqlConfig),
-  db: db(mysqlConfig),
+  adapter: TypeORMLegacyAdapter(mysqlConfig, {
+    entities,
+  }),
+  db: db(mysqlConfig, entities),
 })

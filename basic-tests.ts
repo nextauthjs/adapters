@@ -42,17 +42,24 @@ export function runBasicTests(options: TestOptions) {
     await options.db.connect?.()
   })
 
+  const { adapter, db } = options
+
   afterAll(async () => {
+    // @ts-expect-error This is only used for the TypeORM adapter
+    await adapter.__disconnect?.()
     await options.db.disconnect?.()
   })
-
-  const { adapter, db } = options
 
   let user: any = {
     email: "fill@murray.com",
     image: "https://www.fillmurray.com/460/300",
     name: "Fill Murray",
     emailVerified: new Date(),
+  }
+
+  if (process.env.CUSTOM_MODEL === "1") {
+    user.role = "admin"
+    user.phone = "00000000000"
   }
 
   const session: any = {
@@ -105,7 +112,7 @@ export function runBasicTests(options: TestOptions) {
   })
 
   test("getUser", async () => {
-    expect(await adapter.getUser("non-existent-user-id")).toBeNull()
+    expect(await adapter.getUser(randomUUID())).toBeNull()
     expect(await adapter.getUser(user.id)).toEqual(user)
   })
 
@@ -285,15 +292,18 @@ export function runBasicTests(options: TestOptions) {
 
     await adapter.deleteUser?.(user.id)
     dbUser = await db.user(user.id)
+    // User should not exist after it is deleted
     expect(dbUser).toBeNull()
 
     const dbSession = await db.session(session.sessionToken)
+    // Session should not exist after user is deleted
     expect(dbSession).toBeNull()
 
     const dbAccount = await db.account({
       provider: account.provider,
       providerAccountId: account.providerAccountId,
     })
+    // Account should not exist after user is deleted
     expect(dbAccount).toBeNull()
   })
 }
