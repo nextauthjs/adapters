@@ -34,16 +34,24 @@ You need to pass `DocumentClient` instance from `aws-sdk` to the adapter.
 The default table name is `next-auth`, but you can customise that by passing `{ tableName: 'your-table-name' }` as the second parameter in the adapter.
 
 ```js
-import AWS from "aws-sdk";
+import { DynamoDB } from "@aws-sdk/client-dynamodb"
+import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb"
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
 import { DynamoDBAdapter } from "@next-auth/dynamodb-adapter"
 
-AWS.config.update({
+const config = {
   accessKeyId: process.env.NEXT_AUTH_AWS_ACCESS_KEY,
   secretAccessKey: process.env.NEXT_AUTH_AWS_SECRET_KEY,
   region: process.env.NEXT_AUTH_AWS_REGION,
-});
+}
+const client = DynamoDBDocument.from(new DynamoDB(config), {
+  marshallOptions: {
+    convertEmptyValues: true,
+    removeUndefinedValues: true,
+    convertClassInstanceToMap: true,
+  },
+})
 
 export default NextAuth({
   // Configure one or more authentication providers
@@ -59,7 +67,7 @@ export default NextAuth({
     // ...add more providers here
   ],
   adapter: DynamoDBAdapter(
-    new AWS.DynamoDB.DocumentClient()
+    client
   ),
   ...
 });
