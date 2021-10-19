@@ -84,12 +84,6 @@ export class AccountEntity {
   @Column({ type: "varchar", nullable: true })
   session_state!: string | null
 
-  @Column({ type: "varchar", nullable: true })
-  oauth_token_secret!: string | null
-
-  @Column({ type: "varchar", nullable: true })
-  oauth_token!: string | null
-
   @ManyToOne(() => UserEntity, (user) => user.accounts, {
     createForeignKeyConstraints: true,
   })
