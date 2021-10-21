@@ -1,0 +1,56 @@
+name: Support request
+description: File a support request
+title: "[typeorm-legacy]: "
+labels: typeorm
+
+# note: markdown sections will NOT appear as part of the issue as per documentation, rather they provide context to the user
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-githubs-form-schema#markdown
+
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this issue!
+        ### Important :exclamation:
+        Please help us maintain this project more efficiently! Before creating the issue make sure you shouldn't be creating it in one the below repos instead:
+        - Core repo related: https://github.com/nextauthjs
+        - Docs related: https://github.com/nextauthjs/docs
+        
+        If you are in the correct repo, then proceed by providing the following information:
+  - type: input.text
+    id: title
+    attributes:
+      label: Title
+    validations:
+      required: true
+  - type: input.text
+    id: codesandbox-link
+    attributes:
+      label: Link to CodeSandox.io playground
+    validations:
+      required: true      
+  - type: textarea
+    id: description
+    attributes: 
+      label: Your question/bug report
+      description: Please provide a more in-depth description of your request.
+    validations:
+      required: true    
+  - type: dropdown
+    id: contributing
+    attributes: 
+      label: Contributing
+      description: Are you willing to open a PR for this?
+      multiple: false
+      options:
+        - "Yes, I am"
+        - "No, I'm afraid I cannot help regarding this"
+    validations:
+      required: true
+  - type: markdown
+    attributes: 
+      value: |
+        It takes a lot of work 🏋🏻‍♀️ maintaining a library like `next-auth`; any contribution is more than welcome 💚
+        
+       
