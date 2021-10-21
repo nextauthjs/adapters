@@ -18,13 +18,13 @@ body:
         - Docs related: https://github.com/nextauthjs/docs
         
         If you are in the correct repo, then proceed by providing the following information:
-  - type: input.text
+  - type: input
     id: title
     attributes:
       label: Title
     validations:
       required: true
-  - type: input.text
+  - type: input
     id: codesandbox-link
     attributes:
       label: Link to CodeSandox.io playground
