@@ -1,6 +1,5 @@
 name: TypeORM
 description: File a support request for the typeorm adapter
-title: ""
 labels: typeorm
 
 # note: markdown sections will NOT appear as part of the issue as per documentation, rather they provide context to the user
@@ -24,23 +23,33 @@ body:
       label: Title
     validations:
       required: true
-  - type: input
-    id: codesandbox-link
+  - type: textarea
+    id: reproduction
     attributes:
-      label: Link to CodeSandox.io playground
+      label: How to reproduce ☕️ 
+      description: Please provide a link or code snippets to a minimal reproduction of the bug
     validations:
-      required: true      
+      required: true 
+  - type: markdown
+    attributes:
+      value: |
+        We encourage you to use one of the templates set up on **CodeSandbox** to reproduce your issue:
+        - [`next-auth-example`](https://codesandbox.io/s/next-auth-example-1kktb)
+        - [`next-auth-typescript-example`](https://codesandbox.io/s/next-auth-typescript-example-se32w)
+
+        🚧 – _If you don't provide any way to reproduce the bug, the issue is at risk of being closed._
+      
   - type: textarea
     id: description
     attributes: 
-      label: Your question/bug report
+      label: Your question/bug report 📓
       description: Please provide a more in-depth description of your request.
     validations:
       required: true    
   - type: dropdown
     id: contributing
     attributes: 
-      label: Contributing
+      label: Contributing  🙌🏽
       description: Are you willing to open a PR for this?
       multiple: false
       options:
