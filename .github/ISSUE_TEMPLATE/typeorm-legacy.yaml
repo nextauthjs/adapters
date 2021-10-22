@@ -14,7 +14,7 @@ body:
         Thanks for taking the time to fill out this issue!
         ### Important :exclamation:
         Please help us maintain this project more efficiently! Before creating the issue make sure you shouldn't be creating it in one the below repos instead:
-        - Core repo related: https://github.com/nextauthjs
+        - Core related: https://github.com/nextauthjs/next-auth
         - Docs related: https://github.com/nextauthjs/docs
         
         If you are in the correct repo, then proceed by providing the following information:
