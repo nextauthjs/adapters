@@ -1,6 +1,6 @@
 name: TypeORM
 description: File a support request for the typeorm adapter
-title: "[typeorm]: "
+title: ""
 labels: typeorm
 
 # note: markdown sections will NOT appear as part of the issue as per documentation, rather they provide context to the user
