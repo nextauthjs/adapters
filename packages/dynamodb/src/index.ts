@@ -7,6 +7,10 @@ import type {
   AdapterUser,
   VerificationToken,
 } from "next-auth/adapters"
+
+// internal interfaces for data as is it saved in dynamodb
+// adds some dynamodb specific types such as index keys (pk, sk, GSI1PK, GSI1SK)
+// and changes date types to number for expires property (epoch time saved in seconds) or string (IsoString for emailVerfied prop)
 interface AdapterSessionDynamo {
   pk: string
   sk: string
@@ -15,7 +19,8 @@ interface AdapterSessionDynamo {
   sessionToken: string
   /** Used to connect the session to a particular user */
   userId: string
-  expires: string
+  /** This property can be used to set up dynamodb TTL function see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html for more information */
+  expires: number
   GSI1PK?: string
   GSI1SK?: string
   type: "SESSION"
@@ -24,7 +29,8 @@ interface VerificationTokenDynamo {
   pk: string
   sk: string
   identifier: string
-  expires: string
+  /** This property can be used to set up dynamodb TTL function see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html for more information */
+  expires: number
   token: string
   type: "VR"
 }
@@ -37,6 +43,7 @@ interface AdapterUserDynamo extends User {
   GSI1PK?: string
   GSI1SK?: string
   type: "USER"
+  email: string
 }
 
 export function DynamoDBAdapter(
@@ -58,6 +65,7 @@ export function DynamoDBAdapter(
         sk: `USER#${userId}`,
         id: userId,
         type: "USER",
+        email: user.email as string,
         emailVerified,
       }
 
@@ -295,7 +303,7 @@ export function DynamoDBAdapter(
         sessionToken,
         type: "SESSION",
         userId,
-        expires: expires.toISOString(),
+        expires: expires.getTime() / 1000,
       }
 
       await client.put({ TableName, Item: item })
@@ -331,7 +339,7 @@ export function DynamoDBAdapter(
           "#expires": "expires",
         },
         ExpressionAttributeValues: {
-          ":expires": expires ? expires.toISOString() : undefined,
+          ":expires": expires ? expires.getTime() / 1000 : undefined,
         },
         ReturnValues: "ALL_NEW",
       })
@@ -375,7 +383,7 @@ export function DynamoDBAdapter(
         token,
         identifier,
         type: "VR",
-        expires: expires.toISOString(),
+        expires: expires.getTime() / 1000,
       }
       await client.put({ TableName, Item: item })
       return unMarshallVerificationToken(item)
@@ -396,13 +404,14 @@ export function DynamoDBAdapter(
 }
 // these functions are used to remove dynamodb specific properties
 // and to transform back date strings into Date javascript objects
+// the unused vars are only there so that the ...rest object does not contain those dynamodb internal properties
 const unMarshallAdapterSession = (
   session: AdapterSessionDynamo
 ): AdapterSession => {
   const { pk, sk, GSI1PK, GSI1SK, type, ...rest } = session
   return {
     ...rest,
-    expires: new Date(session.expires),
+    expires: new Date(session.expires * 1000),
   }
 }
 
@@ -412,7 +421,7 @@ const unMarshallVerificationToken = (
   const { pk, sk, type, ...rest } = verificationToken
   return {
     ...rest,
-    expires: new Date(verificationToken.expires),
+    expires: new Date(verificationToken.expires * 1000),
   }
 }
 

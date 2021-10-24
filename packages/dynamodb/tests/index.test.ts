@@ -68,7 +68,7 @@ runBasicTests({
       if (!session.Items || !session.Items[0]) return null
 
       return {
-        expires: new Date(session.Items[0].expires),
+        expires: new Date(session.Items[0].expires * 1000),
         id: session.Items[0].id,
         sessionToken: session.Items[0].sessionToken,
         userId: session.Items[0].userId,
@@ -118,7 +118,7 @@ runBasicTests({
       })
 
       return {
-        expires: new Date(vt.Item?.expires),
+        expires: new Date(vt.Item?.expires * 1000),
         token: vt.Item?.token,
         identifier: vt.Item?.identifier,
       }
