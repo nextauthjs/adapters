@@ -1,4 +1,4 @@
-name: DynamoDP
+name: DynamoDB
 description: File a support request for the DynamoDB adapter
 labels: dynamodb
 
