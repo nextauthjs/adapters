@@ -42,11 +42,14 @@ import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
 import { DynamoDBAdapter } from "@next-auth/dynamodb-adapter"
 
-const config = {
-  accessKeyId: process.env.NEXT_AUTH_AWS_ACCESS_KEY,
-  secretAccessKey: process.env.NEXT_AUTH_AWS_SECRET_KEY,
+const config: DynamoDBClientConfig = {
+  credentials: {
+    accessKeyId: process.env.NEXT_AUTH_AWS_ACCESS_KEY as string,
+    secretAccessKey: process.env.NEXT_AUTH_AWS_SECRET_KEY as string,
+  },
   region: process.env.NEXT_AUTH_AWS_REGION,
-}
+};
+
 const client = DynamoDBDocument.from(new DynamoDB(config), {
   marshallOptions: {
     convertEmptyValues: true,
