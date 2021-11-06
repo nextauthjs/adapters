@@ -1,0 +1,38 @@
+{
+  "name": "@next-auth/mysql-adapter",
+  "version": "0.0.1",
+  "description": "Mysql adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "author": "Roeland Moors",
+  "main": "dist/index.js",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "mysql"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "tsc && ./tests/test.sh"
+  },
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "peerDependencies": {
+    "mysql2": "^2.3.2",
+    "next-auth": "^4.0.0-beta.6"
+  },
+  "devDependencies": {
+    "mysql2": "^2.3.2",
+    "prisma": "^2.16.0"
+  }
+}
