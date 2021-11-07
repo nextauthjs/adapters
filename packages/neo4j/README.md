@@ -16,19 +16,20 @@
 
 This is the Neo4j Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
+You can find the Neo4j schema in the docs at next-auth.js.org/adapters/neo4j.
+
 ## Getting Started
 
-1. Install `next-auth` and `@next-auth/neo4j-adapter`
+1. Install `neo4j-driver`, `next-auth@beta` and `@next-auth/neo4j-adapter@next`
 
 ```js
-npm install next-auth @next-auth/neo4j-adapter
+npm install neo4j-driver next-auth@beta @next-auth/neo4j-adapter@next
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
 ```js
 import NextAuth from "next-auth"
-import Providers from "next-auth/providers"
 import neo4j from "neo4j-driver"
 import { Neo4jAdapter } from "@next-auth/neo4j-adapter"
 
@@ -36,12 +37,14 @@ import { Neo4jAdapter } from "@next-auth/neo4j-adapter"
 const driver = neo4j.driver(
   "bolt://localhost",
   neo4j.auth.basic("neo4j", "password")
-).session()
+)
 const neo4jSession = driver.session()
 
 export default NextAuth({
+  // https://next-auth.js.org/configuration/providers
+  providers: [],
   adapter: Neo4jAdapter(neo4jSession),
-  // Rest of your NextAuth config
+  ...
 })
 ```
 
