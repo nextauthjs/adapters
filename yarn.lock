@@ -10027,10 +10027,10 @@ netmask@^2.0.1:
   resolved "https://registry.yarnpkg.com/netmask/-/netmask-2.0.2.tgz#8b01a07644065d536383835823bc52004ebac5e7"
   integrity sha512-dBpDMdxv9Irdq66304OLfEmQ9tbNRFnFTuZiLo+bD+r332bBmMJ8GBLXklIXXgxd3+v9+KUnZaUR5PJMa75Gsg==
 
-next-auth@4.0.0-next.23:
-  version "4.0.0-next.23"
-  resolved "https://registry.yarnpkg.com/next-auth/-/next-auth-4.0.0-next.23.tgz#d8b735b4eb7e760d5248f3ed37f5010121d7c849"
-  integrity sha512-Gq/S/1f7Lxjx8Hv1GyhS1C5wNAPVYS1ZnuPvJyRrUxpXbePke1//9yRbHbC5wT05L+QKV1rG/SCLNEH5NBLieQ==
+next-auth@4.0.0-beta.4:
+  version "4.0.0-beta.4"
+  resolved "https://registry.yarnpkg.com/next-auth/-/next-auth-4.0.0-beta.4.tgz#f69438c92e06da3b9e2331b71f65e58076b13b2e"
+  integrity sha512-1KRkRUenCbtTv2Y1KiuX8e0T+KBKv94Nt8KFv52xnqc1Ye3giy02J03htd2U+O3uE+hnqE44KBUa0GoHn2727g==
   dependencies:
     "@babel/runtime" "^7.14.6"
     futoin-hkdf "^1.3.3"

@@ -8,6 +8,9 @@ prisma:
   - packages/prisma/**/*
   - packages/prisma-legacy/**/*
 
+mongodb:
+  - packages/mongodb/**/*
+
 typeorm:
   - packages/typeorm-legacy/**/*
 
