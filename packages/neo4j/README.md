@@ -16,7 +16,7 @@
 
 This is the Neo4j Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-You can find the Neo4j schema in the docs at next-auth.js.org/adapters/neo4j.
+You can find the Neo4j schema in the docs at [next-auth.js.org/adapters/neo4j](next-auth.js.org/adapters/neo4j).
 
 ## Getting Started
 
