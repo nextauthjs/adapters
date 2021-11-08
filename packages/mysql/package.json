@@ -20,7 +20,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "tsc && jest"
+    "test": "tsc && tests/test.sh"
   },
   "files": [
     "README.md",
