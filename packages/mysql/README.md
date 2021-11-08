@@ -20,27 +20,27 @@ You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma]
 
 ## Getting Started
 
-1. Install `next-auth@beta` and `@next-auth/prisma-adapter@next`
+1. Install `next-auth@beta` and `@next-auth/mysql-adapter@next`
 
 ```js
-npm install next-auth@beta @next-auth/prisma-adapter@next
+npm install next-auth@beta @next-auth/mysql-adapter@next
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
 
 ```js
 import NextAuth from "next-auth"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import * as Prisma from "@prisma/client"
+import { MysqlAdapter } from "@next-auth/mysql-adapter"
+import mysql from "mysql2/promise"
 
-const prisma = new Prisma.PrismaClient()
+const connection = mysql.createConnection(config)
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
   // https://next-auth.js.org/configuration/providers
   providers: [],
-  adapter: PrismaAdapter(prisma)
+  adapter: MysqlAdapter(connectionPromise)
   ...
 })
 ```
