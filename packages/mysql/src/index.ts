@@ -1,264 +1,263 @@
-import { Profile, User } from "next-auth"
-import { createHash, randomBytes } from "crypto"
-import type { Adapter, AdapterInstance } from "next-auth/adapters"
-import { AppOptions } from "next-auth/internals"
+import type { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters"
 import type { Connection, ResultSetHeader, RowDataPacket } from "mysql2/promise"
+import { Awaitable } from "next-auth"
 
-type MysqlConnection = Connection | Promise<Connection>
-type MysqlOptions = Record<string, unknown>
-type MysqlProfile = Profile
-
-interface MysqlSession {
-  expires: Date
-  id: number
-  userId: number
-}
-
-interface MysqlUser extends User {
-  id: number
-}
-
-interface UserPacket extends RowDataPacket, MysqlUser {}
-interface SessionPacket extends RowDataPacket, MysqlSession {}
-
-interface VerificationRequest {
-  id: string
-  identifier: string
-  token: string
-  expires: Date
-}
-
-interface VerificationRequestPacket
-  extends RowDataPacket,
-    VerificationRequest {}
-
-export const MysqlAdaptor: Adapter<
-  MysqlConnection,
-  MysqlOptions,
-  MysqlUser,
-  MysqlProfile,
-  MysqlSession
-> = (connection: MysqlConnection, options = {}) => {
+export function MysqlAdapter(connection: Awaitable<Connection>): Adapter {
   return {
-    async getAdapter(appOptions: AppOptions) {
-      const conn = await Promise.resolve(connection)
-      return await createAdapter(conn, appOptions)
-    },
-  }
-}
-
-async function createAdapter(
-  connection: Connection,
-  opts: AppOptions
-): Promise<AdapterInstance<MysqlUser, MysqlProfile, MysqlSession>> {
-  const sessionMaxAge = opts.session.maxAge * 1000 // default is 30 days
-  const sessionUpdateAge = opts.session.updateAge * 1000 // default is 1 day
-
-  return {
-    displayName: "MYSQL",
-    async createUser(profile) {
-      const [result] = await connection.execute<ResultSetHeader>(
-        "insert into users (name, email, image) values (?,?,?)",
-        [profile.name, profile.email, profile.image]
+    async createUser(u) {
+      const id = await insert(
+        connection,
+        "insert into users (name, email, email_verified, image) values (?,?,?,?)",
+        [u.name, u.email, u.emailVerified, u.image]
       )
-      if (result.affectedRows !== 1) return null
-      const id = result.insertId
-      return { ...profile, id }
+      return await getUser(connection, id)
     },
-    async getUser(id) {
-      const [users] = await connection.execute<UserPacket[]>(
-        "select * from users where id = ?",
-        [id]
-      )
-      return single(users)
-    },
+
+    getUser: async (id) => await getUser(connection, +id),
+
     async getUserByEmail(email) {
-      const [users] = await connection.execute<UserPacket[]>(
-        "select * from users where email = ?",
+      return await get(
+        connection,
+        `select id, name, email, email_verified emailVerified, image 
+        from users where email = ?`,
         [email]
       )
-      return single(users)
     },
-    async getUserByProviderAccountId(providerId, providerAccountId) {
-      const [users] = await connection.execute<UserPacket[]>(
-        `select u.* from users u 
+
+    async getUserByAccount({ provider, providerAccountId }) {
+      return await get(
+        connection,
+        `select u.id, u.name, u.email, u.email_verified emailVerified, u.image  
+        from users u
         join accounts a on a.user_id = u.id
-        where a.provider_id = ? and a.provider_account_id = ?`,
-        [providerId, providerAccountId]
+        where a.provider = ? and a.provider_account_id = ?`,
+        [provider, providerAccountId]
       )
-      return single(users)
     },
+
     async updateUser(user) {
-      const [result] = await connection.execute<ResultSetHeader>(
-        `update users set name = ?, email = ?, image = ? where id = ?`,
-        [user.name, user.email, user.image, user.id]
-      )
-      if (result.affectedRows !== 1) return null
-      return user
+      const id = parseInt(user.id ?? "")
+      const affectedRows = await update(connection, "users", user, "id", id)
+      if (affectedRows !== 1) throw new Error("update user failed")
+      return await getUser(connection, id)
     },
-    async deleteUser(userId) {
-      await connection.execute<ResultSetHeader>(
+
+    async deleteUser(id) {
+      await run(
+        connection,
         `delete user, accounts, session from users u
-        join accounts a on a.user_id = u.id
-        join sessions s on s.user_id = u.id
-        where u.id = ?`,
-        [userId]
+      join accounts a on a.user_id = u.id
+      join sessions s on s.user_id = u.id
+      where u.id = ?`,
+        [id]
       )
     },
-    async linkAccount(
-      userId,
-      providerId,
-      providerType,
-      providerAccountId,
-      refreshToken,
-      accessToken,
-      accessTokenExpires
-    ) {
-      await connection.execute<ResultSetHeader>(
-        `insert into accounts 
-        (user_id, provider_type, provider_id, provider_account_id,
-          refresh_token, access_token, access_token_expires) 
-        values (?,?,?,?,?,?,?)`,
+
+    async linkAccount(a) {
+      await get(
+        connection,
+        `insert into accounts
+        (user_id, type, provider, provider_account_id,
+          refresh_token, access_token, expires_at, token_type,
+          scope, id_token, session_state)
+        values (?,?,?,?,?,?,?,?,?,?,?)`,
         [
-          userId,
-          providerType,
-          providerId,
-          providerAccountId,
-          refreshToken,
-          accessToken,
-          accessTokenExpires,
+          a.userId,
+          a.type,
+          a.provider,
+          a.providerAccountId,
+          a.refresh_token,
+          a.access_token,
+          a.expires_at,
+          a.token_type,
+          a.scope,
+          a.id_token,
+          a.session_state,
         ]
       )
     },
-    async unlinkAccount(_, providerId, providerAccountId) {
-      await connection.execute<ResultSetHeader>(
-        `delete from accounts
-        where provider_id = ? and provider_account_id = ?`,
-        [providerId, providerAccountId]
-      )
-    },
-    async createSession(user) {
-      const expires = new Date(Date.now() + sessionMaxAge)
-      const sessionToken = randomBytes(32).toString("hex")
-      const accessToken = randomBytes(32).toString("hex")
-      const userId = user.id
 
-      const [result] = await connection.execute<ResultSetHeader>(
-        `insert into sessions 
-        (user_id, expires, session_token, access_token) 
-        values (?,?,?,?)`,
-        [userId, expires, sessionToken, accessToken]
+    async unlinkAccount({ provider, providerAccountId }) {
+      await run(
+        connection,
+        `delete from accounts
+          where provider = ? and provider_account_id = ?`,
+        [provider, providerAccountId]
       )
-      if (result.affectedRows !== 1) return null
-      const id = result.insertId
-      return { userId, expires, id, sessionToken, accessToken }
     },
-    async getSession(sessionToken) {
-      const [sessions] = await connection.execute<SessionPacket[]>(
-        `select id, expires, user_id userId, 
-        session_token sessionToken, access_token accessToken
-        from sessions where session_token = ?`,
+
+    async getSessionAndUser(sessionToken) {
+      const result = await get(
+        connection,
+        `select s.id sessionId, s.expires,
+        session_token sessionToken,
+        u.id userId, u.name, u.email, 
+        u.email_verified emailVerified, u.image
+        from sessions s
+        join users u on u.id = s.user_id
+        where session_token = ?`,
         [sessionToken]
       )
+      if (!result) return null
 
-      const session = single(sessions)
+      const user: AdapterUser = {
+        id: result.userId,
+        name: result.name,
+        email: result.email,
+        emailVerified: result.emailVerified,
+        image: result.image,
+      }
+      const session: AdapterSession = {
+        id: result.sessionId,
+        userId: result.userId,
+        expires: result.expires,
+        sessionToken: result.sessionToken,
+      }
+      return { user, session }
+    },
 
-      if (session && session.expires < new Date()) {
-        await connection.execute(
-          `delete from sessions
-          where session_token = ?`,
-          [sessionToken]
+    async createSession({ userId, sessionToken, expires }) {
+      const id = (
+        await insert(
+          connection,
+          `insert into sessions
+        (user_id, expires, session_token)
+        values (?,?,?)`,
+          [userId, expires, sessionToken]
         )
-        return null
-      }
-
-      return session
+      ).toString()
+      return { userId, expires, id, sessionToken }
     },
-    async updateSession(session, force) {
-      if (
-        !force &&
-        Number(session.expires) - sessionMaxAge + sessionUpdateAge > Date.now()
-      ) {
-        return null
-      }
-      session.expires = new Date(Date.now() + sessionMaxAge)
 
-      const [result] = await connection.execute<ResultSetHeader>(
-        `update sessions set expires = ? where id = ?`,
-        [session.expires, session.id]
+    async updateSession(data) {
+      const affectedRows = await update(
+        connection,
+        "sessions",
+        data,
+        "session_token",
+        data.sessionToken
       )
-      if (result.affectedRows !== 1) return null
-      return session
+      if (affectedRows !== 1) return null
+
+      return await get(
+        connection,
+        `select s.id sessionId, s.expires,
+        session_token sessionToken
+        from sessions s
+        where session_token = ?`,
+        [data.sessionToken]
+      )
     },
+
     async deleteSession(sessionToken) {
-      await connection.execute<ResultSetHeader>(
+      await run(
+        connection,
         `delete from sessions
         where session_token = ?`,
         [sessionToken]
       )
     },
-    async createVerificationRequest(identifier, url, token, secret, provider) {
-      const expires = new Date(Date.now() + provider.maxAge * 1000)
-      await connection.execute<ResultSetHeader>(
-        `insert into verification_requests 
-        (identifier, token, expires) 
+
+    async createVerificationToken(v) {
+      await insert(
+        connection,
+        `insert into verification_tokens
+        (identifier, token, expires)
         values (?,?,?)`,
-        [identifier, hashToken(token, secret), expires]
+        [v.identifier, v.token, v.expires]
       )
-      await provider.sendVerificationRequest({
-        identifier,
-        url,
-        token,
-        baseUrl: opts.baseUrl,
-        provider,
-      })
+      return v
     },
-    async getVerificationRequest(
-      identifier,
-      verificationToken,
-      secret,
-      provider
-    ) {
-      const hashedToken = hashToken(verificationToken, secret)
 
-      const [results] = await connection.execute<VerificationRequestPacket[]>(
-        `select expires, identifier, token 
-        from verification_requests 
+    async useVerificationToken({ identifier, token }) {
+      const v = await get(
+        connection,
+        `select identifier, token, expires
+        from verification_tokens 
         where identifier = ? and token = ?`,
-        [identifier, hashedToken]
+        [identifier, token]
       )
 
-      const verificationRequest = single(results)
-
-      if (verificationRequest && verificationRequest.expires < new Date()) {
-        await connection.execute<ResultSetHeader>(
-          `delete from verification_requests
-          where identifier = ? and token = ?`,
-          [identifier, hashedToken]
+      if (v) {
+        await run(
+          connection,
+          `delete from verification_tokens
+        where identifier = ? and token = ?`,
+          [identifier, token]
         )
-        return null
       }
-
-      return verificationRequest
-    },
-    async deleteVerificationRequest(
-      identifier,
-      verificationToken,
-      secret,
-      provider
-    ) {
-      await connection.execute<ResultSetHeader>(
-        `delete from verification_requests
-        where identifier = ? and token = ?`,
-        [identifier, hashToken(verificationToken, secret)]
-      )
+      return v
     },
   }
 }
 
-function hashToken(token: string, secret: string) {
-  return createHash("sha256").update(`${token}${secret}`).digest("hex")
+async function getUser(
+  connection: Awaitable<Connection>,
+  id: number
+): Promise<AdapterUser> {
+  const sql = `select id, name, email, email_verified emailVerified, image from users where id = ?`
+  return await get(connection, sql, [id])
 }
+
+async function update(
+  connection: Awaitable<Connection>,
+  table: string,
+  fields: Record<string, any>,
+  keyname: string,
+  key: any
+): Promise<Number> {
+  fields = removeEmpty(fields)
+  if (Object.keys(fields).length === 0) return 0
+
+  let sql = ""
+  const values: any[] = []
+  for (const [key, value] of Object.entries(fields)) {
+    if (sql !== "") sql += ", "
+    sql += `${camelToSnakeCase(key)} = ?`
+    values.push(value)
+  }
+  sql = `update ${table} set ${sql} where ${keyname} = ?`
+  values.push(key)
+
+  return (await run(connection, sql, values)).affectedRows
+}
+
+async function get(
+  connection: Awaitable<Connection>,
+  sql: string,
+  keys: any[]
+): Promise<any> {
+  const c = await Promise.resolve(connection)
+  const [results] = await c.execute<any[]>(sql, keys)
+  return single(results)
+}
+async function insert(
+  connection: Awaitable<Connection>,
+  sql: string,
+  keys: any[]
+): Promise<number> {
+  const result = run(connection, sql, keys)
+  return (await result).insertId
+}
+
+async function run(
+  connection: Awaitable<Connection>,
+  sql: string,
+  keys: any[]
+): Promise<ResultSetHeader> {
+  const c = await Promise.resolve(connection)
+  const [result] = await c.execute<ResultSetHeader>(sql, keys)
+  return result
+}
+
+function removeEmpty(obj: Record<string, any>) {
+  return Object.entries(obj)
+    .filter(([_, v]) => v != null)
+    .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {})
+}
+
+const camelToSnakeCase = (str: string) =>
+  str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
 
 function single<T extends RowDataPacket>(records: T[]): T | null {
   if (!records) return null

@@ -1,6 +1,6 @@
 import { runBasicTests } from "../../../basic-tests"
 import mysql from "mysql2/promise"
-import { MysqlAdaptor } from "../src"
+import { MysqlAdapter } from "../src"
 import { ConnectionOptions } from "mysql2/typings/mysql"
 
 const config: ConnectionOptions = {
@@ -9,12 +9,13 @@ const config: ConnectionOptions = {
   user: "root",
   password: "password",
   database: "next-auth",
+  timezone: "Z",
 }
 const connectionPromise = mysql.createConnection(config)
-const myslAdapter = MysqlAdaptor(connectionPromise)
+const mysqlAdapter = MysqlAdapter(connectionPromise)
 
 runBasicTests({
-  adapter: myslAdapter,
+  adapter: mysqlAdapter,
   db: {
     async disconnect() {
       const connection = await connectionPromise
@@ -23,47 +24,42 @@ runBasicTests({
     async session(sessionToken) {
       const connection = await connectionPromise
       const [sessions] = await connection.execute<any[]>(
-        `select id, expires, user_id userId, 
-        session_token sessionToken, access_token accessToken
+        `select id, expires, user_id userId, session_token sessionToken
         from sessions where session_token = ?`,
         [sessionToken]
       )
       if (sessions.length === 0) return null
       return sessions[0]
     },
-    async expireSession(sessionToken, expires) {
-      const connection = await connectionPromise
-      await connection.execute(
-        `update sessions set expires = ? where session_token = ?`,
-        [expires, sessionToken]
-      )
-    },
     async user(id) {
       const connection = await connectionPromise
       const [users] = await connection.execute<any[]>(
-        `select * from users
+        `select id, name, email, email_verified emailVerified, image 
+        from users
         where id = ?`,
         [id]
       )
       return users[0]
     },
-    async account(providerId, providerAccountId) {
+    async account({ provider, providerAccountId }) {
       const connection = await connectionPromise
       const [accounts] = await connection.execute<any[]>(
-        `select user_id userId, provider_id providerId, 
-        provider_type providerType, provider_account_id providerAccountId, 
-        refresh_token refreshToken, access_token accessToken, 
-        access_token_expires accessTokenExpires
+        `select id, user_id userId, type, provider, 
+        provider_account_id providerAccountId,
+        refresh_token, access_token, 
+        expires_at, token_type,
+        scope, id_token, session_state
         from accounts
-        where provider_id = ? and provider_account_id = ?`,
-        [providerId, providerAccountId]
+        where provider = ? and provider_account_id = ?`,
+        [provider, providerAccountId]
       )
+      if (accounts.length === 0) return null
       return accounts[0]
     },
-    async verificationRequest(identifier, token) {
+    async verificationToken({ identifier, token }) {
       const connection = await connectionPromise
       const [results] = await connection.execute<any[]>(
-        `select * from verification_requests
+        `select identifier, token, expires from verification_tokens
         where identifier = ? and token = ?`,
         [identifier, token]
       )
@@ -71,5 +67,4 @@ runBasicTests({
       return results[0]
     },
   },
-  mock: {},
 })
