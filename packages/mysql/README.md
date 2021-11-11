@@ -40,7 +40,7 @@ const connection = mysql.createConnection(config)
 export default NextAuth({
   // https://next-auth.js.org/configuration/providers
   providers: [],
-  adapter: MysqlAdapter(connectionPromise)
+  adapter: MysqlAdapter(connection)
   ...
 })
 ```

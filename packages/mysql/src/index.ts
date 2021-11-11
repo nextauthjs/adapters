@@ -54,7 +54,7 @@ export function MysqlAdapter(connection: Awaitable<Connection>): Adapter {
     },
 
     async linkAccount(a) {
-      await get(
+      await insert(
         connection,
         `insert into accounts
         (user_id, type, provider, provider_account_id,

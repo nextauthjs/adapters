@@ -9,7 +9,6 @@ const config: ConnectionOptions = {
   user: "root",
   password: "password",
   database: "next-auth",
-  timezone: "Z",
 }
 const connectionPromise = mysql.createConnection(config)
 const mysqlAdapter = MysqlAdapter(connectionPromise)
