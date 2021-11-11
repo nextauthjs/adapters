@@ -7,16 +7,16 @@
    </p>
    <p align="center" style="align: center;">
       <img src="https://github.com/nextauthjs/adapters/actions/workflows/release.yml/badge.svg" alt="CI Test" />
-      <a href="https://www.npmjs.com/package/@next-auth/prisma-adapter" target="_blank"><img src="https://img.shields.io/bundlephobia/minzip/@next-auth/prisma-adapter/next" alt="Bundle Size"/></a>
-      <a href="https://www.npmjs.com/package/@next-auth/prisma-adapter" target="_blank"><img src="https://img.shields.io/npm/v/@next-auth/prisma-adapter/next" alt="@next-auth/prisma-adapter Version" /></a>
+      <a href="https://www.npmjs.com/package/@next-auth/mysql-adapter" target="_blank"><img src="https://img.shields.io/bundlephobia/minzip/@next-auth/mysql-adapter/next" alt="Bundle Size"/></a>
+      <a href="https://www.npmjs.com/package/@next-auth/prisma-adapter" target="_blank"><img src="https://img.shields.io/npm/v/@next-auth/mysql-adapter/next" alt="@next-auth/mysql-adapter Version" /></a>
    </p>
 </p>
 
 ## Overview
 
-This is the Prisma Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
+This is the MySQL Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma](https://next-auth.js.org/adapters/prisma).
+You can find the MySQL schema in the docs at [next-auth.js.org/adapters/mysql](https://next-auth.js.org/adapters/msql).
 
 ## Getting Started
 
