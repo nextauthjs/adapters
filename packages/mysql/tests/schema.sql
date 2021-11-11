@@ -21,8 +21,8 @@ CREATE TABLE accounts
     expires_at           BIGINT,
     token_type           VARCHAR(255) NOT NULL,
     scope                VARCHAR(255) NOT NULL,
-    id_token             VARCHAR(255) NOT NULL,
-    session_state        VARCHAR(255) NOT NULL,
+    id_token             TEXT NOT NULL,
+    session_state        VARCHAR(255),
     PRIMARY KEY (id),
     UNIQUE KEY account_provider (provider, provider_account_id)
   );

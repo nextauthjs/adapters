@@ -236,6 +236,7 @@ async function insert(
   sql: string,
   keys: any[]
 ): Promise<number> {
+  keys = keys.map((k) => (k === undefined ? null : k))
   const result = run(connection, sql, keys)
   return (await result).insertId
 }
