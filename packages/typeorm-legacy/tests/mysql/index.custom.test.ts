@@ -2,8 +2,11 @@ import { runBasicTests } from "../../../../basic-tests"
 import { TypeORMLegacyAdapter } from "../../src"
 import * as entities from "../custom-entities"
 import { db } from "../helpers"
+import { SnakeNamingStrategy } from "typeorm-naming-strategies"
 
-const mysqlConfig = {
+import type { ConnectionOptions } from "typeorm"
+
+const mysqlConfig: ConnectionOptions = {
   type: "mysql" as const,
   host: "localhost",
   port: 3306,
@@ -11,6 +14,7 @@ const mysqlConfig = {
   password: "password",
   database: "next-auth",
   synchronize: true,
+  namingStrategy: new SnakeNamingStrategy(),
 }
 
 runBasicTests({
