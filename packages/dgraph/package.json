@@ -30,7 +30,7 @@
     "test": "jest"
   },
   "peerDependencies": {
-    "next-auth": ">=4",
+    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x",
     "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {
