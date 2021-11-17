@@ -20,6 +20,9 @@ firebase:
 pouchdb:
   - packages/pouchdb/**/*
 
+sequelize:
+  - packages/sequelize/**/*
+
 documentation:
   - ./**/*.md
 
