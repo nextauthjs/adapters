@@ -15,8 +15,6 @@ export const Account = {
   token_type: { type: DataTypes.STRING },
   scope: { type: DataTypes.STRING },
   id_token: { type: DataTypes.STRING },
-  oauth_token_secret: { type: DataTypes.STRING },
-  oauth_token: { type: DataTypes.STRING },
   session_state: { type: DataTypes.STRING },
   userId: { type: DataTypes.UUID },
 }
