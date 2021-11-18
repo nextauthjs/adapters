@@ -1,28 +1,27 @@
 {
-  "name": "@next-auth/mongodb-adapter",
-  "version": "0.0.1",
-  "description": "mongoDB adapter for next-auth.",
+  "name": "@next-auth/sequelize-adapter",
+  "version": "1.0.0",
+  "description": "Sequelize adapter for next-auth.",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
   "bugs": {
-    "url": "https://github.com/nextauthjs/next-auth/issues"
+    "url": "https://github.com/nextauthjs/adapters/issues"
   },
-  "author": "Balázs Orbán <info@balazsorban.com>",
+  "author": "github.com/luke-j",
   "main": "dist/index.js",
   "license": "ISC",
   "keywords": [
     "next-auth",
     "next.js",
     "oauth",
-    "mongodb",
-    "adapter"
+    "sequelize"
   ],
   "private": false,
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "test": "./tests/test.sh",
+    "test": "jest",
     "build": "tsc"
   },
   "files": [
@@ -30,10 +29,10 @@
     "dist"
   ],
   "peerDependencies": {
-    "mongodb": "^4.1.1",
-    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x"
+    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x",
+    "sequelize": "^6.6.5"
   },
   "devDependencies": {
-    "mongodb": "^4.1.1"
+    "sequelize": "^6.6.5"
   }
 }

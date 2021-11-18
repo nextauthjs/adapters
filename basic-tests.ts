@@ -74,8 +74,6 @@ export function runBasicTests(options: TestOptions) {
     access_token: randomUUID(),
     expires_at: ONE_MONTH,
     id_token: randomUUID(),
-    oauth_token: randomUUID(),
-    oauth_token_secret: randomUUID(),
     refresh_token: randomUUID(),
     token_type: "bearer",
     scope: "user",
