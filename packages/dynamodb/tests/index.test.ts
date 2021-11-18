@@ -95,8 +95,6 @@ runBasicTests({
         access_token: account.Items[0].accessToken,
         expires_at: account.Items[0].expiresAt,
         id_token: account.Items[0].idToken,
-        oauth_token: account.Items[0].oauthToken,
-        oauth_token_secret: account.Items[0].oauthTokenSecret,
         refresh_token: account.Items[0].refreshToken,
         scope: account.Items[0].scope,
         session_state: account.Items[0].sessionState,
