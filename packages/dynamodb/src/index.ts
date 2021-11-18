@@ -214,8 +214,6 @@ export function DynamoDBAdapter(
         accessToken: data.access_token,
         expiresAt: data.expires_at,
         idToken: data.id_token,
-        oauthToken: data.oauth_token,
-        oauthTokenSecret: data.oauth_token_secret,
         refreshToken: data.refresh_token,
         tokenType: data.token_type,
         scope: data.scope,
