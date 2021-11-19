@@ -41,7 +41,8 @@
     "mysql": "^2.18.1",
     "pg": "^8.7.1",
     "sqlite3": "^5.0.2",
-    "typeorm": "^0.2.37"
+    "typeorm": "^0.2.37",
+    "typeorm-naming-strategies": "^2.0.0"
   },
   "peerDependencies": {
     "mssql": "^6.2.1 || 7",
