@@ -1,47 +1,28 @@
-// Account constraints
+// Constraints and indexes - relevant to Neo4j Community Edition.
 
-CREATE CONSTRAINT account_id_constraint
-  IF NOT EXISTS
-  ON (n:account) 
-  ASSERT n.id IS UNIQUE;
+CREATE CONSTRAINT user_id_constraint IF NOT EXISTS
+ON (u:User) ASSERT u.id IS UNIQUE;
 
-// CREATE CONSTRAINT account_compound_id_constraint 
-//   IF NOT EXISTS
-//   ON (n:account) 
-//   ASSERT n.compound_id IS UNIQUE;
+CREATE INDEX user_id_index IF NOT EXISTS
+FOR (u:User) ON (u.id);
 
-// CREATE INDEX account_provider_account_id 
-//   IF NOT EXISTS
-//   FOR (n:Account)  
-//   ON (n.provider_account_id);
+CREATE INDEX user_email_index IF NOT EXISTS
+FOR (u:User) ON (u.email);
 
-// CREATE INDEX account_provider_id 
-//   IF NOT EXISTS
-//   FOR (n:Account)  
-//   ON (n.provider_id);
+CREATE CONSTRAINT session_session_token_constraint IF NOT EXISTS
+ON (s:Session) ASSERT s.sessionToken IS UNIQUE;
 
-// // Session constraints
+CREATE INDEX session_session_token_index IF NOT EXISTS
+FOR (s:Session) ON (s.sessionToken);
 
-// CREATE CONSTRAINT session_session_token_constraint 
-//   IF NOT EXISTS
-//   ON (n:Session) 
-//   ASSERT n.session_token IS UNIQUE;
+CREATE INDEX account_provider_index IF NOT EXISTS
+FOR (a:Account) ON (a.provider);
 
-// CREATE CONSTRAINT session_access_token_constraint 
-//   IF NOT EXISTS
-//   ON (n:Session) 
-//   ASSERT n.access_token IS UNIQUE;
+CREATE INDEX account_provider_account_id_index IF NOT EXISTS
+FOR (a:Account) ON (a.providerAccountId);
 
-// // User constraints
+CREATE INDEX verification_token_identifier_index IF NOT EXISTS
+FOR (v:VerificationToken) ON (v.identifier);
 
-// CREATE CONSTRAINT user_email_constraint 
-//   IF NOT EXISTS
-//   ON (n:User) 
-//   ASSERT n.email IS UNIQUE;
-
-// // VerificationRequest constraints
-
-// CREATE CONSTRAINT verification_request_token_constraint 
-//   IF NOT EXISTS
-//   ON (n:VerificationToken) 
-//   ASSERT n.token IS UNIQUE;
+CREATE INDEX verification_token_token_index IF NOT EXISTS
+FOR (v:VerificationToken) ON (v.token);
