@@ -8,6 +8,9 @@
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
   "author": "Davey Brown",
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
   "main": "dist/index.js",
   "license": "ISC",
   "keywords": [
@@ -31,11 +34,11 @@
   ],
   "peerDependencies": {
     "neo4j-driver": "^4.0.0",
-    "next-auth": ">=4"
+    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x"
   },
   "devDependencies": {
-    "@types/uuid": "^8.3.0",
-    "neo4j-driver": "^4.3.0"
+    "@types/uuid": "^8.3.3",
+    "neo4j-driver": "^4.4.0"
   },
   "dependencies": {
     "uuid": "^8.3.2"
