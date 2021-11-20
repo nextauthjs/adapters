@@ -1,72 +1,82 @@
-import neo4j from "neo4j-driver"
+import type { Session, QueryResult } from "neo4j-driver"
+import { isInt, integer } from "neo4j-driver"
 
-const neo4jToSafeNumber = (x: typeof neo4j.Integer) => {
-  if (!neo4j.isInt(x)) {
-    return x
-  }
-  if (neo4j.integer.inSafeRange(x)) {
-    return x.toNumber()
-  } else {
-    return x.toString()
-  }
+// https://github.com/honeinc/is-iso-date/blob/master/index.js
+const isoDateRE =
+  /(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))/
+
+function isDate(value: any) {
+  return value && isoDateRE.test(value) && !isNaN(Date.parse(value))
 }
 
-// Function to transform date values from neo4j DateTime to JS Date object.
-const neo4jDateToJs = (value: typeof neo4j.DateTime | null) => {
-  if (!value || !neo4j.temporal.isDateTime(value)) {
-    return value
-  }
-  return new Date(value.toString())
-}
-
-const neo4jWrap: (
-  session: typeof neo4j.Session
-) => (statement: string, values: any, options?: any) => Promise<any> = (
-  session
-) => {
-  return async (statement, values, options) => {
-    let result: any
-
-    const DATE_KEYS = ["emailVerified", "expires"]
-
-    // Transform date values from JS Date object to ISO strings.
-    DATE_KEYS.forEach((key: string) => {
-      if (values?.[key] instanceof Date) {
-        values[key] = values[key].toISOString()
-      }
-    })
-
-    // Database read or write transaction.
-    try {
-      if (options?.tx === "read") {
-        result = await session.readTransaction((tx) =>
-          tx.run(statement, values)
-        )
+export const format = {
+  /** Takes a plain old JavaScript object and turns it into a Neo4j compatible object */
+  to(object: Record<string, any>) {
+    const newObject: Record<string, unknown> = {}
+    for (const key in object) {
+      const value = object[key]
+      if (value instanceof Date) newObject[key] = value.toISOString()
+      else newObject[key] = value
+    }
+    return newObject
+  },
+  /** Takes a Neo4j object and returns a plain old JavaScript object */
+  from<T = Record<string, unknown>>(object?: Record<string, any>): T | null {
+    const newObject: Record<string, unknown> = {}
+    if (!object) return null
+    for (const key in object) {
+      const value = object[key]
+      if (isDate(value)) {
+        newObject[key] = new Date(value)
+      } else if (isInt(value)) {
+        if (integer.inSafeRange(value)) newObject[key] = value.toNumber()
+        else newObject[key] = value.toString()
       } else {
-        result = await session.writeTransaction((tx) =>
-          tx.run(statement, values)
-        )
+        newObject[key] = value
       }
-    } catch (error) {
-      console.error(error)
-      return null
     }
 
-    // Function to loop over neo4j result and run transforms on date values.
-    const withJsDates = (neo4jResult: any) => {
-      DATE_KEYS.forEach((key: string) => {
-        if (neo4jResult?.[key]) {
-          neo4jResult[key] = neo4jDateToJs(neo4jResult[key])
-        }
-      })
-      return neo4jResult
+    return newObject as T
+  },
+}
+
+export function client(session: Session) {
+  return {
+    async read(statement: string, where: any): Promise<any> {
+      const result = await session.readTransaction((tx) =>
+        tx.run(statement, where)
+      )
+      return format.from(result?.records[0] ?? null)
+    },
+    async write<T>(statement: string, object: T): Promise<T> {
+      const data = format.to(object)
+      await session.writeTransaction((tx) => tx.run(statement, data))
+      return object
+    },
+  }
+}
+
+export function neo4jWrap(session: Session) {
+  return async function query(
+    statement: string,
+    values?: any,
+    options?: any
+  ): Promise<any> {
+    let result: QueryResult
+
+    // Database read or write transaction.
+    if (options?.tx === "read") {
+      result = await session.readTransaction((tx) => tx.run(statement, values))
+    } else {
+      result = await session.writeTransaction((tx) =>
+        tx.run(statement, format.to(values))
+      )
     }
 
     // Following are different ways to return the data.
-
     // 1️⃣ Return the single value or object from the database response.
     if (!options?.returnFormat) {
-      return withJsDates(result?.records[0]?.get(0)) || null
+      return format.from(result?.records[0]?.get(0)) || null
     }
 
     // 2️⃣ Return multiple values or objects from the database response.
@@ -75,7 +85,7 @@ const neo4jWrap: (
 
       options?.returnFormat.forEach((returnKey: string) => {
         returnObject[returnKey] =
-          withJsDates(result?.records[0]?.get(returnKey)) || null
+          format.from(result?.records[0]?.get(returnKey)) || null
       })
 
       return returnObject
@@ -89,5 +99,3 @@ const neo4jWrap: (
     return null
   }
 }
-
-export { neo4jToSafeNumber, neo4jDateToJs, neo4jWrap }
