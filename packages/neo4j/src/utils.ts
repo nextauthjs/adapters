@@ -41,22 +41,6 @@ export const format = {
 }
 
 export function client(session: Session) {
-  return {
-    async read(statement: string, where: any): Promise<any> {
-      const result = await session.readTransaction((tx) =>
-        tx.run(statement, where)
-      )
-      return format.from(result?.records[0] ?? null)
-    },
-    async write<T>(statement: string, object: T): Promise<T> {
-      const data = format.to(object)
-      await session.writeTransaction((tx) => tx.run(statement, data))
-      return object
-    },
-  }
-}
-
-export function neo4jWrap(session: Session) {
   return async function query(
     statement: string,
     values?: any,
