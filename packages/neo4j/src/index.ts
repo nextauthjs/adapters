@@ -6,55 +6,51 @@ import { client, format } from "./utils"
 export { format }
 
 export function Neo4jAdapter(session: Session): Adapter {
-  const query = client(session)
+  const { read, write } = client(session)
 
   return {
     async createUser(data) {
       const user: any = { id: uuid(), ...data }
-      await query(`CREATE (u:User $u)`, { u: format.to(user) })
+      await write(`CREATE (u:User $data)`, user)
       return user
     },
 
     async getUser(id) {
-      return await query(
-        `MATCH (u:User { id: $id }) RETURN properties(u)`,
-        { id },
-        { tx: "read" }
-      )
+      return await read(`MATCH (u:User { id: $id }) RETURN properties(u)`, {
+        id,
+      })
     },
 
     async getUserByEmail(email) {
-      return await query(
+      return await read(
         `MATCH (u:User { email: $email }) RETURN properties(u)`,
-        { email },
-        { tx: "read" }
+        { email }
       )
     },
 
     async getUserByAccount(provider_providerAccountId) {
-      return await query(
+      return await read(
         `MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
            provider: $provider,
            providerAccountId: $providerAccountId
          })
          RETURN properties(u)`,
-        provider_providerAccountId,
-        { tx: "read" }
+        provider_providerAccountId
       )
     },
 
-    async updateUser(user) {
-      return await query(
-        `MATCH (u:User { id: $u.id })
-         SET u += $u
+    async updateUser(data) {
+      return await write(
+        `MATCH (u:User { id: $data.id })
+         SET u += $data
          RETURN properties(u)`,
-        { u: format.to(user) }
+        data
       )
     },
 
     async deleteUser(id) {
-      return await query(
-        `MATCH (u:User { id: $id })
+      return await write(
+        `MATCH (u:User { id: $data.id })
          WITH u, properties(u) AS properties
          DETACH DELETE u
          RETURN properties`,
@@ -64,25 +60,25 @@ export function Neo4jAdapter(session: Session): Adapter {
 
     async linkAccount(data) {
       const account = { id: uuid(), ...data }
-      await query(
-        `MATCH (u:User { id: $a.userId })
+      await write(
+        `MATCH (u:User { id: $data.userId })
          MERGE (a:Account {
-           providerAccountId: $a.providerAccountId,
-           provider: $a.provider 
+           providerAccountId: $data.providerAccountId,
+           provider: $data.provider
          }) 
-         ON CREATE SET a.id = $a.id
-         SET a += $a
+         ON CREATE SET a.id = $data.id
+         SET a += $data
          MERGE (u)-[:HAS_ACCOUNT]->(a)`,
-        { a: format.to(account) }
+        account
       )
       return account
     },
 
     async unlinkAccount(provider_providerAccountId) {
-      return await query(
+      return await write(
         `MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account {
-           providerAccountId: $providerAccountId,
-           provider: $provider
+           providerAccountId: $data.providerAccountId,
+           provider: $data.provider
          })
          WITH u, a, properties(a) AS properties
          DETACH DELETE a
@@ -93,43 +89,46 @@ export function Neo4jAdapter(session: Session): Adapter {
 
     async createSession(data) {
       const session = { ...data, id: uuid() }
-      await query(
-        `MATCH (u:User { id: $s.userId })
-         CREATE (s:Session $s)
+      await write(
+        `MATCH (u:User { id: $data.userId })
+         CREATE (s:Session $data)
          CREATE (u)-[:HAS_SESSION]->(s)`,
-        { s: format.to(session) }
+        session
       )
       return session
     },
 
     async getSessionAndUser(sessionToken) {
-      const result = await query(
-        `OPTIONAL MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-         WHERE s.expires <= datetime($now)
+      const result = await write(
+        `OPTIONAL MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $data.sessionToken })
+         WHERE s.expires <= datetime($data.now)
          DETACH DELETE s
          WITH count(s) AS c
-         MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+         MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $data.sessionToken })
          RETURN s { .*, userId: u.id } AS session, properties(u) AS user`,
-        { sessionToken, now: new Date().toISOString() },
-        { returnFormat: ["session", "user"] }
+        { sessionToken, now: new Date().toISOString() }
       )
+
       if (!result?.session || !result?.user) return null
 
-      return result
+      return {
+        session: format.from<any>(result.session),
+        user: format.from<any>(result.user),
+      }
     },
 
     async updateSession(data) {
-      return await query(
-        `MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $s.sessionToken })
-         SET s += $s
+      return await write(
+        `MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $data.sessionToken })
+         SET s += $data
          RETURN s { .*, userId: u.id }`,
-        { s: format.to(data) }
+        data
       )
     },
 
     async deleteSession(sessionToken) {
-      return await query(
-        `MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
+      return await write(
+        `MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $data.sessionToken })
          WITH u, s, properties(s) AS properties
          DETACH DELETE s
          RETURN properties { .*, userId: u.id }`,
@@ -138,28 +137,29 @@ export function Neo4jAdapter(session: Session): Adapter {
     },
 
     async createVerificationToken(data) {
-      await query(
+      await write(
         `MERGE (v:VerificationToken {
-           identifier: $v.identifier,
-           token: $v.token
+           identifier: $data.identifier,
+           token: $data.token
          })
-         SET v += $v`,
-        { v: format.to(data) }
+         SET v += $data`,
+        data
       )
       return data
     },
 
     async useVerificationToken(data) {
-      return await query(
+      const r = await write(
         `MATCH (v:VerificationToken {
-           identifier: $identifier,
-           token: $token 
+           identifier: $data.identifier,
+           token: $data.token
          })
-         WITH v, properties(v) AS properties
+         WITH v, properties(v) as properties
          DETACH DELETE v
          RETURN properties`,
         data
       )
+      return format.from<any>(r?.properties)
     },
   }
 }

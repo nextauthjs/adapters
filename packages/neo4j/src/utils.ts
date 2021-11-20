@@ -1,4 +1,4 @@
-import type { Session, QueryResult } from "neo4j-driver"
+import type { Session } from "neo4j-driver"
 import { isInt, integer } from "neo4j-driver"
 
 // https://github.com/honeinc/is-iso-date/blob/master/index.js
@@ -41,45 +41,25 @@ export const format = {
 }
 
 export function client(session: Session) {
-  return async function query(
-    statement: string,
-    values?: any,
-    options?: any
-  ): Promise<any> {
-    let result: QueryResult
-
-    // Database read or write transaction.
-    if (options?.tx === "read") {
-      result = await session.readTransaction((tx) => tx.run(statement, values))
-    } else {
-      result = await session.writeTransaction((tx) =>
-        tx.run(statement, format.to(values))
+  return {
+    /** Reads values from the database */
+    async read<T>(statement: string, values?: any): Promise<T | null> {
+      const result = await session.readTransaction((tx) =>
+        tx.run(statement, values)
       )
-    }
 
-    // Following are different ways to return the data.
-    // 1️⃣ Return the single value or object from the database response.
-    if (!options?.returnFormat) {
-      return format.from(result?.records[0]?.get(0)) || null
-    }
+      return format.from<T>(result?.records[0]?.get(0)) ?? null
+    },
+    /**
+     * Reads/writes values from/to the database.
+     * Properties are available under `$data`
+     */
+    async write<T>(statement: string, values: T): Promise<any> {
+      const result = await session.writeTransaction((tx) =>
+        tx.run(statement, { data: format.to(values) })
+      )
 
-    // 2️⃣ Return multiple values or objects from the database response.
-    if (Array.isArray(options?.returnFormat)) {
-      const returnObject: any = {}
-
-      options?.returnFormat.forEach((returnKey: string) => {
-        returnObject[returnKey] =
-          format.from(result?.records[0]?.get(returnKey)) || null
-      })
-
-      return returnObject
-    }
-
-    // 3️⃣ Return the database data without any transforms.
-    if (options?.returnFormat === "raw") {
-      return result
-    }
-
-    return null
+      return format.from<T>(result?.records[0]?.toObject())
+    },
   }
 }
