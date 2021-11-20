@@ -35,7 +35,7 @@ runBasicTests({
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
           `MATCH (u:User)-[:HAS_SESSION]->(s:Session)
-          RETURN s, u.id AS userId`,
+           RETURN s, u.id AS userId`,
           { sessionToken }
         )
       )
@@ -51,7 +51,7 @@ runBasicTests({
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
           `MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account)
-          RETURN a, u.id AS userId`,
+           RETURN a, u.id AS userId`,
           provider_providerAccountId
         )
       )
