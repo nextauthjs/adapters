@@ -149,7 +149,7 @@ export function Neo4jAdapter(session: Session): Adapter {
     },
 
     async useVerificationToken(data) {
-      const r = await write(
+      const result = await write(
         `MATCH (v:VerificationToken {
            identifier: $data.identifier,
            token: $data.token
@@ -159,7 +159,7 @@ export function Neo4jAdapter(session: Session): Adapter {
          RETURN properties`,
         data
       )
-      return format.from<any>(r?.properties)
+      return format.from<any>(result?.properties)
     },
   }
 }
