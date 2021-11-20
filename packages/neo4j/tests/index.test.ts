@@ -1,112 +1,78 @@
-import neo4j from "neo4j-driver"
-
+import * as neo4j from "neo4j-driver"
 import { runBasicTests } from "../../../basic-tests"
 
-import { Neo4jAdapter } from "../src"
-import { neo4jDateToJs } from "../src/utils"
+import { Neo4jAdapter, format } from "../src"
 
-const driver: typeof neo4j.Driver = neo4j.driver(
+const driver = neo4j.driver(
   "bolt://localhost",
   neo4j.auth.basic("neo4j", "password")
 )
-const neo4jSession: typeof neo4j.Session = driver.session()
 
-const neo4jAdapter = Neo4jAdapter(neo4jSession)
+const neo4jSession = driver.session()
 
 runBasicTests({
-  adapter: neo4jAdapter,
+  adapter: Neo4jAdapter(neo4jSession),
   db: {
     async disconnect() {
       await neo4jSession.writeTransaction((tx) =>
         tx.run(
           `MATCH (n)
-          DETACH DELETE n
-          RETURN count(n)`
+           DETACH DELETE n
+           RETURN count(n)`
         )
       )
       await neo4jSession.close()
       await driver.close()
     },
-
     async user(id) {
       const result = await neo4jSession.readTransaction((tx) =>
-        tx.run(`MATCH (u:User { id: $id }) RETURN u`, {
-          id,
-        })
+        tx.run(`MATCH (u:User) RETURN u`, { id })
       )
-      const dbUser = result?.records[0]?.get("u")?.properties
-      if (!dbUser) return null
-
-      return {
-        ...dbUser,
-        emailVerified: neo4jDateToJs(dbUser?.emailVerified),
-      }
+      return format.from(result?.records[0]?.get("u")?.properties)
     },
 
     async session(sessionToken: any) {
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
-          `MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $sessionToken })
-          RETURN s, u.id AS userId`,
-          {
-            sessionToken,
-          }
+          `MATCH (u:User)-[:HAS_SESSION]->(s:Session)
+           RETURN s, u.id AS userId`,
+          { sessionToken }
         )
       )
-      const dbSession = result?.records[0]?.get("s")?.properties
-      const dbUserId = result?.records[0]?.get("userId")
-      if (!dbSession || !dbUserId) return null
+      const session = result?.records[0]?.get("s")?.properties
+      const userId = result?.records[0]?.get("userId")
 
-      return {
-        ...dbSession,
-        expires: neo4jDateToJs(dbSession.expires),
-        userId: dbUserId,
-      }
+      if (!session || !userId) return null
+
+      return { ...format.from(session), userId }
     },
 
     async account(provider_providerAccountId) {
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
-          `MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account { 
-            provider: $provider,
-            providerAccountId: $providerAccountId
-          })
-          RETURN a, u.id AS userId`,
+          `MATCH (u:User)-[:HAS_ACCOUNT]->(a:Account)
+           RETURN a, u.id AS userId`,
           provider_providerAccountId
         )
       )
 
-      const dbAccount = result?.records[0]?.get("a")?.properties
-      const dbUserId = result?.records[0]?.get("userId")
-      if (!dbAccount || !dbUserId) return null
+      const account = result?.records[0]?.get("a")?.properties
+      const userId = result?.records[0]?.get("userId")
 
-      return {
-        ...dbAccount,
-        userId: dbUserId,
-      }
+      if (!account || !userId) return null
+      return { ...format.from(account), userId }
     },
 
     async verificationToken(identifier_token) {
       const result = await neo4jSession.readTransaction((tx) =>
         tx.run(
-          `
-          MATCH (v:VerificationToken {
-            identifier: $identifier,
-            token: $token 
-          })
-          RETURN v
-          `,
+          `MATCH (v:VerificationToken)
+           RETURN v`,
           identifier_token
         )
       )
 
-      const dbVerificationToken = result?.records[0]?.get("v")?.properties
-      if (!dbVerificationToken) return null
-
-      return {
-        ...dbVerificationToken,
-        expires: neo4jDateToJs(dbVerificationToken?.expires),
-      }
+      return format.from(result?.records[0]?.get("v")?.properties)
     },
   },
 })
