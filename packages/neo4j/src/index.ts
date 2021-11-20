@@ -59,19 +59,18 @@ export function Neo4jAdapter(session: Session): Adapter {
     },
 
     async linkAccount(data) {
-      const account = { id: uuid(), ...data }
+      const { userId, ...a } = data
       await write(
         `MATCH (u:User { id: $data.userId })
          MERGE (a:Account {
-           providerAccountId: $data.providerAccountId,
-           provider: $data.provider
+           providerAccountId: $data.a.providerAccountId,
+           provider: $data.a.provider
          }) 
-         ON CREATE SET a.id = $data.id
-         SET a += $data
+         SET a += $data.a
          MERGE (u)-[:HAS_ACCOUNT]->(a)`,
-        account
+        { userId, a }
       )
-      return account
+      return data
     },
 
     async unlinkAccount(provider_providerAccountId) {
@@ -87,8 +86,10 @@ export function Neo4jAdapter(session: Session): Adapter {
       )
     },
 
+    // @ts-expect-error Property 'id' is missing in type
+    // We never use `session.id` anywhere in the core, so this is fine.
     async createSession(data) {
-      const session = { ...data, id: uuid() }
+      const session = data
       await write(
         `MATCH (u:User { id: $data.userId })
          CREATE (s:Session $data)
