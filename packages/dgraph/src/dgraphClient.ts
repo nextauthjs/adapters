@@ -1,17 +1,24 @@
 import * as jwt from "jsonwebtoken"
-import * as mutations from "./graphql/mutations"
-import * as queries from "./graphql/queries"
 import fetch, { HeadersInit } from "node-fetch"
-import { DGraphConstructor, GetAccountInput } from "./types"
+import { makeUserFragment } from "./graphql/fragments"
+
+interface DGraphConstructor {
+  endpoint: string
+  apiKey: string
+  jwtSecret?: string
+  authHeader?: string
+  userFields?: string[]
+}
 export class DgraphClient {
   endpoint: string
   headers: HeadersInit
+  userFragment: string
   constructor({
     endpoint,
     apiKey,
-    adminSecret,
     jwtSecret,
     authHeader,
+    userFields,
   }: DGraphConstructor) {
     if (!apiKey) {
       throw new Error("Dgraph client error: Please provide an api key")
@@ -24,70 +31,35 @@ export class DgraphClient {
       "X-Auth-Token": apiKey,
     }
 
-    if (!!authHeader && !!adminSecret && !!jwtSecret) {
+    if (!!authHeader && !!jwtSecret) {
       Object.assign(headers, {
-        [authHeader]: jwt.sign({ adminSecret: adminSecret }, jwtSecret, {
+        [authHeader]: jwt.sign({ nextAuth: true }, jwtSecret, {
           algorithm: "HS256",
         }),
       })
     }
+
+    this.userFragment = makeUserFragment(
+      userFields ? userFields.join("\n") : ""
+    )
 
     this.endpoint = endpoint
     this.headers = headers
   }
 
   dgraph = async (query: string, variables?: any): Promise<any> => {
-    try {
-      const response = await fetch(this.endpoint, {
-        body: JSON.stringify({
-          query,
-          variables,
-        }),
-        method: "POST",
-        headers: this.headers,
-      })
-      const { data = {}, errors } = await response.json()
-      if (errors?.length) {
-        throw new Error(JSON.stringify(errors, null, 3))
-      }
-      const [result] = Object.values(data)
-      return result
-    } catch (error) {
-      throw new Error(JSON.stringify(error, null, 3))
-    }
-  }
-
-  getAccount = async ({ provider, providerAccountId }: GetAccountInput) => {
-    const [result] = await this.dgraph(queries.getAccount, {
-      provider,
-      providerAccountId,
+    const response = await fetch(this.endpoint, {
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+      method: "POST",
+      headers: this.headers,
     })
-    if (!result) return null
-    const { user, ...account } = result
-    return {
-      ...account,
-      expires_at: new Date(account.expires_at).getTime() / 1000,
-      userId: user?.id,
+    const { data = {}, errors } = await response.json()
+    if (errors?.length) {
+      return null
     }
-  }
-
-  getVerificationRequest = async ({ identifier, token }: any) => {
-    const [verificationRequest] = await this.dgraph(
-      queries.getVerificationRequest,
-      {
-        identifier,
-        token,
-      }
-    )
-    if (!verificationRequest) return null
-    return {
-      ...verificationRequest,
-      expires: new Date(verificationRequest.expires),
-    }
-  }
-
-  // for testing purpose
-  clean = async () => {
-    return await this.dgraph(mutations.clean)
+    return Object.values(data)[0]
   }
 }

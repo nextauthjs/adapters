@@ -1,9 +1,9 @@
 type Account
   @auth(
-    delete: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    add: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    query: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    update: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
+    delete: { rule: "{$nextAuth { eq: true } }" }
+    add: { rule: "{$nextAuth { eq: true } }" }
+    query: { rule: "{$nextAuth { eq: true } }" }
+    update: { rule: "{$nextAuth { eq: true } }" }
   ) {
   id: ID
   type: String
@@ -20,22 +20,18 @@ type Account
   session_state: String
   oauth_token_secret: String
   oauth_token: String
-  createdAt: DateTime
-  updatedAt: DateTime
   user: User @hasInverse(field: "accounts")
 }
 type Session
   @auth(
-    delete: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    add: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    query: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    update: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
+    delete: { rule: "{$nextAuth { eq: true } }" }
+    add: { rule: "{$nextAuth { eq: true } }" }
+    query: { rule: "{$nextAuth { eq: true } }" }
+    update: { rule: "{$nextAuth { eq: true } }" }
   ) {
   id: ID
   expires: DateTime
   sessionToken: String @search(by: [hash])
-  createdAt: DateTime
-  updatedAt: DateTime
   user: User @hasInverse(field: "sessions")
 }
 type User
@@ -47,11 +43,11 @@ type User
           query ($userId: String!) {queryUser(filter: { id: { eq: $userId } } ) {id}}
           """
         }
-        { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
+        { rule: "{$nextAuth { eq: true } }" }
       ]
     }
-    delete: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    add: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
+    delete: { rule: "{$nextAuth { eq: true } }" }
+    add: { rule: "{$nextAuth { eq: true } }" }
     update: {
       or: [
         {
@@ -59,7 +55,7 @@ type User
           query ($userId: String!) {queryUser(filter: { id: { eq: $userId } } ) {id}}
           """
         }
-        { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
+        { rule: "{$nextAuth { eq: true } }" }
       ]
     }
   ) {
@@ -68,25 +64,21 @@ type User
   email: String @search(by: [hash])
   emailVerified: DateTime
   image: String
-  createdAt: DateTime
-  updatedAt: DateTime
   accounts: [Account] @hasInverse(field: "user")
   sessions: [Session] @hasInverse(field: "user")
 }
 
 type VerificationRequest
   @auth(
-    delete: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    add: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    query: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
-    update: { rule: "{$adminSecret: { eq: \"<YOUR ADMIN SECRET HERE>\" } }" }
+    delete: { rule: "{$nextAuth { eq: true } }" }
+    add: { rule: "{$nextAuth { eq: true } }" }
+    query: { rule: "{$nextAuth { eq: true } }" }
+    update: { rule: "{$nextAuth { eq: true } }" }
   ) {
   id: ID
   identifier: String @search(by: [hash])
   token: String @search(by: [hash])
   expires: DateTime
-  createdAt: DateTime
-  updatedAt: DateTime
 }
 
-# Dgraph.Authorization {"VerificationKey":"<YOUR JWT SECRET HERE>","Header":"<YOUR AUTH HEADER HERE>","Namespace":"YOUR CUSTOM NAMESPACE HERE","Algo":"HS256"}
+# Dgraph.Authorization {"VerificationKey":"<YOUR JWT SECRET HERE>","Header":"<YOUR AUTH HEADER HERE>","Namespace":"<YOUR CUSTOM NAMESPACE HERE>","Algo":"HS256"}

@@ -1,41 +1,35 @@
 import type { Adapter } from "next-auth/adapters"
 import { DgraphClient } from "./dgraphClient"
-
 import * as mutations from "./graphql/mutations"
 import * as queries from "./graphql/queries"
 
 export function DgraphAdapter(d: DgraphClient): Adapter {
-  const { dgraph } = d
+  const { dgraph, userFragment } = d
   return {
     // USERS
-    createUser: async (data) => {
+    createUser: async (input) => {
       const {
         user: [newUser],
-      } = await dgraph(mutations.createUser, {
-        input: {
-          ...data,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+      } = await dgraph(mutations.createUser(userFragment), {
+        input,
       })
       return { ...newUser, emailVerified: new Date(newUser.emailVerified) }
     },
     getUser: async (id) => {
-      try {
-        const user = await dgraph(queries.getUserById, { id })
-        return { ...user, emailVerified: new Date(user.emailVerified) }
-      } catch (error) {
-        return null
-      }
+      const user = await dgraph(queries.getUserById(userFragment), { id })
+      if (!user) return null
+      return { ...user, emailVerified: new Date(user.emailVerified) }
     },
     getUserByEmail: async (email) => {
-      const [user] = await dgraph(queries.getUserByEmail, { email })
+      const [user] = await dgraph(queries.getUserByEmail(userFragment), {
+        email,
+      })
       if (!user) return null
       return { ...user, emailVerified: new Date(user.emailVerified) }
     },
     async getUserByAccount(provider_providerAccountId) {
       const [account] = await dgraph(
-        queries.getUserByAccount,
+        queries.getUserByAccount(userFragment),
         provider_providerAccountId
       )
       if (account?.user) {
@@ -46,29 +40,25 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
       }
       return null
     },
-    updateUser: async ({ id, ...rest }) => {
-      const input = { ...rest, updatedAt: new Date() }
+    updateUser: async ({ id, ...input }) => {
       if (!id) return input
 
       const {
         user: [updatedUser],
-      } = await dgraph(mutations.updateUser, { id, input })
+      } = await dgraph(mutations.updateUser(userFragment), { id, input })
       return updatedUser
     },
     deleteUser: async (id) => {
       const {
         user: [deletedUser],
       } = await dgraph(mutations.deleteUser, { id })
-      try {
-        await dgraph(mutations.deleteUserAccountsAndSessions, {
-          sessions: deletedUser.sessions.map((x: any) => x.id),
-          accounts: deletedUser.accounts.map((x: any) => x.id),
-        })
 
-        return deletedUser
-      } catch (error) {
-        return null
-      }
+      await dgraph(mutations.deleteUserAccountsAndSessions, {
+        sessions: deletedUser.sessions.map((x: any) => x.id),
+        accounts: deletedUser.accounts.map((x: any) => x.id),
+      })
+
+      return deletedUser
     },
 
     // ACCOUNTS
@@ -90,15 +80,17 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
 
     // SESSIONS
     async getSessionAndUser(sessionToken) {
-      const [session] = await dgraph(queries.getSession, { sessionToken })
-      if (!session) return null
+      const [sessionAndUser] = await dgraph(queries.getSession(userFragment), {
+        sessionToken,
+      })
+      if (!sessionAndUser) return null
 
-      const { user, ...rest } = session
+      const { user, ...session } = sessionAndUser
       return {
         user: { ...user, emailVerified: new Date(user.emailVerified) },
         session: {
-          ...rest,
-          userId: session?.user?.id || null,
+          ...session,
+          userId: user?.id || null,
           expires: new Date(session.expires),
         },
       }
@@ -113,8 +105,6 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
           user: {
             id: userId,
           },
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       })
       return {
@@ -123,12 +113,12 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
         expires: new Date(newSession.expires),
       }
     },
-    updateSession: async ({ sessionToken, ...rest }) => {
+    updateSession: async ({ sessionToken, ...input }) => {
       const {
         session: [updatedSession],
       } = await dgraph(mutations.updateSession, {
         sessionToken,
-        input: { ...rest, updatedAt: new Date() },
+        input,
       })
       if (!updatedSession) return null
       return { ...updatedSession, userId: updatedSession.user.id }
@@ -137,9 +127,9 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
       await dgraph(mutations.deleteSession, { sessionToken }),
 
     // TOKENS
-    createVerificationToken: async (data) => {
+    createVerificationToken: async (input) => {
       return await dgraph(mutations.createVerificationRequest, {
-        input: { ...data, createdAt: new Date(), updatedAt: new Date() },
+        input,
       })
     },
 

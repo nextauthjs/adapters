@@ -1,5 +1,5 @@
-import { userFragment, accountFragment } from "./fragments"
-export const getUserById = /* GraphQL */ `
+import { accountFragment } from "./fragments"
+export const getUserById = (userFragment: string) => /* GraphQL */ `
   query getUserById($id: ID!) {
     getUser(id: $id) {
       ...UserFragment
@@ -7,7 +7,7 @@ export const getUserById = /* GraphQL */ `
   }
   ${userFragment}
 `
-export const getUserByEmail = /* GraphQL */ `
+export const getUserByEmail = (userFragment: string) => /* GraphQL */ `
   query getUserByEmail($email: String = "") {
     queryUser(filter: { email: { eq: $email } }) {
       ...UserFragment
@@ -46,7 +46,7 @@ export const getAccount = /* GraphQL */ `
   }
   ${accountFragment}
 `
-export const getUserByAccount = /* GraphQL */ `
+export const getUserByAccount = (userFragment: string) => /* GraphQL */ `
   query getUserByAccount(
     $providerAccountId: String = ""
     $provider: String = ""
@@ -67,7 +67,7 @@ export const getUserByAccount = /* GraphQL */ `
   }
   ${userFragment}
 `
-export const getSession = /* GraphQL */ `
+export const getSession = (userFragment: string) => /* GraphQL */ `
   query getSession($sessionToken: String = "") {
     querySession(filter: { sessionToken: { eq: $sessionToken } }) {
       expires

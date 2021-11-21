@@ -1,5 +1,5 @@
-import { userFragment, accountFragment, sessionFragment } from "./fragments"
-export const createUser = /* GraphQL */ `
+import { accountFragment, sessionFragment } from "./fragments"
+export const createUser = (userFragment: string) => /* GraphQL */ `
   mutation createUserMutation($input: [AddUserInput!]!) {
     addUser(input: $input) {
       user {
@@ -28,7 +28,7 @@ export const deleteVerificationRequest = /* GraphQL */ `
     }
   }
 `
-export const updateUser = /* GraphQL */ `
+export const updateUser = (userFragment: string) => /* GraphQL */ `
   mutation updateUser($id: [ID!] = "", $input: UserPatch) {
     updateUser(input: { filter: { id: $id }, set: $input }) {
       user {
