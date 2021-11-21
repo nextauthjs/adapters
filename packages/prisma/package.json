@@ -22,9 +22,12 @@
   },
   "scripts": {
     "clean": "rm -rf ./prisma/migrations && rm ./prisma/dev.db*",
-    "reset": "prisma migrate dev -n init && prisma migrate reset -f",
-    "test": "yarn reset && jest",
-    "build": "yarn reset && tsc",
+    "init:default": "prisma migrate dev --name init --skip-seed",
+    "init:custom": "prisma migrate dev --name init-custom --schema ./prisma/custom.prisma",
+    "test:default": "yarn init:default && jest",
+    "test:custom": "yarn init:custom && CUSTOM_MODEL=1 jest",
+    "test": "yarn test:default && yarn test:custom",
+    "build": "prisma generate && tsc",
     "studio": "prisma studio"
   },
   "files": [
@@ -33,10 +36,10 @@
   ],
   "peerDependencies": {
     "@prisma/client": ">=2.26.0",
-    "next-auth": ">=4"
+    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x"
   },
   "devDependencies": {
-    "@prisma/client": "^2.29.1",
-    "prisma": "^2.29.1"
+    "@prisma/client": "^3.0.2",
+    "prisma": "^3.0.2"
   }
 }

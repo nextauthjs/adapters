@@ -13,6 +13,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  phone         String?
+  role          String?
   accounts      Account[]
   sessions      Session[]
 }

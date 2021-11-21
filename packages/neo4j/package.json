@@ -1,27 +1,30 @@
 {
-  "name": "@next-auth/mongodb-adapter",
-  "version": "0.0.1",
-  "description": "mongoDB adapter for next-auth.",
+  "name": "@next-auth/neo4j-adapter",
+  "version": "0.1.0",
+  "description": "neo4j adapter for next-auth.",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
   "bugs": {
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
-  "author": "Balázs Orbán <info@balazsorban.com>",
+  "author": "Davey Brown",
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
   "main": "dist/index.js",
   "license": "ISC",
   "keywords": [
     "next-auth",
     "next.js",
     "oauth",
-    "mongodb",
-    "adapter"
+    "neo4j"
   ],
   "private": false,
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "test:watch": "./tests/test.sh -w",
     "test": "./tests/test.sh",
     "build": "tsc"
   },
@@ -30,10 +33,14 @@
     "dist"
   ],
   "peerDependencies": {
-    "mongodb": "^4.1.1",
+    "neo4j-driver": "^4.0.0",
     "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x"
   },
   "devDependencies": {
-    "mongodb": "^4.1.1"
+    "@types/uuid": "^8.3.3",
+    "neo4j-driver": "^4.4.0"
+  },
+  "dependencies": {
+    "uuid": "^8.3.2"
   }
 }

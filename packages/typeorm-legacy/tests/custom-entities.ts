@@ -33,6 +33,12 @@ export class UserEntity {
   emailVerified!: string | null
 
   @Column({ type: "varchar", nullable: true })
+  role!: string | null
+
+  @Column({ type: "varchar", nullable: true })
+  phone!: string | null
+
+  @Column({ type: "varchar", nullable: true })
   image!: string | null
 
   @OneToMany(() => SessionEntity, (session) => session.userId)

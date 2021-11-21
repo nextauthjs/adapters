@@ -2,13 +2,12 @@ import { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters"
 import {
   Connection,
   ConnectionOptions,
-  createConnection,
   EntityManager,
-  getConnection,
+  getConnectionManager,
 } from "typeorm"
 import { Account } from "next-auth"
 import * as defaultEntities from "./entities"
-import { parseConnectionConfig } from "./utils"
+import { parseConnectionConfig, updateConnectionEntities } from "./utils"
 
 export const entities = defaultEntities
 
@@ -31,19 +30,19 @@ export async function getManager(options: {
     entities: Object.values(entities),
   }
 
-  if (_connection) {
-    try {
-      const c = getConnection(config.name)
-      if (c.isConnected) return c.manager
-      await c.connect()
-      return c.manager
-    } catch (error) {
-      _connection = await createConnection(config)
-      return _connection.manager
-    }
-  }
+  const connectionManager = getConnectionManager()
 
-  _connection = await createConnection(config)
+  if (connectionManager.has(config.name ?? "default")) {
+    _connection = connectionManager.get(config.name ?? "default")
+
+    if (_connection.isConnected) return _connection.manager
+
+    if (process.env.NODE_ENV !== "production") {
+      await updateConnectionEntities(_connection, config.entities)
+    }
+  } else {
+    _connection = await connectionManager.create(config).connect()
+  }
 
   return _connection.manager
 }
@@ -65,9 +64,6 @@ export function TypeORMLegacyAdapter(
     },
   }
 
-  const { UserEntity, AccountEntity, SessionEntity, VerificationTokenEntity } =
-    c.entities
-
   return {
     /**
      * Method used in testing. You won't need to call this in your app.
@@ -80,27 +76,27 @@ export function TypeORMLegacyAdapter(
     // @ts-expect-error
     createUser: async (data) => {
       const m = await getManager(c)
-      const user = await m.save(UserEntity, data)
+      const user = await m.save("UserEntity", data)
       return user
     },
     // @ts-expect-error
     async getUser(id) {
       const m = await getManager(c)
-      const user = await m.findOne(UserEntity, { id })
+      const user = await m.findOne("UserEntity", { id })
       if (!user) return null
       return { ...user }
     },
     // @ts-expect-error
     async getUserByEmail(email) {
       const m = await getManager(c)
-      const user = await m.findOne(UserEntity, { email })
+      const user = await m.findOne("UserEntity", { email })
       if (!user) return null
       return { ...user }
     },
     async getUserByAccount(provider_providerAccountId) {
       const m = await getManager(c)
       const account = await m.findOne<Account & { user: AdapterUser }>(
-        AccountEntity,
+        "AccountEntity",
         provider_providerAccountId,
         { relations: ["user"] }
       )
@@ -110,39 +106,37 @@ export function TypeORMLegacyAdapter(
     // @ts-expect-error
     async updateUser(data) {
       const m = await getManager(c)
-      // @ts-expect-error
-      const user = await m.save(UserEntity, data)
+      const user = await m.save("UserEntity", data)
       return user
     },
     async deleteUser(id) {
       const m = await getManager(c)
       await m.transaction(async (tm) => {
-        await tm.delete(AccountEntity, { userId: id })
-        await tm.delete(SessionEntity, { userId: id })
-        await tm.delete(UserEntity, { id })
+        await tm.delete("AccountEntity", { userId: id })
+        await tm.delete("SessionEntity", { userId: id })
+        await tm.delete("UserEntity", { id })
       })
     },
     async linkAccount(data) {
       const m = await getManager(c)
-      const account = await m.save(AccountEntity, data)
+      const account = await m.save("AccountEntity", data)
       return account
     },
     async unlinkAccount(providerAccountId) {
       const m = await getManager(c)
-      await m.delete<Account>(AccountEntity, providerAccountId)
+      await m.delete<Account>("AccountEntity", providerAccountId)
     },
     // @ts-expect-error
     async createSession(data) {
       const m = await getManager(c)
-      // @ts-expect-error
-      const session = await m.save(SessionEntity, data)
+      const session = await m.save("SessionEntity", data)
       return session
     },
     async getSessionAndUser(sessionToken) {
       const m = await getManager(c)
       const sessionAndUser = await m.findOne<
         AdapterSession & { user: AdapterUser }
-      >(SessionEntity, { sessionToken }, { relations: ["user"] })
+      >("SessionEntity", { sessionToken }, { relations: ["user"] })
 
       if (!sessionAndUser) return null
       const { user, ...session } = sessionAndUser
@@ -150,20 +144,17 @@ export function TypeORMLegacyAdapter(
     },
     async updateSession(data) {
       const m = await getManager(c)
-      // @ts-expect-error
-      await m.update(SessionEntity, { sessionToken: data.sessionToken }, data)
+      await m.update("SessionEntity", { sessionToken: data.sessionToken }, data)
       // TODO: Try to return?
       return null
     },
     async deleteSession(sessionToken) {
       const m = await getManager(c)
-      await m.delete(SessionEntity, { sessionToken })
+      await m.delete("SessionEntity", { sessionToken })
     },
-    // @ts-expect-error
     async createVerificationToken(data) {
       const m = await getManager(c)
-      // @ts-expect-error
-      const verificationToken = await m.save(VerificationTokenEntity, data)
+      const verificationToken = await m.save("VerificationTokenEntity", data)
       // @ts-expect-error
       delete verificationToken.id
       return verificationToken
@@ -172,13 +163,13 @@ export function TypeORMLegacyAdapter(
     async useVerificationToken(identifier_token) {
       const m = await getManager(c)
       const verificationToken = await m.findOne(
-        VerificationTokenEntity,
+        "VerificationTokenEntity",
         identifier_token
       )
       if (!verificationToken) {
         return null
       }
-      await m.delete(VerificationTokenEntity, identifier_token)
+      await m.delete("VerificationTokenEntity", identifier_token)
       // @ts-expect-error
       delete verificationToken.id
       return verificationToken

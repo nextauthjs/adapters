@@ -29,22 +29,25 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "yarn sqlite && yarn postgres && yarn mysql",
-    "mysql": "tests/mysql/test.sh",
-    "postgres": "tests/postgresql/test.sh",
-    "sqlite": "rm -f tests/sqlite/dev.db && jest tests/sqlite/index.test.ts"
+    "init:db": "tests/init.sh",
+    "test:containers": "tests/test.sh",
+    "test": "tests/test.sh",
+    "mysql": "yarn init:db && tests/mysql/test.sh",
+    "postgres": "yarn init:db && tests/postgresql/test.sh",
+    "sqlite": "tests/sqlite/test.sh"
   },
   "devDependencies": {
     "mssql": "^7.2.1",
     "mysql": "^2.18.1",
     "pg": "^8.7.1",
     "sqlite3": "^5.0.2",
-    "typeorm": "^0.2.37"
+    "typeorm": "^0.2.37",
+    "typeorm-naming-strategies": "^2.0.0"
   },
   "peerDependencies": {
     "mssql": "^6.2.1 || 7",
     "mysql": "^2.18.1",
-    "next-auth": ">=4",
+    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x",
     "pg": "^8.2.1",
     "sqlite3": "^5.0.2",
     "typeorm": "^0.2.31"
