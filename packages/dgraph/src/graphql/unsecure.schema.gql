@@ -12,8 +12,6 @@ type Account {
   scope: String
   id_token: String
   session_state: String
-  oauth_token_secret: String
-  oauth_token: String
   createdAt: DateTime
   updatedAt: DateTime
   user: User @hasInverse(field: "accounts")
