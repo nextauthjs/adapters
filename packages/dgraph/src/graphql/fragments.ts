@@ -24,8 +24,6 @@ export const accountFragment = /* GraphQL */ `
     refresh_token
     id_token
     session_state
-    oauth_token_secret
-    oauth_token
   }
 `
 export const sessionFragment = /* GraphQL */ `

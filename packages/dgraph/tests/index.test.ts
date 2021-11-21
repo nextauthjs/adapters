@@ -23,7 +23,7 @@ runBasicTests({
         expires: new Date(verificationRequest.expires),
       }
     },
-    user: async (id) => await DgraphAdapter(dgraph).getUser(id),
+    user: (id) => DgraphAdapter(dgraph).getUser(id),
     account: async (provider_providerAccountId) => {
       const [result] = await dgraph.dgraph(
         getAccount,
