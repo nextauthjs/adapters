@@ -25,6 +25,9 @@ pouchdb:
 sequelize:
   - packages/sequelize/**/*
 
+dgraph:
+  - packages/dgraph/**/*
+
 documentation:
   - ./**/*.md
 
