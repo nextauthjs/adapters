@@ -9,6 +9,13 @@ export interface DgraphClientParams {
   authHeader?: string
 }
 
+export class DgraphClientError extends Error {
+  name = "DgraphClientError"
+  constructor(errors: any[]) {
+    super(errors.map((error) => error.message).join("\n"))
+  }
+}
+
 export function client(params: DgraphClientParams) {
   if (!params.authToken) {
     throw new Error("Dgraph client error: Please provide an api key")
@@ -42,9 +49,7 @@ export function client(params: DgraphClientParams) {
 
       const { data = {}, errors } = await response.json()
       if (errors?.length) {
-        const e = new Error(errors.map((x: any) => x.message).join("\n"))
-        e.name = "DgraphClientError"
-        throw e
+        throw new DgraphClientError(errors)
       }
       return Object.values(data)[0] as any
     },
