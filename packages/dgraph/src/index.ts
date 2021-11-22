@@ -2,9 +2,9 @@ import type { Adapter } from "next-auth/adapters"
 import { DgraphClient } from "./dgraphClient"
 import * as mutations from "./graphql/mutations"
 import * as queries from "./graphql/queries"
-
-export function DgraphAdapter(d: DgraphClient): Adapter {
-  const { dgraph, userFragment } = d
+import format from "./format"
+export function DgraphAdapter(client: DgraphClient): Adapter {
+  const { dgraph, userFragment } = client
   return {
     // USERS
     createUser: async (input) => {
@@ -13,19 +13,21 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
       } = await dgraph(mutations.createUser(userFragment), {
         input,
       })
-      return { ...newUser, emailVerified: new Date(newUser.emailVerified) }
+      // console.log("AdapterUser", format<AdapterUser>(newUser))
+
+      return format<any>(newUser)
     },
     getUser: async (id) => {
       const user = await dgraph(queries.getUserById(userFragment), { id })
       if (!user) return null
-      return { ...user, emailVerified: new Date(user.emailVerified) }
+      return format<any>(user)
     },
     getUserByEmail: async (email) => {
       const [user] = await dgraph(queries.getUserByEmail(userFragment), {
         email,
       })
       if (!user) return null
-      return { ...user, emailVerified: new Date(user.emailVerified) }
+      return format<any>(user)
     },
     async getUserByAccount(provider_providerAccountId) {
       const [account] = await dgraph(
@@ -33,10 +35,7 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
         provider_providerAccountId
       )
       if (account?.user) {
-        return {
-          ...account.user,
-          emailVerified: new Date(account.user.emailVerified),
-        }
+        return format<any>(account.user)
       }
       return null
     },
@@ -71,8 +70,7 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
           },
         },
       })
-
-      return { ...account, expires_at: new Date(account.expires_at).getTime() }
+      return format<any>(account)
     },
     unlinkAccount: async (provider_providerAccountId) => {
       return await dgraph(mutations.unlinkAccount, provider_providerAccountId)
@@ -87,11 +85,10 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
 
       const { user, ...session } = sessionAndUser
       return {
-        user: { ...user, emailVerified: new Date(user.emailVerified) },
+        user: format<any>(user),
         session: {
-          ...session,
+          ...format<any>(session),
           userId: user?.id || null,
-          expires: new Date(session.expires),
         },
       }
     },
@@ -107,10 +104,10 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
           },
         },
       })
+
       return {
-        ...newSession,
+        ...format<any>(newSession),
         userId: newSession.user.id,
-        expires: new Date(newSession.expires),
       }
     },
     updateSession: async ({ sessionToken, ...input }) => {
@@ -142,7 +139,7 @@ export function DgraphAdapter(d: DgraphClient): Adapter {
       })
 
       if (!request) return null
-      return { ...request, expires: new Date(request.expires) }
+      return format<any>(request)
     },
   }
 }
