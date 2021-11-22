@@ -1,7 +1,7 @@
 import { DgraphAdapter, DgraphClientParams, format } from "../src"
 import { client as dgraphClient } from "../src/client"
 import { runBasicTests } from "../../../basic-tests"
-import { Session, User } from "../src/graphql/fragments"
+import { Account, Session, User } from "../src/graphql/fragments"
 
 // TODO: We should not rely on services over the network.
 const params: DgraphClientParams = {
@@ -66,7 +66,32 @@ runBasicTests({
       const { user, ...session } = result?.[0] ?? {}
       return format.from({ ...session, userId: user?.id })
     },
-    async account(provider_providerAccountId) {},
+    async account(provider_providerAccountId) {
+      const result = await c.run<any>(
+        /* GraphQL */ `
+          query ($providerAccountId: String = "", $provider: String = "") {
+            queryAccount(
+              filter: {
+                providerAccountId: { eq: $providerAccountId }
+                provider: { eq: $provider }
+              }
+            ) {
+              ...AccountFragment
+              user {
+                id
+              }
+            }
+          }
+          ${Account}
+        `,
+        provider_providerAccountId
+      )
+
+      const account = format.from<any>(result?.[0])
+      account.userId = account.user?.id
+      delete account.user
+      return account
+    },
     async verificationToken(identifier_token) {},
   },
 })

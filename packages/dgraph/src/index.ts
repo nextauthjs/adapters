@@ -153,6 +153,7 @@ export function DgraphAdapter(
     },
 
     async linkAccount(data) {
+      const { userId, ...input } = data
       await c.run<any>(
         /* GraphQL */ `
           mutation ($input: [AddAccountInput!]!) {
@@ -164,7 +165,7 @@ export function DgraphAdapter(
           }
           ${fragments.Account}
         `,
-        { input: { ...data, user: { id: data.userId } } }
+        { input: { ...input, user: { id: userId } } }
       )
       return data
     },
