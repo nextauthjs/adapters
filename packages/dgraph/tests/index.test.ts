@@ -3,11 +3,9 @@ import { client as dgraphClient } from "../src/client"
 import { runBasicTests } from "../../../basic-tests"
 import { Account, Session, User } from "../src/graphql/fragments"
 
-// TODO: We should not rely on services over the network.
 const params: DgraphClientParams = {
-  endpoint: "https://wild-grass.us-east-1.aws.cloud.dgraph.io/graphql",
-  // REVIEW: This should not have been exposed????
-  authToken: "OGE3MDZmMjA5ODNmNDk0ZGU0ZDYyMjI3NWIxM2JmYTA=",
+  endpoint: "http://localhost:8080/graphql",
+  authToken: "test",
 }
 
 /** TODO: Add test to `dgraphClient` */
@@ -23,7 +21,7 @@ runBasicTests({
           deleteUser(filter: {}) {
             numUids
           }
-          deleteVerificationRequest(filter: {}) {
+          deleteVerificationToken(filter: {}) {
             numUids
           }
           deleteSession(filter: {}) {
