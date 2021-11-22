@@ -30,7 +30,10 @@ export function client(params: DgraphClientParams) {
   }
 
   return {
-    async run(query: string, variables?: Record<string, any>): Promise<any> {
+    async run<T>(
+      query: string,
+      variables?: Record<string, any>
+    ): Promise<T | null> {
       const response = await fetch(endpoint, {
         method: "POST",
         headers,
@@ -38,7 +41,11 @@ export function client(params: DgraphClientParams) {
       })
 
       const { data = {}, errors } = await response.json()
-      if (errors?.length) return null
+      if (errors?.length) {
+        const e = new Error(errors.map((x: any) => x.message).join("\n"))
+        e.name = "DgraphClientError"
+        throw e
+      }
       return Object.values(data)[0] as any
     },
   }

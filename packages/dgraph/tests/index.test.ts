@@ -1,4 +1,4 @@
-import { DgraphAdapter, DgraphClientParams } from "../src"
+import { DgraphAdapter, DgraphClientParams, format } from "../src"
 import { client as dgraphClient } from "../src/client"
 import { runBasicTests } from "../../../basic-tests"
 import { User } from "../src/graphql/fragments"
@@ -35,7 +35,7 @@ runBasicTests({
       `)
     },
     async user(id) {
-      return await c.run(
+      const result = await c.run<any>(
         /* GraphQL */ `
           query ($id: ID!) {
             getUser(id: $id) {
@@ -46,6 +46,8 @@ runBasicTests({
         `,
         { id }
       )
+
+      return format.from(result)
     },
     async account(provider_providerAccountId) {},
     async session(sessionToken) {},
