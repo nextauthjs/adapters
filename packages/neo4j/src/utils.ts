@@ -16,6 +16,7 @@ export const format = {
     for (const key in object) {
       const value = object[key]
       if (value instanceof Date) newObject[key] = value.toISOString()
+      else if (value instanceof Object) newObject[key] = format.to(value)
       else newObject[key] = value
     }
     return newObject

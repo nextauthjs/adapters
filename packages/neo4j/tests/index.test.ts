@@ -42,7 +42,7 @@ runBasicTests({
       const session = result?.records[0]?.get("s")?.properties
       const userId = result?.records[0]?.get("userId")
 
-      if (!session || !userId) return null
+      if (!session || session.userId || !userId) return null
 
       return { ...format.from(session), userId }
     },
@@ -59,7 +59,8 @@ runBasicTests({
       const account = result?.records[0]?.get("a")?.properties
       const userId = result?.records[0]?.get("userId")
 
-      if (!account || !userId) return null
+      if (!account || account.userId || !userId) return null
+
       return { ...format.from(account), userId }
     },
 
@@ -76,3 +77,4 @@ runBasicTests({
     },
   },
 })
+
