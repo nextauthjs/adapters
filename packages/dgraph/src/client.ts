@@ -11,8 +11,9 @@ export interface DgraphClientParams {
 
 export class DgraphClientError extends Error {
   name = "DgraphClientError"
-  constructor(errors: any[]) {
+  constructor(errors: any[], query: string, variables: any) {
     super(errors.map((error) => error.message).join("\n"))
+    console.error({ query, variables })
   }
 }
 
@@ -49,7 +50,7 @@ export function client(params: DgraphClientParams) {
 
       const { data = {}, errors } = await response.json()
       if (errors?.length) {
-        throw new DgraphClientError(errors)
+        throw new DgraphClientError(errors, query, variables)
       }
       return Object.values(data)[0] as any
     },
