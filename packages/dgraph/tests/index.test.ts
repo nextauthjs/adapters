@@ -16,6 +16,7 @@ const c = dgraphClient(params)
 runBasicTests({
   adapter: DgraphAdapter(params),
   db: {
+    id: () => "0x0a0a00a00",
     async disconnect() {
       await c.run(/* GraphQL */ `
         mutation {
