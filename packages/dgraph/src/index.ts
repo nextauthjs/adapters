@@ -213,7 +213,7 @@ export function DgraphAdapter(
         session: { ...format.from<any>(session), userId: user.id },
       }
     },
-    async createSession(data) {
+    async createSession({ userId, ...data }) {
       await c.run<any>(
         /* GraphQL */ `
           mutation ($input: [AddSessionInput!]!) {
@@ -225,7 +225,7 @@ export function DgraphAdapter(
           }
           ${fragments.Session}
         `,
-        { input: { ...data, user: { id: data.userId } } }
+        { input: { ...data, user: { id: userId } } }
       )
 
       return data as any
