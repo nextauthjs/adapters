@@ -4,7 +4,7 @@ type Account {
   provider: String @search(by: [hash])
   providerAccountId: String @search(by: [hash])
   refreshToken: String
-  expires_at: Int
+  expires_at: Int64
   accessToken: String
   token_type: String
   refresh_token: String
