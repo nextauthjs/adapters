@@ -10,7 +10,7 @@ type Account
   provider: String @search(by: [hash])
   providerAccountId: String @search(by: [hash])
   refreshToken: String
-  expires_at: DateTime
+  expires_at: Int
   accessToken: String
   token_type: String
   refresh_token: String
