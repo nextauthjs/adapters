@@ -1,5 +1,6 @@
 import * as neo4j from "neo4j-driver"
 import { runBasicTests } from "../../../basic-tests"
+import statements from './resources/statements'
 
 import { Neo4jAdapter, format } from "../src"
 
@@ -13,6 +14,14 @@ const neo4jSession = driver.session()
 runBasicTests({
   adapter: Neo4jAdapter(neo4jSession),
   db: {
+    async connect() {
+      for await (const statement of statements.split(';')) {
+        if(!statement.length) return
+        await neo4jSession.writeTransaction((tx) =>
+          tx.run(statement)
+        )
+      }
+    },
     async disconnect() {
       await neo4jSession.writeTransaction((tx) =>
         tx.run(
