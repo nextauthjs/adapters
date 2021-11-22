@@ -1,51 +1,54 @@
-import { DgraphAdapter } from "../src"
-import { DgraphClient } from "../src/dgraphClient"
+import { DgraphAdapter, DgraphClientParams } from "../src"
+import { client as dgraphClient } from "../src/client"
 import { runBasicTests } from "../../../basic-tests"
-import { getAccount, getVerificationRequest } from "../src/graphql/queries"
-import { clean } from "../src/graphql/mutations"
-const dgraph = new DgraphClient({
+import { User } from "../src/graphql/fragments"
+
+// TODO: We should not rely on services over the network.
+const params: DgraphClientParams = {
   endpoint: "https://wild-grass.us-east-1.aws.cloud.dgraph.io/graphql",
-  apiKey: "OGE3MDZmMjA5ODNmNDk0ZGU0ZDYyMjI3NWIxM2JmYTA=",
-})
+  // REVIEW: This should not have been exposed????
+  authToken: "OGE3MDZmMjA5ODNmNDk0ZGU0ZDYyMjI3NWIxM2JmYTA=",
+}
+
+/** TODO: Add test to `dgraphClient` */
+const c = dgraphClient(params)
 
 runBasicTests({
-  adapter: DgraphAdapter(dgraph),
+  adapter: DgraphAdapter(params),
   db: {
-    disconnect: async () => await dgraph.dgraph(clean),
-    verificationToken: async (identifier_token) => {
-      const [verificationRequest] = await dgraph.dgraph(
-        getVerificationRequest,
-        identifier_token
-      )
-      if (!verificationRequest) return null
-      return {
-        ...verificationRequest,
-        expires: new Date(verificationRequest.expires),
-      }
+    async disconnect() {
+      await c.run(/* GraphQL */ `
+        mutation {
+          deleteUser(filter: {}) {
+            numUids
+          }
+          deleteVerificationRequest(filter: {}) {
+            numUids
+          }
+          deleteSession(filter: {}) {
+            numUids
+          }
+          deleteAccount(filter: {}) {
+            numUids
+          }
+        }
+      `)
     },
-    user: (id) => DgraphAdapter(dgraph).getUser(id),
-    account: async (provider_providerAccountId) => {
-      const [result] = await dgraph.dgraph(
-        getAccount,
-        provider_providerAccountId
+    async user(id) {
+      return await c.run(
+        /* GraphQL */ `
+          query ($id: ID!) {
+            getUser(id: $id) {
+              ...UserFragment
+            }
+          }
+          ${User}
+        `,
+        { id }
       )
-      if (!result) return null
-      const { user, ...account } = result
-      return {
-        ...account,
-        expires_at: new Date(account.expires_at).getTime() / 1000,
-        userId: user?.id,
-      }
     },
-    session: async (sessionToken) => {
-      const sessionAndUser = await DgraphAdapter(dgraph).getSessionAndUser(
-        sessionToken
-      )
-      if (sessionAndUser === null) return null
-      const { session } = sessionAndUser
-      if (!session?.id) return null
-
-      return Object.assign(session, { expires: new Date(session.expires) })
-    },
+    async account(provider_providerAccountId) {},
+    async session(sessionToken) {},
+    async verificationToken(identifier_token) {},
   },
 })
