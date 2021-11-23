@@ -18,8 +18,6 @@ CREATE TABLE accounts (
   scope VARCHAR(255),
   id_token VARCHAR(255),
   session_state VARCHAR(255),
-  oauth_token_secret VARCHAR(255),
-  oauth_token VARCHAR(255),
   CONSTRAINT fk_user FOREIGN KEY("userId") REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE TABLE sessions (
