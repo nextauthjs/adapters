@@ -17,6 +17,12 @@ export const client = createClient("http://localhost:8000", supabaseKey)
 runBasicTests({
   adapter: SupabaseAdapter(client),
   db: {
+    async disconnect() {
+      await client.from("users").delete()
+      await client.from("accounts").delete()
+      await client.from("sessions").delete()
+      await client.from("verification_tokens").delete()
+    },
     async user(id) {
       const result = await client
         .from<AdapterUser>("users")
