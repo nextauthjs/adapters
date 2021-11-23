@@ -89,7 +89,7 @@ export function Neo4jAdapter(session: Session): Adapter {
     // @ts-expect-error Property 'id' is missing in type
     // We never use `session.id` anywhere in the core, so this is fine.
     async createSession(data) {
-      const {userId, ...s} = data
+      const { userId, ...s } = format.to(data)
       await write(
         `MATCH (u:User { id: $data.userId })
          CREATE (s:Session)
