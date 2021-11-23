@@ -1,7 +1,12 @@
 import { DgraphAdapter, DgraphClientParams, format } from "../src"
 import { client as dgraphClient } from "../src/client"
 import { runBasicTests } from "../../../basic-tests"
-import { Account, Session, User } from "../src/graphql/fragments"
+import {
+  Account,
+  Session,
+  User,
+  VerificationToken,
+} from "../src/graphql/fragments"
 
 const params: DgraphClientParams = {
   endpoint: "http://localhost:8080/graphql",
@@ -54,6 +59,9 @@ runBasicTests({
           query ($sessionToken: String!) {
             querySession(filter: { sessionToken: { eq: $sessionToken } }) {
               ...SessionFragment
+              user {
+                id
+              }
             }
           }
           ${Session}
@@ -62,7 +70,8 @@ runBasicTests({
       )
 
       const { user, ...session } = result?.[0] ?? {}
-      return format.from({ ...session, userId: user?.id })
+      if (!user?.id) return null
+      return format.from({ ...session, userId: user.id })
     },
     async account(provider_providerAccountId) {
       const result = await c.run<any>(
@@ -86,10 +95,28 @@ runBasicTests({
       )
 
       const account = format.from<any>(result?.[0])
-      account.userId = account.user?.id
+      if (!account?.user) return null
+
+      account.userId = account.user.id
       delete account.user
       return account
     },
-    async verificationToken(identifier_token) {},
+    async verificationToken(identifier_token) {
+      const result = await c.run<any>(
+        /* GraphQL */ `
+          query ($identifier: String = "", $token: String = "") {
+            queryVerificationToken(
+              filter: { identifier: { eq: $identifier }, token: { eq: $token } }
+            ) {
+              ...VerificationTokenFragment
+            }
+          }
+          ${VerificationToken}
+        `,
+        identifier_token
+      )
+
+      return format.from(result?.[0])
+    },
   },
 })

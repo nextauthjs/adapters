@@ -28,11 +28,6 @@ export const Session = /* GraphQL */ `
     expires
     id
     sessionToken
-    user {
-      id
-      name
-      email
-    }
   }
 `
 

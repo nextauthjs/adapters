@@ -288,6 +288,7 @@ export function runBasicTests(options: TestOptions) {
     expect(dbUser).toEqual(user)
 
     // Re-populate db with session and account
+    delete session.id
     await adapter.createSession(session)
     await adapter.linkAccount(account)
 
