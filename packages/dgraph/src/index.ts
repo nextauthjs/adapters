@@ -217,8 +217,6 @@ export function DgraphAdapter(
     async createSession(data) {
       const { userId, ...input } = data
 
-      console.log(input)
-
       await c.run<any>(
         /* GraphQL */ `
           mutation ($input: [AddSessionInput!]!) {
