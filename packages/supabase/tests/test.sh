@@ -2,6 +2,8 @@
 
 npx supabase start
 
+echo "Waiting 5 sec for db to start..." && sleep 5
+
 docker exec \
 -i "supabase-db" \
 sh -c 'psql -h localhost -U postgres' < "$(pwd)/tests/empty.sql"
