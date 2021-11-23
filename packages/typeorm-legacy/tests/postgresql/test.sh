@@ -1,25 +1,15 @@
 #!/usr/bin/env bash
 
-PGUSER=nextauth
-PGDATABASE=nextauth
-PGPORT=5432
-CONTAINER_NAME=next-auth-postgres-test
+WAIT=10
+echo "Waiting ${WAIT} sec for PostgreSQL db to be up..."
+sleep ${WAIT}
 
-# Start db
-docker run -d --rm \
--e POSTGRES_USER=${PGUSER} \
--e POSTGRES_DB=${PGDATABASE} \
--e POSTGRES_HOST_AUTH_METHOD=trust \
---name "${CONTAINER_NAME}" \
--p ${PGPORT}:5432 \
--v "$(pwd)/tests/postgresql/schema.sql":/docker-entrypoint-initdb.d/schema.sql \
-postgres:13.3 
+set -eu
 
-echo \"Waiting 20 sec for db to start...\" && sleep 20
+echo "Started running PostgreSQL tests with default models."
+jest tests/postgresql/index.test.ts
+echo "Finished running PostgreSQL tests with default models."
 
-# Always stop container, but exit with 1 when tests are failing
-if npx jest tests/postgresql --detectOpenHandles --forceExit;then
-    docker stop "${CONTAINER_NAME}"
-else
-    docker stop "${CONTAINER_NAME}" && exit 1
-fi
+echo "Started running PostgreSQL tests with custom models."
+CUSTOM_MODEL=1 jest tests/postgresql/index.custom.test.ts
+echo "Finished running PostgreSQL tests with custom models."
