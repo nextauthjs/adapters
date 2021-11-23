@@ -33,17 +33,7 @@ npm install next-auth @next-auth/dgraph-adapter
 
 ```js
 import NextAuth from "next-auth"
-import { DgraphClient, DgraphAdapter } from "@next-auth/dgraph-adapter/dgraphAdapter";
-
-
-const dgraph = new DgraphClient({
-  endpoint: process.env.DGRAPH_GRAPHQL_ENDPOINT,
-  apiKey: process.env.DGRAPH_GRAPHQL_KEY,
-
-  // you can omit the following properties if you are running an unsecure schema
-  authHeader: "<YOUR AUTH HEADER>",
-  jwtSecret: process.env.SECRET
-});
+import { DgraphAdapter } from "@next-auth/dgraph-adapter";
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -52,7 +42,14 @@ export default NextAuth({
   providers: [
     ...,
   ],
-  adapter: DgraphAdapter(dgraph)
+  adapter: DgraphAdapter({
+    endpoint: process.env.DGRAPH_GRAPHQL_ENDPOINT,
+    authToken: process.env.DGRAPH_GRAPHQL_KEY,
+
+    // you can omit the following properties if you are running an unsecure schema
+    authHeader: "<YOUR AUTH HEADER>",
+    jwtSecret: process.env.SECRET
+  })
   ...
 })
 ```
