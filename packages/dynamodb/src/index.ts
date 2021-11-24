@@ -13,7 +13,7 @@ export type Dynamo<Model> = Model & {
   sk: string
   GSI1PK?: string
   GSI1SK?: string
-  _dynamodbType: "USER" | "SESSION" | "VR" | "ACCOUNT"
+  type: "USER" | "SESSION" | "VR"
 }
 
 export function DynamoDBAdapter(
@@ -30,7 +30,7 @@ export function DynamoDBAdapter(
         pk: `USER#${userId}`,
         sk: `USER#${userId}`,
         id: userId,
-        _dynamodbType: "USER",
+        type: "USER",
       })
 
       if (user.email && typeof user.email === "string") {
@@ -91,7 +91,7 @@ export function DynamoDBAdapter(
         },
       })
       if (!data || !data.Items || !data.Items.length) return null
-      const accounts = data.Items[0] as Dynamo<Account>
+      const accounts = data.Items[0] as Account
       const res = await client.get({
         TableName,
         Key: {
@@ -168,7 +168,6 @@ export function DynamoDBAdapter(
         sk: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
         GSI1PK: `ACCOUNT#${data.provider}`,
         GSI1SK: `ACCOUNT#${data.providerAccountId}`,
-        _dynamodbType: "ACCOUNT",
       }
       await client.put({ TableName, Item: format.to(item) })
       return item
@@ -193,7 +192,7 @@ export function DynamoDBAdapter(
       if (!data.Items) {
         return undefined
       }
-      const account = data.Items[0] as Dynamo<Account>
+      const account = data.Items[0] as Account
       const deleted = await client.delete({
         TableName,
         Key: {
@@ -251,7 +250,7 @@ export function DynamoDBAdapter(
         GSI1SK: `SESSION#${sessionToken}`,
         GSI1PK: `SESSION#${sessionToken}`,
         sessionToken,
-        _dynamodbType: "SESSION",
+        type: "SESSION",
         userId,
         expires,
       }
@@ -331,7 +330,7 @@ export function DynamoDBAdapter(
         sk: `VR#${token}`,
         token,
         identifier,
-        _dynamodbType: "VR",
+        type: "VR",
         expires,
       }
       await client.put({ TableName, Item: format.to(item) })
@@ -381,7 +380,7 @@ export const format = {
   },
   /** Takes a Dynamo object and returns a plain old JavaScript object */
   from<T = Record<string, unknown>>(dynamodbObject: Record<string, any>): T {
-    const { pk, sk, GSI1PK, GSI1SK, _dynamodbType, ...object } = dynamodbObject
+    const { pk, sk, GSI1PK, GSI1SK, type, ...object } = dynamodbObject
     const newObject: Record<string, unknown> = {}
     for (const key in object) {
       const value = object[key]
