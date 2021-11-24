@@ -2,18 +2,15 @@ import { DynamoDB } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb"
 import { DynamoDBAdapter } from "../src"
 import { runBasicTests } from "../../../basic-tests"
-const isTest = process.env.JEST_WORKER_ID
+import { format } from "../src/"
 const config = {
-  region: "us-east-1",
-  ...(isTest && {
-    endpoint: "http://127.0.0.1:8000",
-    region: "eu-central-1",
-    tls: false,
-    credentials: {
-      accessKeyId: "foo",
-      secretAccessKey: "bar",
-    },
-  }),
+  endpoint: "http://127.0.0.1:8000",
+  region: "eu-central-1",
+  tls: false,
+  credentials: {
+    accessKeyId: "foo",
+    secretAccessKey: "bar",
+  },
 }
 
 export const client = DynamoDBDocument.from(new DynamoDB(config), {
@@ -42,13 +39,7 @@ runBasicTests({
 
       if (!user.Item) return null
 
-      return {
-        email: user.Item.email,
-        id: user.Item.id,
-        image: user.Item.image,
-        name: user.Item.name,
-        emailVerified: new Date(user.Item.emailVerified),
-      }
+      return format.from(user.Item)
     },
     async session(token) {
       const session = await client.query({
@@ -67,12 +58,7 @@ runBasicTests({
 
       if (!session.Items || !session.Items[0]) return null
 
-      return {
-        expires: new Date(session.Items[0].expires * 1000),
-        id: session.Items[0].id,
-        sessionToken: session.Items[0].sessionToken,
-        userId: session.Items[0].userId,
-      }
+      return format.from(session.Items[0])
     },
     async account({ provider, providerAccountId }) {
       const account = await client.query({
@@ -91,20 +77,7 @@ runBasicTests({
 
       if (!account.Items || !account.Items[0]) return null
 
-      return {
-        access_token: account.Items[0].accessToken,
-        expires_at: account.Items[0].expiresAt,
-        id_token: account.Items[0].idToken,
-        refresh_token: account.Items[0].refreshToken,
-        scope: account.Items[0].scope,
-        session_state: account.Items[0].sessionState,
-        token_type: account.Items[0].tokenType,
-        type: account.Items[0].type,
-        provider: account.Items[0].provider,
-        providerAccountId: account.Items[0].providerAccountId,
-        userId: account.Items[0].userId,
-        id: undefined,
-      }
+      return format.from(account.Items[0])
     },
     async verificationToken({ token, identifier }) {
       const vt = await client.get({
@@ -114,12 +87,9 @@ runBasicTests({
           sk: `VR#${token}`,
         },
       })
+      if (!vt.Item) return null
 
-      return {
-        expires: new Date(vt.Item?.expires * 1000),
-        token: vt.Item?.token,
-        identifier: vt.Item?.identifier,
-      }
+      return format.from(vt.Item)
     },
   },
 })

@@ -1,6 +1,6 @@
 import { BatchWriteCommandInput, DynamoDBDocument } from "@aws-sdk/lib-dynamodb"
 import { randomBytes } from "crypto"
-import { Account, User } from "next-auth"
+import { Account } from "next-auth"
 import type {
   Adapter,
   AdapterSession,
@@ -8,42 +8,12 @@ import type {
   VerificationToken,
 } from "next-auth/adapters"
 
-// internal interfaces for data as is it saved in dynamodb
-// adds some dynamodb specific types such as index keys (pk, sk, GSI1PK, GSI1SK)
-// and changes date types to number for expires property (epoch time saved in seconds) or string (IsoString for emailVerfied prop)
-interface AdapterSessionDynamo {
+export type Dynamo<Model> = Model & {
   pk: string
   sk: string
-  id: string
-  /** A randomly generated value that is used to get hold of the session. */
-  sessionToken: string
-  /** Used to connect the session to a particular user */
-  userId: string
-  /** This property can be used to set up dynamodb TTL function see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html for more information */
-  expires: number
   GSI1PK?: string
   GSI1SK?: string
-  type: "SESSION"
-}
-interface VerificationTokenDynamo {
-  pk: string
-  sk: string
-  identifier: string
-  /** This property can be used to set up dynamodb TTL function see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html for more information */
-  expires: number
-  token: string
-  type: "VR"
-}
-
-interface AdapterUserDynamo extends User {
-  pk: string
-  sk: string
-  id: string
-  emailVerified: string | null
-  GSI1PK?: string
-  GSI1SK?: string
-  type: "USER"
-  email: string
+  _dynamodbType: "USER" | "SESSION" | "VR" | "ACCOUNT"
 }
 
 export function DynamoDBAdapter(
@@ -55,27 +25,21 @@ export function DynamoDBAdapter(
   return {
     async createUser(user) {
       const userId = randomBytes(16).toString("hex")
-      let emailVerified: string | null = null
-      if (user.emailVerified instanceof Date) {
-        emailVerified = user.emailVerified.toISOString()
-      }
-      const item: AdapterUserDynamo = {
+      const item = format.to({
         ...user,
         pk: `USER#${userId}`,
         sk: `USER#${userId}`,
         id: userId,
-        type: "USER",
-        email: user.email as string,
-        emailVerified,
+        _dynamodbType: "USER",
+      })
+
+      if (user.email && typeof user.email === "string") {
+        item.GSI1PK = `USER#${user.email}`
+        item.GSI1SK = `USER#${user.email}`
       }
 
-      if (item.email) {
-        item.GSI1PK = `USER#${item.email}`
-        item.GSI1SK = `USER#${item.email}`
-      }
-
-      await client.put({ TableName, Item: item })
-      return unMarshallAdapterUserDynamo(item)
+      await client.put({ TableName, Item: format.to(item) })
+      return format.from<AdapterUser>(item)
     },
     async getUser(userId) {
       const data = await client.get({
@@ -85,9 +49,9 @@ export function DynamoDBAdapter(
           sk: `USER#${userId}`,
         },
       })
-      const adapterUserDynamo = data.Item as AdapterUserDynamo
+      const adapterUserDynamo = data.Item
       return adapterUserDynamo
-        ? unMarshallAdapterUserDynamo(adapterUserDynamo)
+        ? format.from<AdapterUser>(adapterUserDynamo)
         : null
     },
     async getUserByEmail(email) {
@@ -107,9 +71,9 @@ export function DynamoDBAdapter(
       if (!data.Items) {
         return null
       }
-      const adapterUserDynamo = data.Items[0] as AdapterUserDynamo
+      const adapterUserDynamo = data.Items[0]
       return adapterUserDynamo
-        ? unMarshallAdapterUserDynamo(adapterUserDynamo)
+        ? format.from<AdapterUser>(adapterUserDynamo)
         : null
     },
     async getUserByAccount({ provider, providerAccountId }) {
@@ -127,7 +91,7 @@ export function DynamoDBAdapter(
         },
       })
       if (!data || !data.Items || !data.Items.length) return null
-      const accounts = data.Items[0] as Account
+      const accounts = data.Items[0] as Dynamo<Account>
       const res = await client.get({
         TableName,
         Key: {
@@ -135,17 +99,18 @@ export function DynamoDBAdapter(
           sk: `USER#${accounts.userId}`,
         },
       })
-      const user = res.Item as AdapterUserDynamo
-      return user ? unMarshallAdapterUserDynamo(user) : null
+      const user = res.Item
+      return user ? format.from<AdapterUser>(user) : null
     },
     async updateUser(user) {
+      const formatedUser = format.to(user)
       let updateExpression = "set"
       const ExpressionAttributeNames: Record<string, string> = {}
       const ExpressionAttributeValues: Record<string, unknown> = {}
-      for (const property in user) {
+      for (const property in formatedUser) {
         updateExpression += ` #${property} = :${property},`
         ExpressionAttributeNames["#" + property] = property
-        ExpressionAttributeValues[":" + property] = user[property]
+        ExpressionAttributeValues[":" + property] = formatedUser[property]
       }
       updateExpression = updateExpression.slice(0, -1)
 
@@ -153,17 +118,16 @@ export function DynamoDBAdapter(
         TableName,
         Key: {
           // next-auth type is incorrect it should be Partial<AdapterUser> & {id: string} instead of just Partial<AdapterUser>
-          pk: `USER#${user.id as string}`,
-          sk: `USER#${user.id as string}`,
+          pk: `USER#${formatedUser.id as string}`,
+          sk: `USER#${formatedUser.id as string}`,
         },
         UpdateExpression: updateExpression,
         ExpressionAttributeNames: ExpressionAttributeNames,
         ExpressionAttributeValues: ExpressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
-      const attributesDynamo = data.Attributes as AdapterUserDynamo
-      const attributes = unMarshallAdapterUserDynamo(attributesDynamo)
-      return attributes
+      const attributesDynamo = data.Attributes as Dynamo<AdapterUser>
+      return format.from<AdapterUser>(attributesDynamo)
     },
     async deleteUser(userId) {
       // query all the items related to the user to delete
@@ -176,13 +140,9 @@ export function DynamoDBAdapter(
       if (!resQuery.Items) {
         return null
       }
-      const items = resQuery.Items as Array<
-        AdapterUserDynamo | AdapterSessionDynamo
-      >
+      const items = resQuery.Items
       // find the user we want to delete to return at the end of the function call
-      const user = items.find((item) => item.type === "USER") as
-        | AdapterUserDynamo
-        | undefined
+      const user = items.find((item) => item.type === "USER")
       const itemsToDelete = items.map((item) => {
         return {
           DeleteRequest: {
@@ -199,28 +159,18 @@ export function DynamoDBAdapter(
         RequestItems: { [TableName]: itemsToDeleteMax },
       }
       await client.batchWrite(param)
-      return user ? unMarshallAdapterUserDynamo(user) : null
+      return user ? format.from<AdapterUser>(user) : null
     },
     async linkAccount(data) {
-      const item: Account = {
+      const item = {
+        ...data,
         pk: `USER#${data.userId}`,
         sk: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
         GSI1PK: `ACCOUNT#${data.provider}`,
         GSI1SK: `ACCOUNT#${data.providerAccountId}`,
-        userId: data.userId,
-        provider: data.provider,
-        providerAccountId: data.providerAccountId,
-        type: data.type,
-        accessToken: data.access_token,
-        expiresAt: data.expires_at,
-        idToken: data.id_token,
-        refreshToken: data.refresh_token,
-        tokenType: data.token_type,
-        scope: data.scope,
-        sessionState: data.session_state,
+        _dynamodbType: "ACCOUNT",
       }
-
-      await client.put({ TableName, Item: item })
+      await client.put({ TableName, Item: format.to(item) })
       return item
     },
     async unlinkAccount({
@@ -243,7 +193,7 @@ export function DynamoDBAdapter(
       if (!data.Items) {
         return undefined
       }
-      const account = data.Items[0] as Account
+      const account = data.Items[0] as Dynamo<Account>
       const deleted = await client.delete({
         TableName,
         Key: {
@@ -252,7 +202,9 @@ export function DynamoDBAdapter(
         },
         ReturnValues: "ALL_OLD",
       })
-      const deletedAccount = deleted.Attributes as Account
+      const deletedAccount = format.from<Account>(
+        deleted.Attributes as Dynamo<Account>
+      )
       return deletedAccount
     },
     async getSessionAndUser(sessionToken) {
@@ -272,9 +224,9 @@ export function DynamoDBAdapter(
       if (!data.Items) {
         return null
       }
-      const dynamoSession = (data.Items[0] as AdapterSessionDynamo) || null
+      const dynamoSession = data.Items[0] || null
       const session = dynamoSession
-        ? unMarshallAdapterSession(dynamoSession)
+        ? format.from<AdapterSession>(dynamoSession)
         : null
       if (!session || (session?.expires && new Date() > session.expires)) {
         return null
@@ -286,26 +238,25 @@ export function DynamoDBAdapter(
           sk: `USER#${session.userId}`,
         },
       })
-      const userDynamo = (res.Item as AdapterUserDynamo) || null
+      const userDynamo = res.Item ?? null
       if (!userDynamo) return null
-      const user = unMarshallAdapterUserDynamo(userDynamo)
+      const user = format.from<AdapterUser>(userDynamo)
       return { user, session }
     },
     async createSession({ sessionToken, userId, expires }) {
-      const item: AdapterSessionDynamo = {
+      const item: Dynamo<AdapterSession> = {
         id: `SESSION#${sessionToken}`,
         pk: `USER#${userId}`,
         sk: `SESSION#${sessionToken}`,
         GSI1SK: `SESSION#${sessionToken}`,
         GSI1PK: `SESSION#${sessionToken}`,
         sessionToken,
-        type: "SESSION",
+        _dynamodbType: "SESSION",
         userId,
-        expires: expires.getTime() / 1000,
+        expires,
       }
-
-      await client.put({ TableName, Item: item })
-      return unMarshallAdapterSession(item)
+      await client.put({ TableName, Item: format.to(item) })
+      return format.from<AdapterSession>(item)
     },
     async updateSession({ sessionToken, expires }) {
       const data = await client.query({
@@ -341,8 +292,8 @@ export function DynamoDBAdapter(
         },
         ReturnValues: "ALL_NEW",
       })
-      const updatedSession = res.Attributes as AdapterSessionDynamo
-      return updatedSession ? unMarshallAdapterSession(updatedSession) : null
+      const updatedSession = res.Attributes
+      return updatedSession ? format.from<AdapterSession>(updatedSession) : null
     },
     async deleteSession(sessionToken) {
       const data = await client.query({
@@ -370,21 +321,21 @@ export function DynamoDBAdapter(
         },
         ReturnValues: "ALL_OLD",
       })
-      const session = res.Attributes as AdapterSessionDynamo
-      return session ? unMarshallAdapterSession(session) : null
+      const session = res.Attributes
+      return session ? format.from<AdapterSession>(session) : null
     },
     async createVerificationToken(verificationToken) {
       const { identifier, expires, token } = verificationToken
-      const item: VerificationTokenDynamo = {
+      const item: Dynamo<VerificationToken> = {
         pk: `VR#${identifier}`,
         sk: `VR#${token}`,
         token,
         identifier,
-        type: "VR",
-        expires: expires.getTime() / 1000,
+        _dynamodbType: "VR",
+        expires,
       }
-      await client.put({ TableName, Item: item })
-      return unMarshallVerificationToken(item)
+      await client.put({ TableName, Item: format.to(item) })
+      return format.from<VerificationToken>(item)
     },
     async useVerificationToken({ identifier, token }) {
       const data = await client.delete({
@@ -395,42 +346,54 @@ export function DynamoDBAdapter(
         },
         ReturnValues: "ALL_OLD",
       })
-      const attributes = data.Attributes as VerificationTokenDynamo
-      return attributes ? unMarshallVerificationToken(attributes) : null
+      const attributes = data.Attributes
+      return attributes ? format.from<VerificationToken>(attributes) : null
     },
   }
 }
-// these functions are used to remove dynamodb specific properties
-// and to transform back date strings into Date javascript objects
-// the unused vars are only there so that the ...rest object does not contain those dynamodb internal properties
-const unMarshallAdapterSession = (
-  session: AdapterSessionDynamo
-): AdapterSession => {
-  const { pk, sk, GSI1PK, GSI1SK, type, ...rest } = session
-  return {
-    ...rest,
-    expires: new Date(session.expires * 1000),
-  }
+
+// https://github.com/honeinc/is-iso-date/blob/master/index.js
+const isoDateRE =
+  /(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))/
+function isDate(value: any) {
+  return value && isoDateRE.test(value) && !isNaN(Date.parse(value))
 }
 
-const unMarshallVerificationToken = (
-  verificationToken: VerificationTokenDynamo
-): VerificationToken => {
-  const { pk, sk, type, ...rest } = verificationToken
-  return {
-    ...rest,
-    expires: new Date(verificationToken.expires * 1000),
-  }
-}
-
-const unMarshallAdapterUserDynamo = (
-  adapterUser: AdapterUserDynamo
-): AdapterUser => {
-  const { pk, sk, GSI1PK, GSI1SK, type, ...rest } = adapterUser
-  return {
-    ...rest,
-    emailVerified: adapterUser.emailVerified
-      ? new Date(adapterUser.emailVerified)
-      : null,
-  }
+// dyanmo TTL requires the date object to be a timestamp in Unix epoch time format in seconds.
+// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-before-you-start.html#time-to-live-ttl-before-you-start-formatting
+export const format = {
+  /** Takes a plain old JavaScript object and turns it into a Dynamodb object */
+  to(object: Record<string, any>) {
+    const newObject: Record<string, unknown> = {}
+    for (const key in object) {
+      const value = object[key]
+      if (value instanceof Date) {
+        if (key === "expires") {
+          newObject[key] = value.getTime() / 1000
+        } else {
+          newObject[key] = value.toISOString()
+        }
+      } else {
+        newObject[key] = value
+      }
+    }
+    return newObject
+  },
+  /** Takes a Dynamo object and returns a plain old JavaScript object */
+  from<T = Record<string, unknown>>(dynamodbObject: Record<string, any>): T {
+    const { pk, sk, GSI1PK, GSI1SK, _dynamodbType, ...object } = dynamodbObject
+    const newObject: Record<string, unknown> = {}
+    for (const key in object) {
+      const value = object[key]
+      if (isDate(value)) {
+        newObject[key] = new Date(value)
+      } else {
+        newObject[key] = value
+      }
+      if (key === "expires") {
+        newObject[key] = new Date(value * 1000)
+      }
+    }
+    return newObject as T
+  },
 }
