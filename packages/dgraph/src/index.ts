@@ -13,8 +13,6 @@ export interface DgraphAdapterOptions {
   }
 }
 
-// TODO: remove
-
 export type { DgraphClientParams }
 export { format }
 
