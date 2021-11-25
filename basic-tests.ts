@@ -4,6 +4,8 @@ import { createHash, randomUUID } from "crypto"
 export interface TestOptions {
   adapter: Adapter
   db: {
+    /** Generates UUID v4 by default. Use it to override how the test suite should generate IDs, like user id. */
+    id?: () => string
     /**
      * Manually disconnect database after all tests have been run,
      * if your adapter doesn't do it automatically
@@ -37,6 +39,7 @@ export interface TestOptions {
  * You can add additional tests below, if you wish.
  */
 export function runBasicTests(options: TestOptions) {
+  const id = options.db.id ?? randomUUID
   // Init
   beforeAll(async () => {
     await options.db.connect?.()
@@ -110,7 +113,7 @@ export function runBasicTests(options: TestOptions) {
   })
 
   test("getUser", async () => {
-    expect(await adapter.getUser(randomUUID())).toBeNull()
+    expect(await adapter.getUser(id())).toBeNull()
     expect(await adapter.getUser(user.id)).toEqual(user)
   })
 
@@ -285,6 +288,7 @@ export function runBasicTests(options: TestOptions) {
     expect(dbUser).toEqual(user)
 
     // Re-populate db with session and account
+    delete session.id
     await adapter.createSession(session)
     await adapter.linkAccount(account)
 

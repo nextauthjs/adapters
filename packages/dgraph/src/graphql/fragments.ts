@@ -1,17 +1,14 @@
-export const makeUserFragment = (
-  customFields: string
-): string => /* GraphQL */ `
+export const User = /* GraphQL */ `
   fragment UserFragment on User {
     email
     id
     image
     name
     emailVerified
-    ${customFields}
   }
 `
 
-export const accountFragment = /* GraphQL */ `
+export const Account = /* GraphQL */ `
   fragment AccountFragment on Account {
     id
     type
@@ -26,15 +23,18 @@ export const accountFragment = /* GraphQL */ `
     session_state
   }
 `
-export const sessionFragment = /* GraphQL */ `
+export const Session = /* GraphQL */ `
   fragment SessionFragment on Session {
     expires
     id
     sessionToken
-    user {
-      id
-      name
-      email
-    }
+  }
+`
+
+export const VerificationToken = /* GraphQL */ `
+  fragment VerificationTokenFragment on VerificationToken {
+    identifier
+    token
+    expires
   }
 `

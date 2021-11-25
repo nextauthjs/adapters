@@ -1,51 +1,122 @@
-import { DgraphAdapter } from "../src"
-import { DgraphClient } from "../src/dgraphClient"
+import { DgraphAdapter, DgraphClientParams, format } from "../src"
+import { client as dgraphClient } from "../src/client"
 import { runBasicTests } from "../../../basic-tests"
-import { getAccount, getVerificationRequest } from "../src/graphql/queries"
-import { clean } from "../src/graphql/mutations"
-const dgraph = new DgraphClient({
-  endpoint: "https://wild-grass.us-east-1.aws.cloud.dgraph.io/graphql",
-  apiKey: "OGE3MDZmMjA5ODNmNDk0ZGU0ZDYyMjI3NWIxM2JmYTA=",
-})
+import {
+  Account,
+  Session,
+  User,
+  VerificationToken,
+} from "../src/graphql/fragments"
+
+const params: DgraphClientParams = {
+  endpoint: "http://localhost:8080/graphql",
+  authToken: "test",
+}
+
+/** TODO: Add test to `dgraphClient` */
+const c = dgraphClient(params)
 
 runBasicTests({
-  adapter: DgraphAdapter(dgraph),
+  adapter: DgraphAdapter(params),
   db: {
-    disconnect: async () => await dgraph.dgraph(clean),
-    verificationToken: async (identifier_token) => {
-      const [verificationRequest] = await dgraph.dgraph(
-        getVerificationRequest,
-        identifier_token
-      )
-      if (!verificationRequest) return null
-      return {
-        ...verificationRequest,
-        expires: new Date(verificationRequest.expires),
-      }
+    id: () => "0x0a0a00a00",
+    async disconnect() {
+      await c.run(/* GraphQL */ `
+        mutation {
+          deleteUser(filter: {}) {
+            numUids
+          }
+          deleteVerificationToken(filter: {}) {
+            numUids
+          }
+          deleteSession(filter: {}) {
+            numUids
+          }
+          deleteAccount(filter: {}) {
+            numUids
+          }
+        }
+      `)
     },
-    user: (id) => DgraphAdapter(dgraph).getUser(id),
-    account: async (provider_providerAccountId) => {
-      const [result] = await dgraph.dgraph(
-        getAccount,
+    async user(id) {
+      const result = await c.run<any>(
+        /* GraphQL */ `
+          query ($id: ID!) {
+            getUser(id: $id) {
+              ...UserFragment
+            }
+          }
+          ${User}
+        `,
+        { id }
+      )
+
+      return format.from(result)
+    },
+    async session(sessionToken) {
+      const result = await c.run<any>(
+        /* GraphQL */ `
+          query ($sessionToken: String!) {
+            querySession(filter: { sessionToken: { eq: $sessionToken } }) {
+              ...SessionFragment
+              user {
+                id
+              }
+            }
+          }
+          ${Session}
+        `,
+        { sessionToken }
+      )
+
+      const { user, ...session } = result?.[0] ?? {}
+      if (!user?.id) return null
+      return format.from({ ...session, userId: user.id })
+    },
+    async account(provider_providerAccountId) {
+      const result = await c.run<any>(
+        /* GraphQL */ `
+          query ($providerAccountId: String = "", $provider: String = "") {
+            queryAccount(
+              filter: {
+                providerAccountId: { eq: $providerAccountId }
+                provider: { eq: $provider }
+              }
+            ) {
+              ...AccountFragment
+              user {
+                id
+              }
+            }
+          }
+          ${Account}
+        `,
         provider_providerAccountId
       )
-      if (!result) return null
-      const { user, ...account } = result
-      return {
-        ...account,
-        expires_at: new Date(account.expires_at).getTime() / 1000,
-        userId: user?.id,
-      }
-    },
-    session: async (sessionToken) => {
-      const sessionAndUser = await DgraphAdapter(dgraph).getSessionAndUser(
-        sessionToken
-      )
-      if (sessionAndUser === null) return null
-      const { session } = sessionAndUser
-      if (!session?.id) return null
 
-      return Object.assign(session, { expires: new Date(session.expires) })
+      const account = format.from<any>(result?.[0])
+      if (!account?.user) return null
+
+      account.userId = account.user.id
+      delete account.user
+      return account
+    },
+    async verificationToken(identifier_token) {
+      const result = await c.run<any>(
+        /* GraphQL */ `
+          query ($identifier: String = "", $token: String = "") {
+            queryVerificationToken(
+              filter: { identifier: { eq: $identifier }, token: { eq: $token } }
+            ) {
+              ...VerificationTokenFragment
+            }
+          }
+          ${VerificationToken}
+        `,
+        identifier_token
+      )
+
+      return format.from(result?.[0])
     },
   },
 })

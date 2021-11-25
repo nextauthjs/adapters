@@ -10,7 +10,7 @@ type Account
   provider: String @search(by: [hash])
   providerAccountId: String @search(by: [hash])
   refreshToken: String
-  expires_at: DateTime
+  expires_at: Int64
   accessToken: String
   token_type: String
   refresh_token: String
@@ -66,7 +66,7 @@ type User
   sessions: [Session] @hasInverse(field: "user")
 }
 
-type VerificationRequest
+type VerificationToken
   @auth(
     delete: { rule: "{$nextAuth { eq: true } }" }
     add: { rule: "{$nextAuth { eq: true } }" }
