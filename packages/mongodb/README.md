@@ -73,8 +73,6 @@ import clientPromise from "lib/mongodb"
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
   adapter: MongoDBAdapter(clientPromise),
-  // https://next-auth.js.org/configuration/providers
-  providers: [],
   ...
 })
 ```
