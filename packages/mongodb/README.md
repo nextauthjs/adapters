@@ -1,7 +1,7 @@
 <p align="center">
    <br/>
    <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="./logo.svg" />
-   <h3 align="center"><b>mongoDB Adapter</b> - NextAuth.js</h3>
+   <h3 align="center"><b>MongoDB Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
    </p>
@@ -14,9 +14,7 @@
 
 ## Overview
 
-This is the mongoDB Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
-
-You can find the mongoDB schema in the docs at [next-auth.js.org/adapters/mongodb](https://next-auth.js.org/adapters/mongodb).
+This is the MongoDB Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
 ## Getting Started
 
@@ -73,16 +71,12 @@ import clientPromise from "lib/mongodb"
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
-export default async function auth(req, res) {
-  return await NextAuth(req, res, {
-    adapter: MongoDBAdapter({
-      db: (await clientPromise).db("your-database")
-    }),
-    // https://next-auth.js.org/configuration/providers
-    providers: [],
-    ...
-  })
-}
+export default NextAuth({
+  adapter: MongoDBAdapter(clientPromise),
+  // https://next-auth.js.org/configuration/providers
+  providers: [],
+  ...
+})
 ```
 
 ## Contributing
