@@ -55,16 +55,23 @@ export function _id(hex?: string) {
   return new ObjectId(hex)
 }
 
-export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
-  const { db: m } = options
+export function MongoDBAdapter(options: {
+  db: MongoDB.Db
+  collectionPrefix?: string
+}): Adapter {
+  const { db: m, collectionPrefix = "" } = options
   const { from, to } = format
 
   const { Users, Accounts, Sessions, VerificationTokens } = {
-    Users: m.collection<AdapterUser>(collections.Users),
-    Accounts: m.collection<Account>(collections.Accounts),
-    Sessions: m.collection<AdapterSession>(collections.Sessions),
+    Users: m.collection<AdapterUser>(`${collectionPrefix}${collections.Users}`),
+    Accounts: m.collection<Account>(
+      `${collectionPrefix}${collections.Accounts}`
+    ),
+    Sessions: m.collection<AdapterSession>(
+      `${collectionPrefix}${collections.Sessions}`
+    ),
     VerificationTokens: m.collection<VerificationToken>(
-      collections.VerificationTokens
+      `${collectionPrefix}${collections.VerificationTokens}`
     ),
   }
   return {
@@ -100,9 +107,9 @@ export function MongoDBAdapter(options: { db: MongoDB.Db }): Adapter {
     async deleteUser(id) {
       const userId = _id(id)
       await Promise.all([
-        m.collection(collections.Accounts).deleteMany({ userId }),
-        m.collection(collections.Sessions).deleteMany({ userId }),
-        m.collection(collections.Users).deleteOne({ _id: userId }),
+        Accounts.deleteMany({ userId }),
+        Sessions.deleteMany({ userId }),
+        Users.deleteOne({ _id: userId }),
       ])
     },
     linkAccount: async (data) => {

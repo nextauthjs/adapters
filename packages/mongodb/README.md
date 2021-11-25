@@ -85,6 +85,22 @@ export default async function auth(req, res) {
 }
 ```
 
+Optional: Use the `collectionPrefix` configuration option to make sure that all database collections that are created have your prefix in their name. This may be necessary when you already have collections with names like `users`, `accounts`, `sessions` or `verification_tokens`. Use it like that:
+
+```
+export default async function auth(req, res) {
+  return await NextAuth(req, res, {
+    adapter: MongoDBAdapter({
+      db: (await clientPromise).db("your-database"),
+	  collectionPrefix: 'nextauth_'
+    }),
+    // https://next-auth.js.org/configuration/providers
+    providers: [],
+    ...
+  })
+}
+```
+
 ## Contributing
 
 We're open to all community contributions! If you'd like to contribute in any way, please read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/main/CONTRIBUTING.md).
