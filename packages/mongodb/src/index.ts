@@ -9,14 +9,18 @@ import type * as MongoDB from "mongodb"
 import { ObjectId } from "mongodb"
 import { Account } from "next-auth"
 
-export interface Collections {
-  Users?: string
-  Accounts?: string
-  Sessions?: string
-  VerificationTokens?: string
+export interface MongoDBAdapterOptions {
+  collections?: {
+    Users?: string
+    Accounts?: string
+    Sessions?: string
+    VerificationTokens?: string
+  }
 }
 
-export const defaultCollections = {
+export const defaultCollections: Required<
+  Required<MongoDBAdapterOptions>["collections"]
+> = {
   Users: "users",
   Accounts: "accounts",
   Sessions: "sessions",
@@ -60,10 +64,6 @@ export const format = {
 export function _id(hex?: string) {
   if (hex?.length !== 24) return new ObjectId()
   return new ObjectId(hex)
-}
-
-export interface MongoDBAdapterOptions {
-  collections?: Collections
 }
 
 export function MongoDBAdapter(
