@@ -21,7 +21,7 @@ dgraph/standalone
 
 echo "Waiting 15 sec for db to start..." && sleep 15
 
-curl -X POST localhost:8080/admin/schema --data-binary '@src/graphql/unsecure.schema.gql'
+curl -X POST localhost:8080/admin/schema --data-binary '@src/graphql/test.schema.gql'
 
 if $JEST_WATCH; then
     # Run jest in watch mode
