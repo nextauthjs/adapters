@@ -42,12 +42,6 @@ You can find the Prisma schema in the docs at [next-auth.js.org/adapters/mikro-o
    const getORM = async () => {
       if (!global.__MikroORM__){
          global.__MikroORM__ = await MikroORM.init(config)
-         // specific to in-memory sqlite
-            .then(async orm => {
-               const generator = orm.getSchemaGenerator();
-               await generator.createSchema().catch();
-               return orm;
-            });
       }
       return global.__MikroORM__;
    };
