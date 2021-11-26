@@ -1,5 +1,6 @@
 import * as neo4j from "neo4j-driver"
 import { runBasicTests } from "../../../basic-tests"
+import statements from './resources/statements'
 
 import { Neo4jAdapter, format } from "../src"
 
@@ -13,6 +14,14 @@ const neo4jSession = driver.session()
 runBasicTests({
   adapter: Neo4jAdapter(neo4jSession),
   db: {
+    async connect() {
+      for await (const statement of statements.split(';')) {
+        if(!statement.length) return
+        await neo4jSession.writeTransaction((tx) =>
+          tx.run(statement)
+        )
+      }
+    },
     async disconnect() {
       await neo4jSession.writeTransaction((tx) =>
         tx.run(
@@ -42,7 +51,7 @@ runBasicTests({
       const session = result?.records[0]?.get("s")?.properties
       const userId = result?.records[0]?.get("userId")
 
-      if (!session || !userId) return null
+      if (!session || session.userId || !userId) return null
 
       return { ...format.from(session), userId }
     },
@@ -59,7 +68,8 @@ runBasicTests({
       const account = result?.records[0]?.get("a")?.properties
       const userId = result?.records[0]?.get("userId")
 
-      if (!account || !userId) return null
+      if (!account || account.userId || !userId) return null
+
       return { ...format.from(account), userId }
     },
 
@@ -76,3 +86,4 @@ runBasicTests({
     },
   },
 })
+
