@@ -1,14 +1,12 @@
 import * as jwt from "jsonwebtoken"
 import fetch, { HeadersInit } from "node-fetch"
 
-export type DgraphJwtAlgorithm = "HS256" | "RS256"
-
 export interface DgraphClientParams {
   endpoint: string
   /** `X-Auth-Token` header value */
   authToken: string
   jwtSecret?: string
-  jwtAlgorithm?: DgraphJwtAlgorithm
+  jwtAlgorithm?: "HS256" | "RS256"
   authHeader?: string
 }
 
@@ -28,7 +26,13 @@ export function client(params: DgraphClientParams) {
     throw new Error("Dgraph client error: Please provide a graphql endpoint")
   }
 
-  const { endpoint, authToken, jwtSecret, jwtAlgorithm = "HS256", authHeader = "Authorization",  } = params
+  const {
+    endpoint,
+    authToken,
+    jwtSecret,
+    jwtAlgorithm = "HS256",
+    authHeader = "Authorization",
+  } = params
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "X-Auth-Token": authToken,

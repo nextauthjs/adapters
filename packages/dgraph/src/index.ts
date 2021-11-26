@@ -4,6 +4,8 @@ import type { Adapter } from "next-auth/adapters"
 import type { DgraphClientParams } from "./client"
 import * as defaultFragments from "./graphql/fragments"
 
+export type { DgraphClientParams, DgraphClientError } from "./client"
+
 export interface DgraphAdapterOptions {
   fragments?: {
     User?: string
@@ -13,7 +15,6 @@ export interface DgraphAdapterOptions {
   }
 }
 
-export type { DgraphClientParams }
 export { format }
 
 export function DgraphAdapter(
