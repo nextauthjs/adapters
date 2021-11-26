@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { ObjectId } from "mongodb"
+
 import type {
   Adapter,
   AdapterSession,
   AdapterUser,
   VerificationToken,
 } from "next-auth/adapters"
-import type * as MongoDB from "mongodb"
-import { ObjectId } from "mongodb"
-import { Account } from "next-auth"
+import type { MongoClient } from "mongodb"
+import type { Account } from "next-auth"
 
 export interface MongoDBAdapterOptions {
   collections?: {
@@ -67,7 +68,7 @@ export function _id(hex?: string) {
 }
 
 export function MongoDBAdapter(
-  client: Promise<MongoDB.MongoClient>,
+  client: Promise<MongoClient>,
   options: MongoDBAdapterOptions = {}
 ): Adapter {
   const { collections } = options
