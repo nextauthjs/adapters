@@ -72,7 +72,11 @@ export class Session implements AdapterSession {
   @PrimaryKey({ default: randomUUID() })
   id: string = randomUUID()
 
-  @ManyToOne({ hidden: true })
+  @ManyToOne({
+    entity: () => User,
+    hidden: true,
+    onDelete: "cascade",
+  })
   user!: User
 
   @Property({ persist: false })
@@ -95,7 +99,11 @@ export class Account implements RemoveIndex<DefaultAccount> {
   @PrimaryKey()
   id: string = randomUUID()
 
-  @ManyToOne({ hidden: true })
+  @ManyToOne({
+    entity: () => User,
+    hidden: true,
+    onDelete: "cascade",
+  })
   user!: User
 
   @Property({ persist: false })

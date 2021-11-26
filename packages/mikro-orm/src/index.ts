@@ -72,6 +72,7 @@ export function MikroOrmAdapter<
       return wrap(user).toObject() as AdapterUser
     },
     deleteUser: async (id) => {
+      // cascade delete does not work in sqlite, so manually populating sessions/accounts
       const user = await getEM().findOne(UserModel, { id }, [
         "sessions",
         "accounts",
@@ -100,13 +101,13 @@ export function MikroOrmAdapter<
       return wrap(account).toObject() as DefaultAccount
     },
     getSessionAndUser: async (sessionToken) => {
-      const session = await getEM().findOne(SessionModel, { sessionToken })
-      if (!session) return null
-      const user = await getEM().findOne(UserModel, { id: session.userId })
-      if (!user) return null
+      const session = await getEM().findOne(SessionModel, { sessionToken }, [
+        "user",
+      ])
+      if (!session || !session.user) return null
 
       return {
-        user: wrap(user).toObject() as AdapterUser,
+        user: wrap(session.user).toObject() as AdapterUser,
         session: wrap(session).toObject() as AdapterSession,
       }
     },
