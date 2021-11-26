@@ -37,7 +37,6 @@ You can find the Prisma schema in the docs at [next-auth.js.org/adapters/mikro-o
       ...
    };
 
-
    // fetches a global instance of mikro-rom
    const getORM = async () => {
       if (!global.__MikroORM__){

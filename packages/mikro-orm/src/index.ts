@@ -103,7 +103,6 @@ export function MikroOrmAdapter<
         { populate: ["user"] }
       )
       if (!session || !session.user) return null
-      console.log(session)
 
       return {
         user: wrap(session.user).toObject() as AdapterUser,

@@ -35,8 +35,6 @@
     "@mikro-orm/core": "^5.0.0-dev.527"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-decorators": "^7.16.4",
-    "@mikro-orm/sqlite": "^5.0.0-dev.527",
-    "babel-plugin-transform-typescript-metadata": "^0.3.2"
+    "@mikro-orm/sqlite": "^5.0.0-dev.527"
   }
 }
