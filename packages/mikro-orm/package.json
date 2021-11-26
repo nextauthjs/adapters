@@ -1,0 +1,42 @@
+{
+  "name": "@next-auth/mikro-orm-adapter",
+  "version": "0.0.0",
+  "description": "Mikro-ORM adapter for next-auth.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/next-auth/issues"
+  },
+  "author": "Jonas Strassel <info@jonas-strassel.de>",
+  "main": "dist/index.js",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "prisma"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "jest --runInBand",
+    "build": "tsc"
+  },
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "peerDependencies": {
+    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x"
+  },
+  "dependencies": {
+    "@mikro-orm/core": "^4.5.9"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^7.16.4",
+    "@mikro-orm/sqlite": "^4.5.9",
+    "babel-plugin-transform-typescript-metadata": "^0.3.2"
+  }
+}
