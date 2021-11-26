@@ -2,6 +2,8 @@
 
 CONTAINER_NAME=next-auth-mongodb-test
 
+JEST_WATCH=false
+
 # Is the watch flag passed to the script?
 while getopts w flag
 do
