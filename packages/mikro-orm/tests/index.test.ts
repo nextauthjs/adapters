@@ -8,10 +8,6 @@ declare global {
   var __MikroORM__: MikroORM
 }
 
-jest.spyOn(MikroOrmModule, "getEM").mockImplementation(() => {
-  return global.__MikroORM__.em.fork()
-})
-
 const getORM = async () => {
   if (!global.__MikroORM__) {
     global.__MikroORM__ = await MikroORM.init({
@@ -25,7 +21,7 @@ const getORM = async () => {
 }
 
 runBasicTests({
-  adapter: MikroOrmModule.MikroOrmAdapter(),
+  adapter: MikroOrmModule.MikroOrmAdapter(getORM()),
   db: {
     connect: async () => {
       const orm = await getORM()
