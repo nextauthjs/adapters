@@ -18,9 +18,21 @@ export const getEM = () => {
 }
 
 export function MikroOrmAdapter<
-  TUserModel extends typeof defaultModels.User = typeof defaultModels.User
->(User?: TUserModel): Adapter {
-  const UserModel = User ?? defaultModels.User
+  TUserModel extends typeof defaultModels.User = typeof defaultModels.User,
+  TAccountModel extends typeof defaultModels.Account = typeof defaultModels.Account,
+  TSessionModel extends typeof defaultModels.Session = typeof defaultModels.Session,
+  TVerificationTokenModel extends typeof defaultModels.VerificationToken = typeof defaultModels.VerificationToken
+>(models?: {
+  User?: TUserModel
+  Account: TAccountModel
+  Session?: TSessionModel
+  VerificationToken?: TVerificationTokenModel
+}): Adapter {
+  const UserModel = models?.User ?? defaultModels.User
+  const AccountModel = models?.Account ?? defaultModels.Account
+  const SessionModel = models?.Session ?? defaultModels.Session
+  const VerificationTokenModel =
+    models?.VerificationToken ?? defaultModels.VerificationToken
 
   return {
     createUser: async (data) => {
@@ -42,7 +54,7 @@ export function MikroOrmAdapter<
       return wrap(user).toObject()
     },
     getUserByAccount: async (provider_providerAccountId) => {
-      const account = await getEM().findOne(defaultModels.Account, {
+      const account = await getEM().findOne(AccountModel, {
         ...provider_providerAccountId,
       })
       if (!account) return null
@@ -68,14 +80,14 @@ export function MikroOrmAdapter<
     linkAccount: async (data) => {
       const user = await getEM().findOne(UserModel, { id: data.userId })
       if (!user) throw new Error("User not found")
-      const account = new defaultModels.Account(data)
+      const account = new AccountModel(data)
       user.accounts.add(account)
       await getEM().persistAndFlush(user)
 
       return wrap(account).toObject() as DefaultAccount
     },
     unlinkAccount: async (provider_providerAccountId) => {
-      const account = await getEM().findOne(defaultModels.Account, {
+      const account = await getEM().findOne(AccountModel, {
         ...provider_providerAccountId,
       })
       if (!account) throw new Error("Account not found")
@@ -85,7 +97,7 @@ export function MikroOrmAdapter<
     },
     getSessionAndUser: async (sessionToken) => {
       const session = await getEM().findOne(
-        defaultModels.Session,
+        SessionModel,
         { sessionToken },
         { populate: ["user"] }
       )
@@ -99,14 +111,14 @@ export function MikroOrmAdapter<
     createSession: async (data) => {
       const user = await getEM().findOne(UserModel, { id: data.userId })
       if (!user) throw new Error("User not found")
-      const session = new defaultModels.Session(data)
+      const session = new SessionModel(data)
       user.sessions.add(session)
       await getEM().persistAndFlush(user)
 
       return wrap(session).toObject() as AdapterSession
     },
     updateSession: async (data) => {
-      const session = await getEM().findOne(defaultModels.Session, {
+      const session = await getEM().findOne(SessionModel, {
         sessionToken: data.sessionToken,
       })
       wrap(session).assign(data)
@@ -116,7 +128,7 @@ export function MikroOrmAdapter<
       return wrap(session).toObject() as AdapterSession
     },
     deleteSession: async (sessionToken) => {
-      const session = await getEM().findOne(defaultModels.Session, {
+      const session = await getEM().findOne(SessionModel, {
         sessionToken,
       })
       if (!session) return null
@@ -125,14 +137,14 @@ export function MikroOrmAdapter<
       return wrap(session).toObject() as AdapterSession
     },
     createVerificationToken: async (data) => {
-      const verificationToken = new defaultModels.VerificationToken(data)
+      const verificationToken = new VerificationTokenModel(data)
       await getEM().persistAndFlush(verificationToken)
 
       return wrap(verificationToken).toObject() as AdapterVerificationToken
     },
     useVerificationToken: async (params) => {
       const verificationToken = await getEM()
-        .getRepository(defaultModels.VerificationToken)
+        .getRepository(VerificationTokenModel)
         .findOne(params)
       if (!verificationToken) return null
       await getEM().removeAndFlush(verificationToken)
