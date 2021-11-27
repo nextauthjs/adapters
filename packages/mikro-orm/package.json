@@ -21,7 +21,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "jest --runInBand --forceExit",
+    "test": "jest --runInBand",
     "build": "tsc"
   },
   "files": [

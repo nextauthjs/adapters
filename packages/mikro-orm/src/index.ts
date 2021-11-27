@@ -1,4 +1,4 @@
-import type { MikroORM } from "@mikro-orm/core"
+import type { EntityManager } from "@mikro-orm/core"
 import { wrap, RequestContext } from "@mikro-orm/core"
 
 import * as defaultModels from "./models"
@@ -9,13 +9,11 @@ import type {
 } from "next-auth/adapters"
 import type { DefaultAccount } from "next-auth"
 
-export const getEM = (ormPromise?: Promise<MikroORM>) => {
-  const emPromise =
-    RequestContext.getEntityManager() ??
-    ormPromise?.then((orm) => orm.em.fork())
-  if (!emPromise)
-    throw new Error("Neither RequestContext, nor ORM instance provided.")
-  return emPromise
+export const getEM = (emPromise?: Promise<EntityManager> | EntityManager) => {
+  const em = RequestContext.getEntityManager() ?? emPromise
+  if (!em)
+    throw new Error("Neither RequestContext, nor EntityManager provided.")
+  return em
 }
 
 export function MikroOrmAdapter<
@@ -24,7 +22,7 @@ export function MikroOrmAdapter<
   TSessionModel extends typeof defaultModels.Session = typeof defaultModels.Session,
   TVerificationTokenModel extends typeof defaultModels.VerificationToken = typeof defaultModels.VerificationToken
 >(
-  ormPromise?: Promise<MikroORM>,
+  emPromise?: Promise<EntityManager> | EntityManager,
   models?: {
     User?: TUserModel
     Account: TAccountModel
@@ -40,28 +38,28 @@ export function MikroOrmAdapter<
 
   return {
     createUser: async (data) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const user = new UserModel({ ...data })
       await em.persistAndFlush(user)
 
       return wrap(user).toObject()
     },
     getUser: async (id) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const user = await em.findOne(UserModel, { id })
       if (!user) return null
 
       return wrap(user).toObject()
     },
     getUserByEmail: async (email) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const user = await em.findOne(UserModel, { email })
       if (!user) return null
 
       return wrap(user).toObject()
     },
     getUserByAccount: async (provider_providerAccountId) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const account = await em.findOne(AccountModel, {
         ...provider_providerAccountId,
       })
@@ -71,7 +69,7 @@ export function MikroOrmAdapter<
       return wrap(user).toObject()
     },
     updateUser: async (data) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const user = await em.findOne(UserModel, { id: data.id })
       if (!user) throw new Error("User not found")
       wrap(user).assign(data, { mergeObjects: true })
@@ -80,7 +78,7 @@ export function MikroOrmAdapter<
       return wrap(user).toObject()
     },
     deleteUser: async (id) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const user = await em.findOne(UserModel, { id })
       if (!user) return null
       await em.removeAndFlush(user)
@@ -88,7 +86,7 @@ export function MikroOrmAdapter<
       return wrap(user).toObject()
     },
     linkAccount: async (data) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const user = await em.findOne(UserModel, { id: data.userId })
       if (!user) throw new Error("User not found")
       const account = new AccountModel(data)
@@ -98,7 +96,7 @@ export function MikroOrmAdapter<
       return wrap(account).toObject() as DefaultAccount
     },
     unlinkAccount: async (provider_providerAccountId) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const account = await em.findOne(AccountModel, {
         ...provider_providerAccountId,
       })
@@ -108,7 +106,7 @@ export function MikroOrmAdapter<
       return wrap(account).toObject() as DefaultAccount
     },
     getSessionAndUser: async (sessionToken) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const session = await em.findOne(
         SessionModel,
         { sessionToken },
@@ -122,7 +120,7 @@ export function MikroOrmAdapter<
       }
     },
     createSession: async (data) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const user = await em.findOne(UserModel, { id: data.userId })
       if (!user) throw new Error("User not found")
       const session = new SessionModel(data)
@@ -132,7 +130,7 @@ export function MikroOrmAdapter<
       return wrap(session).toObject() as AdapterSession
     },
     updateSession: async (data) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const session = await em.findOne(SessionModel, {
         sessionToken: data.sessionToken,
       })
@@ -143,7 +141,7 @@ export function MikroOrmAdapter<
       return wrap(session).toObject() as AdapterSession
     },
     deleteSession: async (sessionToken) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const session = await em.findOne(SessionModel, {
         sessionToken,
       })
@@ -153,14 +151,14 @@ export function MikroOrmAdapter<
       return wrap(session).toObject() as AdapterSession
     },
     createVerificationToken: async (data) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const verificationToken = new VerificationTokenModel(data)
       await em.persistAndFlush(verificationToken)
 
       return wrap(verificationToken).toObject() as AdapterVerificationToken
     },
     useVerificationToken: async (params) => {
-      const em = await getEM(ormPromise)
+      const em = await getEM(emPromise)
       const verificationToken = await em
         .getRepository(VerificationTokenModel)
         .findOne(params)
