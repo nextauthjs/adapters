@@ -6,12 +6,12 @@ import {
   User as DefaultUserModel,
   VerificationToken,
 } from "./models"
-import {
+import type {
   Adapter,
   AdapterSession,
   VerificationToken as AdapterVerificationToken,
 } from "next-auth/adapters"
-import { DefaultAccount } from "next-auth"
+import type { DefaultAccount } from "next-auth"
 
 export const getEM = () => {
   const em = RequestContext.getEntityManager()
