@@ -97,6 +97,7 @@ export class Session implements AdapterSession {
 }
 
 @Entity()
+@Unique({ properties: ["provider", "providerAccountId"] })
 export class Account implements RemoveIndex<DefaultAccount> {
   @PrimaryKey()
   id: string = randomUUID()
@@ -147,6 +148,7 @@ export class Account implements RemoveIndex<DefaultAccount> {
 }
 
 @Entity()
+@Unique({ properties: ["token", "identifier"] })
 export class VerificationToken implements AdapterVerificationToken {
   @PrimaryKey()
   @Property()
