@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto"
+import { v4 as randomUUID } from "uuid"
 
 import {
   Property,
