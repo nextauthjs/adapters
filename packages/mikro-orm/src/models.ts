@@ -45,6 +45,7 @@ export class User implements RemoveIndex<AdapterUser> {
   @OneToMany({
     entity: () => Session,
     mappedBy: (session) => session.user,
+    hidden: true,
     orphanRemoval: true,
     cascade: [Cascade.ALL],
   })
@@ -53,6 +54,7 @@ export class User implements RemoveIndex<AdapterUser> {
   @OneToMany({
     entity: () => Account,
     mappedBy: (account) => account.user,
+    hidden: true,
     orphanRemoval: true,
     cascade: [Cascade.ALL],
   })
