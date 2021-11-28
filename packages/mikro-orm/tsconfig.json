@@ -5,7 +5,8 @@
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "stripInternal": true
   },
   "exclude": ["tests", "dist"]
 }
