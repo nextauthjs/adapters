@@ -1,4 +1,4 @@
-import { wrap, RequestContext } from "@mikro-orm/core"
+import { wrap } from "@mikro-orm/core"
 import * as defaultModels from "./models"
 
 import type { EntityManager } from "@mikro-orm/core"
@@ -6,17 +6,8 @@ import type { Adapter } from "next-auth/adapters"
 
 export * as defaultModels from "./models"
 
-function getEM(em?: Promise<EntityManager> | EntityManager) {
-  if (em) return em
-
-  const _em = RequestContext.getEntityManager()
-  if (_em) return _em
-
-  throw new Error("Neither RequestContext, nor EntityManager provided.")
-}
-
 export function MikroOrmAdapter(
-  entityManager?: Promise<EntityManager> | EntityManager,
+  em: Promise<EntityManager>,
   options?: { models?: typeof defaultModels }
 ): Adapter {
   const {
@@ -26,7 +17,6 @@ export function MikroOrmAdapter(
     VerificationToken: VerificationTokenModel,
   } = { ...defaultModels, ...options?.models }
 
-  const em = getEM(entityManager)
   return {
     /**
      * Method used in testing. You won't need to call this in your app.
