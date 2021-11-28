@@ -32,40 +32,29 @@ You can find the Prisma schema in the docs at [next-auth.js.org/adapters/mikro-o
    import NextAuth from "next-auth"
    import { MikroOrmAdapter, Account, Session, User, VerificationToken } from "@next-auth/mikro-orm-adapter"
 
-   const config: Options<PostgreSqlDriver> = {
-      entities: [User, Session, Account, VerificationToken],
-      ...
-   };
-
    // fetches a global instance of mikro-rom
    const getORM = async () => {
-      if (!global.__MikroORM__){
-         global.__MikroORM__ = await MikroORM.init(config)
+      if (!global.__MikroORM__) {
+         global.__MikroORM__ = await MikroORM.init({
+            dbName: "./db.sqlite",
+            type: "sqlite",
+            entities: [User, Session, Account, VerificationToken],
+            debug: process.env.DEBUG === "true" || process.env.DEBUG?.includes("db"),
+         })
       }
-      return global.__MikroORM__;
-   };
-
-   // ensures mikro-orm RequestContext exists on the api route
-   const withORM = (handler: NextApiHandler) => async (req: NextApiRequest, res: NextApiResponse) => {
-      const orm = await getORM();
-      return RequestContext.createAsync(orm.em, async () => handler(req, res));
+      return global.__MikroORM__
    }
 
-   const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
-      // For more information on each option (and a full list of options) go to
-      // https://next-auth.js.org/configuration/options
-      return NextAuth(req, res, {
-         // https://next-auth.js.org/configuration/providers
-         providers: [],
-         // optionally pass extended models as { models: { } }
-         adapter: MikroOrmAdapter()
-         ...
-      })
-
-   }
-
-   export default withORM(handler);
+   // For more information on each option (and a full list of options) go to
+   // https://next-auth.js.org/configuration/options
+   export default NextAuth({
+      // https://next-auth.js.org/configuration/providers
+      providers: [],
+      // optionally pass extended models as { models: { } }
+      adapter: MikroOrmAdapter(getORM())
+      ...
+   });
    ```
 
 ## Contributing
