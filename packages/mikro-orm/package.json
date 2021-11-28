@@ -8,13 +8,16 @@
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
   "author": "Jonas Strassel <info@jonas-strassel.de>",
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
   "main": "dist/index.js",
   "license": "ISC",
   "keywords": [
     "next-auth",
     "next.js",
     "oauth",
-    "prisma"
+    "mikro-orm"
   ],
   "private": false,
   "publishConfig": {
