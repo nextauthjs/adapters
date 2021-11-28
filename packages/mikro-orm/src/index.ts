@@ -1,5 +1,5 @@
 import type { MikroORM } from "@mikro-orm/core"
-import { wrap, RequestContext } from "@mikro-orm/core"
+import { wrap } from "@mikro-orm/core"
 
 import * as defaultModels from "./models"
 import type {
@@ -9,13 +9,8 @@ import type {
 } from "next-auth/adapters"
 import type { DefaultAccount } from "next-auth"
 
-export const getEM = (ormPromise?: Promise<MikroORM>) => {
-  const emPromise =
-    RequestContext.getEntityManager() ??
-    ormPromise?.then((orm) => orm.em.fork())
-  if (!emPromise)
-    throw new Error("Neither RequestContext, nor ORM instance provided.")
-  return emPromise
+export const getEM = async (ormPromise: Promise<MikroORM>) => {
+  return await ormPromise?.then((orm) => orm.em.fork())
 }
 
 export function MikroOrmAdapter<
@@ -24,7 +19,7 @@ export function MikroOrmAdapter<
   TSessionModel extends typeof defaultModels.Session = typeof defaultModels.Session,
   TVerificationTokenModel extends typeof defaultModels.VerificationToken = typeof defaultModels.VerificationToken
 >(
-  ormPromise?: Promise<MikroORM>,
+  ormPromise: Promise<MikroORM>,
   models?: {
     User?: TUserModel
     Account: TAccountModel
