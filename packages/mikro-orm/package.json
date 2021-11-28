@@ -29,12 +29,11 @@
     "dist"
   ],
   "peerDependencies": {
-    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x"
-  },
-  "dependencies": {
-    "@mikro-orm/core": "^5.0.0-dev.527"
+    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x",
+    "@mikro-orm/core": ">5 || 5.0.0-dev.527 - 5.0.0-dev.x"
   },
   "devDependencies": {
+    "@mikro-orm/core": "^5.0.0-dev.527",
     "@mikro-orm/sqlite": "^5.0.0-dev.527"
   }
 }
