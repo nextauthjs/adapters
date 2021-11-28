@@ -19,7 +19,7 @@ import type {
 } from "next-auth/adapters"
 import type { ProviderType } from "next-auth/providers"
 
-export type RemoveIndex<T> = {
+type RemoveIndex<T> = {
   // eslint-disable-next-line @typescript-eslint/ban-types
   [K in keyof T as {} extends Record<K, 1> ? never : K]: T[K]
 }
