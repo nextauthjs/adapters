@@ -7,9 +7,9 @@ import {
   Property,
   Unique,
 } from "@mikro-orm/core"
-import { Session, Account } from "next-auth"
 import { randomUUID } from "../../../basic-tests"
 import type { defaultEntities } from "../src"
+import { Account, Session } from "../src/entities"
 
 @Entity()
 export class User implements defaultEntities.User {
@@ -47,14 +47,15 @@ export class User implements defaultEntities.User {
   })
   accounts = new Collection<Account>(this)
 
-  @Property()
+  @Property({ hidden: true })
   role = "ADMIN"
+}
 
-  constructor(
-    parameters: Omit<User, "id" | "emailVerified" | "sessions" | "accounts">
-  ) {
-    // store emails lowerCase
-    parameters.email = parameters.email?.toLowerCase()
-    Object.assign(this, parameters)
-  }
+@Entity()
+export class VeryImportantEntity {
+  @PrimaryKey()
+  id: string = randomUUID()
+
+  @Property()
+  important = true
 }

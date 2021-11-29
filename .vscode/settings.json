@@ -1,0 +1,11 @@
+{
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "driver": "SQLite",
+      "database": "packages/mikro-orm/db.sqlite",
+      "name": "sqlite"
+    }
+  ],
+  "sqltools.useNodeRuntime": true
+}

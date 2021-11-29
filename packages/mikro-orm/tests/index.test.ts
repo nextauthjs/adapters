@@ -1,8 +1,17 @@
 import { MikroORM, wrap } from "@mikro-orm/core"
 import { runBasicTests } from "../../../basic-tests"
 import { MikroOrmAdapter, defaultEntities } from "../src"
+import { User, VeryImportantEntity } from "./testEntities"
 
 let _init: MikroORM
+
+const entities = [
+  User,
+  defaultEntities.Account,
+  defaultEntities.Session,
+  defaultEntities.VerificationToken,
+  VeryImportantEntity,
+]
 
 async function getORM() {
   if (_init) return _init
@@ -10,14 +19,28 @@ async function getORM() {
   _init = await MikroORM.init({
     dbName: "./db.sqlite",
     type: "sqlite",
-    entities: [...Object.values(defaultEntities)],
+    entities,
     debug: process.env.DEBUG === "true" || process.env.DEBUG?.includes("db"),
   })
   return _init
 }
 
 runBasicTests({
-  adapter: MikroOrmAdapter(getORM(), { entities: defaultEntities }),
+  adapter: MikroOrmAdapter(
+    {
+      dbName: "./db.sqlite",
+      type: "sqlite",
+      entities: [
+        defaultEntities.User,
+        defaultEntities.Account,
+        defaultEntities.Session,
+        defaultEntities.VerificationToken,
+        VeryImportantEntity,
+      ],
+      debug: process.env.DEBUG === "true" || process.env.DEBUG?.includes("db"),
+    },
+    { entities: { User } }
+  ),
   db: {
     async connect() {
       const orm = await getORM()
@@ -30,8 +53,8 @@ runBasicTests({
       await orm
         .getSchemaGenerator()
         .dropSchema()
-        .catch((e) => null)
-      await orm.close().catch((e) => null)
+        .catch(() => null)
+      await orm.close().catch(() => null)
     },
     async verificationToken(identifier_token) {
       const orm = await getORM()
