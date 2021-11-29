@@ -16,8 +16,6 @@
 
 This is the Mikro ORM Adapter for [`next-auth`](https://next-auth.js.org). This package can only be used in conjunction with the primary `next-auth` package. It is not a standalone package.
 
-You can find the Prisma schema in the docs at [next-auth.js.org/adapters/mikro-orm](https://next-auth.js.org/adapters/mikro-orm).
-
 ## Getting Started
 
 1. Install `next-auth@beta` and `@next-auth/mikro-orm-adapter@next`
@@ -26,9 +24,9 @@ You can find the Prisma schema in the docs at [next-auth.js.org/adapters/mikro-o
    npm install next-auth@beta @next-auth/mikro-orm-adapter@next
    ```
 
-2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
+2. Add this adapter to your `pages/api/[...nextauth].ts` next-auth configuration object.
 
-   ```typescript
+   ```typescript title="pages/api/auth/[...nextauth].ts"
    import NextAuth from "next-auth"
    import { MikroOrmAdapter } from "@next-auth/mikro-orm-adapter"
 
