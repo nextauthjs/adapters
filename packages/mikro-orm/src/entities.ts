@@ -9,7 +9,6 @@ import {
   OneToMany,
   Collection,
   ManyToOne,
-  Cascade,
 } from "@mikro-orm/core"
 import type { DefaultAccount } from "next-auth"
 import type {
@@ -47,7 +46,6 @@ export class User implements RemoveIndex<AdapterUser> {
     mappedBy: (session) => session.user,
     hidden: true,
     orphanRemoval: true,
-    cascade: [Cascade.ALL],
   })
   sessions = new Collection<Session>(this)
 
@@ -56,14 +54,13 @@ export class User implements RemoveIndex<AdapterUser> {
     mappedBy: (account) => account.user,
     hidden: true,
     orphanRemoval: true,
-    cascade: [Cascade.ALL],
   })
   accounts = new Collection<Account>(this)
 }
 
 @Entity()
 export class Session implements AdapterSession {
-  @PrimaryKey({ default: randomUUID() })
+  @PrimaryKey()
   id: string = randomUUID()
 
   @ManyToOne({
