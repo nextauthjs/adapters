@@ -28,9 +28,9 @@ export const getEM = async (
 }
 
 /**
- * The mikro-orm adapter accepts a mikro-orm instance or configuration and returns a NextAuth adapter.
- * @param ormConnection can either be a mikro orm connection configuration or an instance promise
- * @param options entities in the options object will be passed to the mikro-orm init function as entities
+ * The MikroORM adapter accepts a MikroORM instance or configuration and returns a NextAuth adapter.
+ * @param ormConnection can either be an instance promise or a MikroORM connection configuration (https://mikro-orm.io/docs/next/configuration#driver)
+ * @param options entities in the options object will be passed to the MikroORM init function as entities
  * @returns
  */
 export function MikroOrmAdapter(
@@ -88,7 +88,7 @@ export function MikroOrmAdapter(
         ...provider_providerAccountId,
       })
       if (!account) return null
-      const user = await (await em).findOne(UserModel, { id: account.userId })
+      const user = await em.findOne(UserModel, { id: account.userId })
 
       return wrap(user).toObject()
     },
@@ -97,7 +97,7 @@ export function MikroOrmAdapter(
       const user = await em.findOne(UserModel, { id: data.id })
       if (!user) throw new Error("User not found")
       wrap(user).assign(data, { mergeObjects: true })
-      await (await em).persistAndFlush(user)
+      await em.persistAndFlush(user)
 
       return wrap(user).toObject()
     },
@@ -105,7 +105,7 @@ export function MikroOrmAdapter(
       const em = await getEM(ormConnection, actualEntities)
       const user = await em.findOne(UserModel, { id })
       if (!user) return null
-      await (await em).removeAndFlush(user)
+      await em.removeAndFlush(user)
 
       return wrap(user).toObject()
     },
@@ -115,7 +115,7 @@ export function MikroOrmAdapter(
       if (!user) throw new Error("User not found")
       const account = new AccountModel(data)
       user.accounts.add(account)
-      await (await em).persistAndFlush(user)
+      await em.persistAndFlush(user)
 
       return wrap(account).toObject()
     },
@@ -125,7 +125,7 @@ export function MikroOrmAdapter(
         ...provider_providerAccountId,
       })
       if (!account) throw new Error("Account not found")
-      await (await em).removeAndFlush(account)
+      await em.removeAndFlush(account)
 
       return wrap(account).toObject()
     },
@@ -149,7 +149,7 @@ export function MikroOrmAdapter(
       if (!user) throw new Error("User not found")
       const session = new SessionModel(data)
       user.sessions.add(session)
-      await (await em).persistAndFlush(user)
+      await em.persistAndFlush(user)
 
       return wrap(session).toObject()
     },
@@ -160,7 +160,7 @@ export function MikroOrmAdapter(
       })
       wrap(session).assign(data)
       if (!session) throw new Error("Session not found")
-      await (await em).persistAndFlush(session)
+      await em.persistAndFlush(session)
 
       return wrap(session).toObject()
     },
@@ -170,14 +170,14 @@ export function MikroOrmAdapter(
         sessionToken,
       })
       if (!session) return null
-      await (await em).removeAndFlush(session)
+      await em.removeAndFlush(session)
 
       return wrap(session).toObject()
     },
     async createVerificationToken(data) {
       const em = await getEM(ormConnection, actualEntities)
       const verificationToken = new VerificationTokenModel(data)
-      await (await em).persistAndFlush(verificationToken)
+      await em.persistAndFlush(verificationToken)
 
       return wrap(verificationToken).toObject()
     },
@@ -187,7 +187,7 @@ export function MikroOrmAdapter(
         .getRepository(VerificationTokenModel)
         .findOne(params)
       if (!verificationToken) return null
-      await (await em).removeAndFlush(verificationToken)
+      await em.removeAndFlush(verificationToken)
 
       return wrap(verificationToken).toObject()
     },
