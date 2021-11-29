@@ -7,7 +7,7 @@ import { isPromise } from "util/types"
 
 export * as defaultEntities from "./entities"
 
-export const getEM = async (
+const getEM = async (
   ormConnection: Promise<MikroORM> | Options,
   entities: Array<
     | typeof defaultEntities.User
@@ -63,7 +63,8 @@ export function MikroOrmAdapter(
     },
     async createUser(data) {
       const em = await getEM(ormConnection, actualEntities)
-      const user = new UserModel({ ...data })
+      const user = new UserModel()
+      wrap(user).assign(data)
       await em.persistAndFlush(user)
 
       return wrap(user).toObject()
@@ -113,7 +114,8 @@ export function MikroOrmAdapter(
       const em = await getEM(ormConnection, actualEntities)
       const user = await em.findOne(UserModel, { id: data.userId })
       if (!user) throw new Error("User not found")
-      const account = new AccountModel(data)
+      const account = new AccountModel()
+      wrap(account).assign(data)
       user.accounts.add(account)
       await em.persistAndFlush(user)
 
@@ -147,7 +149,8 @@ export function MikroOrmAdapter(
       const em = await getEM(ormConnection, actualEntities)
       const user = await em.findOne(UserModel, { id: data.userId })
       if (!user) throw new Error("User not found")
-      const session = new SessionModel(data)
+      const session = new SessionModel()
+      wrap(session).assign(data)
       user.sessions.add(session)
       await em.persistAndFlush(user)
 
@@ -176,7 +179,8 @@ export function MikroOrmAdapter(
     },
     async createVerificationToken(data) {
       const em = await getEM(ormConnection, actualEntities)
-      const verificationToken = new VerificationTokenModel(data)
+      const verificationToken = new VerificationTokenModel()
+      wrap(verificationToken).assign(data)
       await em.persistAndFlush(verificationToken)
 
       return wrap(verificationToken).toObject()

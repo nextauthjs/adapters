@@ -10,7 +10,7 @@ async function getORM() {
   _init = await MikroORM.init({
     dbName: "./db.sqlite",
     type: "sqlite",
-    entities: [],
+    entities: [...Object.values(defaultEntities)],
     debug: process.env.DEBUG === "true" || process.env.DEBUG?.includes("db"),
   })
   return _init

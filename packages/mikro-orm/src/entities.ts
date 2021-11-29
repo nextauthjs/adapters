@@ -59,14 +59,6 @@ export class User implements RemoveIndex<AdapterUser> {
     cascade: [Cascade.ALL],
   })
   accounts = new Collection<Account>(this)
-
-  constructor(
-    parameters: Omit<User, "id" | "emailVerified" | "sessions" | "accounts">
-  ) {
-    // store emails lowerCase
-    parameters.email = parameters.email?.toLowerCase()
-    Object.assign(this, parameters)
-  }
 }
 
 @Entity()
@@ -90,10 +82,6 @@ export class Session implements AdapterSession {
   @Property()
   @Unique()
   sessionToken!: string
-
-  constructor(parameters: Omit<Session, "id" | "user">) {
-    Object.assign(this, parameters)
-  }
 }
 
 @Entity()
@@ -141,10 +129,6 @@ export class Account implements RemoveIndex<DefaultAccount> {
 
   @Property({ nullable: true })
   session_state?: string
-
-  constructor(parameters: Omit<Account, "id" | "user">) {
-    Object.assign(this, parameters)
-  }
 }
 
 @Entity()
@@ -159,8 +143,4 @@ export class VerificationToken implements AdapterVerificationToken {
 
   @Property()
   identifier!: string
-
-  constructor(parameters: Omit<VerificationToken, "id">) {
-    Object.assign(this, parameters)
-  }
 }
