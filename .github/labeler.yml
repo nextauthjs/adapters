@@ -6,10 +6,12 @@ dynamodb:
 
 prisma:
   - packages/prisma/**/*
-  - packages/prisma-legacy/**/*
 
 mongodb:
   - packages/mongodb/**/*
+
+neo4j:
+  - packages/neo4j/**/*
 
 typeorm:
   - packages/typeorm-legacy/**/*
@@ -22,6 +24,9 @@ pouchdb:
 
 sequelize:
   - packages/sequelize/**/*
+
+dgraph:
+  - packages/dgraph/**/*
 
 documentation:
   - ./**/*.md
