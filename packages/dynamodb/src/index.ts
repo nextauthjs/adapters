@@ -1,6 +1,9 @@
-import { BatchWriteCommandInput, DynamoDBDocument } from "@aws-sdk/lib-dynamodb"
 import { randomBytes } from "crypto"
-import { Account } from "next-auth"
+import type {
+  BatchWriteCommandInput,
+  DynamoDBDocument,
+} from "@aws-sdk/lib-dynamodb"
+import type { Account } from "next-auth"
 import type {
   Adapter,
   AdapterSession,
@@ -164,13 +167,14 @@ export function DynamoDBAdapter(
     async linkAccount(data) {
       const item = {
         ...data,
+        id: randomBytes(16).toString("hex"),
         pk: `USER#${data.userId}`,
         sk: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
         GSI1PK: `ACCOUNT#${data.provider}`,
         GSI1SK: `ACCOUNT#${data.providerAccountId}`,
       }
       await client.put({ TableName, Item: format.to(item) })
-      return item
+      return data
     },
     async unlinkAccount({
       provider,
@@ -381,6 +385,10 @@ export const format = {
   /** Takes a Dynamo object and returns a plain old JavaScript object */
   from<T = Record<string, unknown>>(dynamodbObject: Record<string, any>): T {
     const { pk, sk, GSI1PK, GSI1SK, type, ...object } = dynamodbObject
+    // hack to keep type property in accounts
+    if (type !== "SESSION" && type !== "VR" && type !== "USER") {
+      object.type = type
+    }
     const newObject: Record<string, unknown> = {}
     for (const key in object) {
       const value = object[key]
