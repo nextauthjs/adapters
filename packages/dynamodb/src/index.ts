@@ -106,27 +106,21 @@ export function DynamoDBAdapter(
       return user ? format.from<AdapterUser>(user) : null
     },
     async updateUser(user) {
-      const formatedUser = format.to(user)
-      let updateExpression = "set"
-      const ExpressionAttributeNames: Record<string, string> = {}
-      const ExpressionAttributeValues: Record<string, unknown> = {}
-      for (const property in formatedUser) {
-        updateExpression += ` #${property} = :${property},`
-        ExpressionAttributeNames["#" + property] = property
-        ExpressionAttributeValues[":" + property] = formatedUser[property]
-      }
-      updateExpression = updateExpression.slice(0, -1)
-
+      const {
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = generateUpdateExpression(user)
       const data = await client.update({
         TableName,
         Key: {
           // next-auth type is incorrect it should be Partial<AdapterUser> & {id: string} instead of just Partial<AdapterUser>
-          pk: `USER#${formatedUser.id as string}`,
-          sk: `USER#${formatedUser.id as string}`,
+          pk: `USER#${user.id as string}`,
+          sk: `USER#${user.id as string}`,
         },
-        UpdateExpression: updateExpression,
-        ExpressionAttributeNames: ExpressionAttributeNames,
-        ExpressionAttributeValues: ExpressionAttributeValues,
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
       const attributesDynamo = data.Attributes as Dynamo<AdapterUser>
@@ -261,7 +255,8 @@ export function DynamoDBAdapter(
       await client.put({ TableName, Item: format.to(item) })
       return format.from<AdapterSession>(item)
     },
-    async updateSession({ sessionToken, expires }) {
+    async updateSession(session) {
+      const sessionToken = session.sessionToken
       const data = await client.query({
         TableName,
         IndexName: "GSI1",
@@ -278,21 +273,22 @@ export function DynamoDBAdapter(
       if (!data.Items) {
         return null
       }
-      const session = data.Items[0]
-
+      const { pk, sk } = data.Items[0] as Dynamo<AdapterSession>
+      const {
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = generateUpdateExpression(session)
       const res = await client.update({
         TableName,
         Key: {
-          pk: session.pk,
-          sk: session.sk,
+          // next-auth type is incorrect it should be Partial<AdapterUser> & {id: string} instead of just Partial<AdapterUser>
+          pk,
+          sk,
         },
-        UpdateExpression: "set #expires = :expires",
-        ExpressionAttributeNames: {
-          "#expires": "expires",
-        },
-        ExpressionAttributeValues: {
-          ":expires": expires ? expires.getTime() / 1000 : undefined,
-        },
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
       const updatedSession = res.Attributes
@@ -403,4 +399,28 @@ export const format = {
     }
     return newObject as T
   },
+}
+
+const generateUpdateExpression = (
+  object: Record<string, any>
+): {
+  UpdateExpression: string
+  ExpressionAttributeNames: Record<string, string>
+  ExpressionAttributeValues: Record<string, unknown>
+} => {
+  const formatedSession = format.to(object)
+  let UpdateExpression = "set"
+  const ExpressionAttributeNames: Record<string, string> = {}
+  const ExpressionAttributeValues: Record<string, unknown> = {}
+  for (const property in formatedSession) {
+    UpdateExpression += ` #${property} = :${property},`
+    ExpressionAttributeNames["#" + property] = property
+    ExpressionAttributeValues[":" + property] = formatedSession[property]
+  }
+  UpdateExpression = UpdateExpression.slice(0, -1)
+  return {
+    UpdateExpression,
+    ExpressionAttributeNames,
+    ExpressionAttributeValues,
+  }
 }
