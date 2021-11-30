@@ -1,447 +1,426 @@
-import { createHash, randomBytes } from "crypto"
-import { Profile, Session, User } from "next-auth"
-import { Adapter } from "next-auth/adapters"
+import { randomBytes } from "crypto"
+import type {
+  BatchWriteCommandInput,
+  DynamoDBDocument,
+} from "@aws-sdk/lib-dynamodb"
+import type { Account } from "next-auth"
+import type {
+  Adapter,
+  AdapterSession,
+  AdapterUser,
+  VerificationToken,
+} from "next-auth/adapters"
 
-export const DynamoDBAdapter: Adapter<
-  any,
-  {
-    tableName: string
-  },
-  User & { emailVerified?: Date },
-  Profile & { emailVerified?: Date },
-  Session
-> = (client, options) => {
+export type Dynamo<Model> = Model & {
+  pk: string
+  sk: string
+  GSI1PK?: string
+  GSI1SK?: string
+  type: "USER" | "SESSION" | "VR"
+}
+
+export function DynamoDBAdapter(
+  client: DynamoDBDocument,
+  options?: { tableName: string }
+): Adapter {
   const TableName = options?.tableName ?? "next-auth"
 
   return {
-    async getAdapter({ logger, session, secret, ...appOptions }) {
-      const sessionMaxAge = session.maxAge * 1000 // default is 30 days
-      const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
+    async createUser(user) {
+      const userId = randomBytes(16).toString("hex")
+      const item = format.to({
+        ...user,
+        pk: `USER#${userId}`,
+        sk: `USER#${userId}`,
+        id: userId,
+        type: "USER",
+      })
 
-      /**
-       * @todo Move this to core package
-       * @todo Use bcrypt or a more secure method
-       */
-      const hashToken = (token: string) =>
-        createHash("sha256").update(`${token}${secret}`).digest("hex")
-
-      return {
-        displayName: "DYNAMODB",
-        async createUser(profile) {
-          const userId = randomBytes(16).toString("hex")
-          const now = new Date()
-          const item: any = {
-            pk: `USER#${userId}`,
-            sk: `USER#${userId}`,
-            id: userId,
-            type: "USER",
-            name: profile.name,
-            email: profile.email,
-            image: profile.image,
-            username: profile.username,
-            emailVerified: profile.emailVerified?.toISOString() ?? null,
-            createdAt: now.toISOString(),
-            updatedAt: now.toISOString(),
-          }
-
-          if (profile.email) {
-            item.GSI1SK = `USER#${profile.email}`
-            item.GSI1PK = `USER#${profile.email}`
-          }
-
-          await client.put({ TableName, Item: item }).promise()
-          return item
-        },
-        async getUser(id) {
-          const data = await client
-            .get({
-              TableName,
-              Key: {
-                pk: `USER#${id}`,
-                sk: `USER#${id}`,
-              },
-            })
-            .promise()
-
-          return data.Item || null
-        },
-        async getUserByEmail(email) {
-          const data = await client
-            .query({
-              TableName,
-              IndexName: "GSI1",
-              KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
-              ExpressionAttributeNames: {
-                "#gsi1pk": "GSI1PK",
-                "#gsi1sk": "GSI1SK",
-              },
-              ExpressionAttributeValues: {
-                ":gsi1pk": `USER#${email ?? ""}`,
-                ":gsi1sk": `USER#${email ?? ""}`,
-              },
-            })
-            .promise()
-
-          return data.Items[0] || null
-        },
-        async getUserByProviderAccountId(providerId, providerAccountId) {
-          const data = await client
-            .query({
-              TableName,
-              IndexName: "GSI1",
-              KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
-              ExpressionAttributeNames: {
-                "#gsi1pk": "GSI1PK",
-                "#gsi1sk": "GSI1SK",
-              },
-              ExpressionAttributeValues: {
-                ":gsi1pk": `ACCOUNT#${providerAccountId}`,
-                ":gsi1sk": `ACCOUNT#${providerId}`,
-              },
-            })
-            .promise()
-
-          if (!data || !data.Items.length) return null
-
-          const user = await client
-            .get({
-              TableName,
-              Key: {
-                pk: `USER#${data.Items[0].userId as string}`,
-                sk: `USER#${data.Items[0].userId as string}`,
-              },
-            })
-            .promise()
-
-          return user.Item || null
-        },
-        async updateUser(user) {
-          const now = new Date()
-          const data = await client
-            .update({
-              TableName,
-              Key: {
-                pk: user.pk,
-                sk: user.sk,
-              },
-              UpdateExpression:
-                "set #name = :name, #email = :email, #gsi1pk = :gsi1pk, #gsi1sk = :gsi1sk, #image = :image, #emailVerified = :emailVerified, #username = :username, #updatedAt = :updatedAt",
-              ExpressionAttributeNames: {
-                "#name": "name",
-                "#email": "email",
-                "#gsi1pk": "GSI1PK",
-                "#gsi1sk": "GSI1SK",
-                "#image": "image",
-                "#emailVerified": "emailVerified",
-                "#username": "username",
-                "#updatedAt": "updatedAt",
-              },
-              ExpressionAttributeValues: {
-                ":name": user.name,
-                ":email": user.email,
-                ":gsi1pk": `USER#${user.email as string}`,
-                ":gsi1sk": `USER#${user.email as string}`,
-                ":image": user.image,
-                ":emailVerified": user.emailVerified?.toISOString() ?? null,
-                ":username": user.username,
-                ":updatedAt": now.toISOString(),
-              },
-              ReturnValues: "UPDATED_NEW",
-            })
-            .promise()
-
-          return { ...user, ...data.Attributes }
-        },
-        async deleteUser(userId) {
-          const deleted = await client
-            .delete({
-              TableName,
-              Key: {
-                pk: `USER#${userId}`,
-                sk: `USER#${userId}`,
-              },
-            })
-            .promise()
-
-          return deleted
-        },
-        async linkAccount(
-          userId,
-          providerId,
-          providerType,
-          providerAccountId,
-          refreshToken,
-          accessToken,
-          accessTokenExpires
-        ) {
-          const now = new Date()
-
-          const item = {
-            pk: `USER#${userId}`,
-            sk: `ACCOUNT#${providerId}#${providerAccountId}`,
-            GSI1SK: `ACCOUNT#${providerId}`,
-            GSI1PK: `ACCOUNT#${providerAccountId}`,
-            providerId,
-            providerAccountId,
-            providerType,
-            refreshToken,
-            accessToken,
-            accessTokenExpires,
-            type: "ACCOUNT",
-            userId,
-            createdAt: now.toISOString(),
-            updatedAt: now.toISOString(),
-          }
-
-          await client.put({ TableName, Item: item }).promise()
-          return item as any
-        },
-        async unlinkAccount(userId, providerId, providerAccountId) {
-          const deleted = await client
-            .delete({
-              TableName,
-              Key: {
-                pk: `USER#${userId}`,
-                sk: `ACCOUNT#${providerId}#${providerAccountId}`,
-              },
-            })
-            .promise()
-
-          return deleted
-        },
-        async createSession(user) {
-          let expires = null
-          if (sessionMaxAge) {
-            const dateExpires = new Date()
-            dateExpires.setTime(dateExpires.getTime() + sessionMaxAge)
-            expires = dateExpires.toISOString()
-          }
-
-          const sessionToken = randomBytes(32).toString("hex")
-          const accessToken = randomBytes(32).toString("hex")
-
-          const now = new Date()
-
-          const item = {
-            pk: `USER#${user.id as string}`,
-            sk: `SESSION#${sessionToken}`,
-            GSI1SK: `SESSION#${sessionToken}`,
-            GSI1PK: `SESSION#${sessionToken}`,
-            sessionToken,
-            accessToken,
-            type: "SESSION",
-            userId: user.id,
-            expires,
-            createdAt: now.toISOString(),
-            updatedAt: now.toISOString(),
-          }
-
-          await client.put({ TableName, Item: item }).promise()
-          return item as any
-        },
-        async getSession(sessionToken) {
-          const data = await client
-            .query({
-              TableName,
-              IndexName: "GSI1",
-              KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
-              ExpressionAttributeNames: {
-                "#gsi1pk": "GSI1PK",
-                "#gsi1sk": "GSI1SK",
-              },
-              ExpressionAttributeValues: {
-                ":gsi1pk": `SESSION#${sessionToken}`,
-                ":gsi1sk": `SESSION#${sessionToken}`,
-              },
-            })
-            .promise()
-
-          const session = data.Items[0] || null
-
-          if (session?.expires && new Date() > session.expires) {
-            return null
-          }
-
-          return session
-        },
-        async updateSession(session, force) {
-          const shouldUpdate =
-            sessionMaxAge &&
-            (sessionUpdateAge || sessionUpdateAge === 0) &&
-            session.expires
-          if (!shouldUpdate && !force) {
-            return null
-          }
-
-          // Calculate last updated date, to throttle write updates to database
-          // Formula: ({expiry date} - sessionMaxAge) + sessionUpdateAge
-          //     e.g. ({expiry date} - 30 days) + 1 hour
-          //
-          // Default for sessionMaxAge is 30 days.
-          // Default for sessionUpdateAge is 1 hour.
-
-          // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
-          // @ts-ignore
-          const dateSessionIsDueToBeUpdated = new Date(session.expires)
-          dateSessionIsDueToBeUpdated.setTime(
-            dateSessionIsDueToBeUpdated.getTime() - sessionMaxAge
-          )
-          dateSessionIsDueToBeUpdated.setTime(
-            dateSessionIsDueToBeUpdated.getTime() + sessionUpdateAge
-          )
-
-          // Trigger update of session expiry date and write to database, only
-          // if the session was last updated more than {sessionUpdateAge} ago
-          const currentDate = new Date()
-          if (currentDate < dateSessionIsDueToBeUpdated && !force) {
-            return null
-          }
-
-          const newExpiryDate = new Date()
-          newExpiryDate.setTime(newExpiryDate.getTime() + sessionMaxAge)
-
-          const data = await client
-            .update({
-              TableName,
-              Key: {
-                pk: session.pk,
-                sk: session.sk,
-              },
-              UpdateExpression:
-                "set #expires = :expires, #updatedAt = :updatedAt",
-              ExpressionAttributeNames: {
-                "#expires": "expires",
-                "#updatedAt": "updatedAt",
-              },
-              ExpressionAttributeValues: {
-                ":expires": newExpiryDate.toISOString(),
-                ":updatedAt": new Date().toISOString(),
-              },
-              ReturnValues: "UPDATED_NEW",
-            })
-            .promise()
-
-          return {
-            ...session,
-            expires: data.Attributes.expires,
-            updatedAt: data.Attributes.updatedAt,
-          }
-        },
-        async deleteSession(sessionToken) {
-          const data = await client
-            .query({
-              TableName,
-              IndexName: "GSI1",
-              KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
-              ExpressionAttributeNames: {
-                "#gsi1pk": "GSI1PK",
-                "#gsi1sk": "GSI1SK",
-              },
-              ExpressionAttributeValues: {
-                ":gsi1pk": `SESSION#${sessionToken}`,
-                ":gsi1sk": `SESSION#${sessionToken}`,
-              },
-            })
-            .promise()
-
-          if (data?.Items?.length <= 0) return null
-
-          const infoToDelete = data.Items[0]
-
-          const deleted = await client
-            .delete({
-              TableName,
-              Key: {
-                pk: infoToDelete.pk,
-                sk: infoToDelete.sk,
-              },
-            })
-            .promise()
-
-          return deleted
-        },
-        async createVerificationRequest(identifier, url, token, _, provider) {
-          const { baseUrl } = appOptions
-          const { sendVerificationRequest, maxAge } = provider
-
-          const hashedToken = hashToken(token)
-
-          let expires = null
-          if (maxAge) {
-            const dateExpires = new Date()
-            dateExpires.setTime(dateExpires.getTime() + maxAge * 1000)
-
-            expires = dateExpires.toISOString()
-          }
-
-          const now = new Date()
-
-          const item = {
-            pk: `VR#${identifier}`,
-            sk: `VR#${hashedToken}`,
-            token: hashedToken,
-            identifier,
-            type: "VR",
-            expires: expires === null ? null : expires,
-            createdAt: now.toISOString(),
-            updatedAt: now.toISOString(),
-          }
-
-          await client.put({ TableName, Item: item }).promise()
-
-          await sendVerificationRequest({
-            identifier,
-            url,
-            token,
-            baseUrl,
-            provider,
-          })
-
-          return item as any
-        },
-        async getVerificationRequest(identifier, token) {
-          const hashedToken = hashToken(token)
-
-          const data = await client
-            .get({
-              TableName,
-              Key: {
-                pk: `VR#${identifier}`,
-                sk: `VR#${hashedToken}`,
-              },
-            })
-            .promise()
-
-          if (data.Item?.expires && data.Item.expires < Date.now()) {
-            // Delete the expired request so it cannot be used
-            await client
-              .delete({
-                TableName,
-                Key: {
-                  pk: `VR#${identifier}`,
-                  sk: `VR#${hashedToken}`,
-                },
-              })
-              .promise()
-
-            return null
-          }
-
-          return data.Item || null
-        },
-        async deleteVerificationRequest(identifier, token) {
-          // eslint-disable-next-line @typescript-eslint/return-await
-          return await client
-            .delete({
-              TableName,
-              Key: {
-                pk: `VR#${identifier}`,
-                sk: `VR#${hashToken(token)}`,
-              },
-            })
-            .promise()
-        },
+      if (user.email && typeof user.email === "string") {
+        item.GSI1PK = `USER#${user.email}`
+        item.GSI1SK = `USER#${user.email}`
       }
+
+      await client.put({ TableName, Item: format.to(item) })
+      return format.from<AdapterUser>(item)
     },
+    async getUser(userId) {
+      const data = await client.get({
+        TableName,
+        Key: {
+          pk: `USER#${userId}`,
+          sk: `USER#${userId}`,
+        },
+      })
+      const adapterUserDynamo = data.Item
+      return adapterUserDynamo
+        ? format.from<AdapterUser>(adapterUserDynamo)
+        : null
+    },
+    async getUserByEmail(email) {
+      const data = await client.query({
+        TableName,
+        IndexName: "GSI1",
+        KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+        ExpressionAttributeNames: {
+          "#gsi1pk": "GSI1PK",
+          "#gsi1sk": "GSI1SK",
+        },
+        ExpressionAttributeValues: {
+          ":gsi1pk": `USER#${email ?? ""}`,
+          ":gsi1sk": `USER#${email ?? ""}`,
+        },
+      })
+      if (!data.Items) {
+        return null
+      }
+      const adapterUserDynamo = data.Items[0]
+      return adapterUserDynamo
+        ? format.from<AdapterUser>(adapterUserDynamo)
+        : null
+    },
+    async getUserByAccount({ provider, providerAccountId }) {
+      const data = await client.query({
+        TableName,
+        IndexName: "GSI1",
+        KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+        ExpressionAttributeNames: {
+          "#gsi1pk": "GSI1PK",
+          "#gsi1sk": "GSI1SK",
+        },
+        ExpressionAttributeValues: {
+          ":gsi1pk": `ACCOUNT#${provider}`,
+          ":gsi1sk": `ACCOUNT#${providerAccountId}`,
+        },
+      })
+      if (!data || !data.Items || !data.Items.length) return null
+      const accounts = data.Items[0] as Account
+      const res = await client.get({
+        TableName,
+        Key: {
+          pk: `USER#${accounts.userId}`,
+          sk: `USER#${accounts.userId}`,
+        },
+      })
+      const user = res.Item
+      return user ? format.from<AdapterUser>(user) : null
+    },
+    async updateUser(user) {
+      const {
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = generateUpdateExpression(user)
+      const data = await client.update({
+        TableName,
+        Key: {
+          // next-auth type is incorrect it should be Partial<AdapterUser> & {id: string} instead of just Partial<AdapterUser>
+          pk: `USER#${user.id as string}`,
+          sk: `USER#${user.id as string}`,
+        },
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+        ReturnValues: "ALL_NEW",
+      })
+      const attributesDynamo = data.Attributes as Dynamo<AdapterUser>
+      return format.from<AdapterUser>(attributesDynamo)
+    },
+    async deleteUser(userId) {
+      // query all the items related to the user to delete
+      const resQuery = await client.query({
+        TableName,
+        KeyConditionExpression: "#pk = :pk",
+        ExpressionAttributeNames: { "#pk": "pk" },
+        ExpressionAttributeValues: { ":pk": `USER#${userId}` },
+      })
+      if (!resQuery.Items) {
+        return null
+      }
+      const items = resQuery.Items
+      // find the user we want to delete to return at the end of the function call
+      const user = items.find((item) => item.type === "USER")
+      const itemsToDelete = items.map((item) => {
+        return {
+          DeleteRequest: {
+            Key: {
+              sk: item.sk,
+              pk: item.pk,
+            },
+          },
+        }
+      })
+      // batch write commands cannot handle more than 25 requests at once
+      const itemsToDeleteMax = itemsToDelete.slice(0, 25)
+      const param: BatchWriteCommandInput = {
+        RequestItems: { [TableName]: itemsToDeleteMax },
+      }
+      await client.batchWrite(param)
+      return user ? format.from<AdapterUser>(user) : null
+    },
+    async linkAccount(data) {
+      const item = {
+        ...data,
+        id: randomBytes(16).toString("hex"),
+        pk: `USER#${data.userId}`,
+        sk: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
+        GSI1PK: `ACCOUNT#${data.provider}`,
+        GSI1SK: `ACCOUNT#${data.providerAccountId}`,
+      }
+      await client.put({ TableName, Item: format.to(item) })
+      return data
+    },
+    async unlinkAccount({
+      provider,
+      providerAccountId,
+    }): Promise<Account | undefined> {
+      const data = await client.query({
+        TableName,
+        IndexName: "GSI1",
+        KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+        ExpressionAttributeNames: {
+          "#gsi1pk": "GSI1PK",
+          "#gsi1sk": "GSI1SK",
+        },
+        ExpressionAttributeValues: {
+          ":gsi1pk": `ACCOUNT#${provider}`,
+          ":gsi1sk": `ACCOUNT#${providerAccountId}`,
+        },
+      })
+      if (!data.Items) {
+        return undefined
+      }
+      const account = data.Items[0] as Account
+      const deleted = await client.delete({
+        TableName,
+        Key: {
+          pk: `USER#${account.userId}`,
+          sk: `ACCOUNT#${provider}#${providerAccountId}`,
+        },
+        ReturnValues: "ALL_OLD",
+      })
+      const deletedAccount = format.from<Account>(
+        deleted.Attributes as Dynamo<Account>
+      )
+      return deletedAccount
+    },
+    async getSessionAndUser(sessionToken) {
+      const data = await client.query({
+        TableName,
+        IndexName: "GSI1",
+        KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+        ExpressionAttributeNames: {
+          "#gsi1pk": "GSI1PK",
+          "#gsi1sk": "GSI1SK",
+        },
+        ExpressionAttributeValues: {
+          ":gsi1pk": `SESSION#${sessionToken}`,
+          ":gsi1sk": `SESSION#${sessionToken}`,
+        },
+      })
+      if (!data.Items) {
+        return null
+      }
+      const dynamoSession = data.Items[0] || null
+      const session = dynamoSession
+        ? format.from<AdapterSession>(dynamoSession)
+        : null
+      if (!session || (session?.expires && new Date() > session.expires)) {
+        return null
+      }
+      const res = await client.get({
+        TableName,
+        Key: {
+          pk: `USER#${session.userId}`,
+          sk: `USER#${session.userId}`,
+        },
+      })
+      const userDynamo = res.Item ?? null
+      if (!userDynamo) return null
+      const user = format.from<AdapterUser>(userDynamo)
+      return { user, session }
+    },
+    async createSession({ sessionToken, userId, expires }) {
+      const item: Dynamo<AdapterSession> = {
+        id: `SESSION#${sessionToken}`,
+        pk: `USER#${userId}`,
+        sk: `SESSION#${sessionToken}`,
+        GSI1SK: `SESSION#${sessionToken}`,
+        GSI1PK: `SESSION#${sessionToken}`,
+        sessionToken,
+        type: "SESSION",
+        userId,
+        expires,
+      }
+      await client.put({ TableName, Item: format.to(item) })
+      return format.from<AdapterSession>(item)
+    },
+    async updateSession(session) {
+      const sessionToken = session.sessionToken
+      const data = await client.query({
+        TableName,
+        IndexName: "GSI1",
+        KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+        ExpressionAttributeNames: {
+          "#gsi1pk": "GSI1PK",
+          "#gsi1sk": "GSI1SK",
+        },
+        ExpressionAttributeValues: {
+          ":gsi1pk": `SESSION#${sessionToken}`,
+          ":gsi1sk": `SESSION#${sessionToken}`,
+        },
+      })
+      if (!data.Items) {
+        return null
+      }
+      const { pk, sk } = data.Items[0] as Dynamo<AdapterSession>
+      const {
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = generateUpdateExpression(session)
+      const res = await client.update({
+        TableName,
+        Key: {
+          // next-auth type is incorrect it should be Partial<AdapterUser> & {id: string} instead of just Partial<AdapterUser>
+          pk,
+          sk,
+        },
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+        ReturnValues: "ALL_NEW",
+      })
+      const updatedSession = res.Attributes
+      return updatedSession ? format.from<AdapterSession>(updatedSession) : null
+    },
+    async deleteSession(sessionToken) {
+      const data = await client.query({
+        TableName,
+        IndexName: "GSI1",
+        KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
+        ExpressionAttributeNames: {
+          "#gsi1pk": "GSI1PK",
+          "#gsi1sk": "GSI1SK",
+        },
+        ExpressionAttributeValues: {
+          ":gsi1pk": `SESSION#${sessionToken}`,
+          ":gsi1sk": `SESSION#${sessionToken}`,
+        },
+      })
+      if (!data.Items || data?.Items?.length <= 0) return null
+
+      const infoToDelete = data.Items[0]
+
+      const res = await client.delete({
+        TableName,
+        Key: {
+          pk: infoToDelete.pk,
+          sk: infoToDelete.sk,
+        },
+        ReturnValues: "ALL_OLD",
+      })
+      const session = res.Attributes
+      return session ? format.from<AdapterSession>(session) : null
+    },
+    async createVerificationToken(verificationToken) {
+      const { identifier, expires, token } = verificationToken
+      const item: Dynamo<VerificationToken> = {
+        pk: `VR#${identifier}`,
+        sk: `VR#${token}`,
+        token,
+        identifier,
+        type: "VR",
+        expires,
+      }
+      await client.put({ TableName, Item: format.to(item) })
+      return format.from<VerificationToken>(item)
+    },
+    async useVerificationToken({ identifier, token }) {
+      const data = await client.delete({
+        TableName,
+        Key: {
+          pk: `VR#${identifier}`,
+          sk: `VR#${token}`,
+        },
+        ReturnValues: "ALL_OLD",
+      })
+      const attributes = data.Attributes
+      return attributes ? format.from<VerificationToken>(attributes) : null
+    },
+  }
+}
+
+// https://github.com/honeinc/is-iso-date/blob/master/index.js
+const isoDateRE =
+  /(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))/
+function isDate(value: any) {
+  return value && isoDateRE.test(value) && !isNaN(Date.parse(value))
+}
+
+// dyanmo TTL requires the date object to be a timestamp in Unix epoch time format in seconds.
+// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-before-you-start.html#time-to-live-ttl-before-you-start-formatting
+export const format = {
+  /** Takes a plain old JavaScript object and turns it into a Dynamodb object */
+  to(object: Record<string, any>) {
+    const newObject: Record<string, unknown> = {}
+    for (const key in object) {
+      const value = object[key]
+      if (value instanceof Date) {
+        if (key === "expires") {
+          newObject[key] = value.getTime() / 1000
+        } else {
+          newObject[key] = value.toISOString()
+        }
+      } else {
+        newObject[key] = value
+      }
+    }
+    return newObject
+  },
+  /** Takes a Dynamo object and returns a plain old JavaScript object */
+  from<T = Record<string, unknown>>(dynamodbObject: Record<string, any>): T {
+    const { pk, sk, GSI1PK, GSI1SK, type, ...object } = dynamodbObject
+    // hack to keep type property in accounts
+    if (type !== "SESSION" && type !== "VR" && type !== "USER") {
+      object.type = type
+    }
+    const newObject: Record<string, unknown> = {}
+    for (const key in object) {
+      const value = object[key]
+      if (isDate(value)) {
+        newObject[key] = new Date(value)
+      } else {
+        newObject[key] = value
+      }
+      if (key === "expires") {
+        newObject[key] = new Date(value * 1000)
+      }
+    }
+    return newObject as T
+  },
+}
+
+const generateUpdateExpression = (
+  object: Record<string, any>
+): {
+  UpdateExpression: string
+  ExpressionAttributeNames: Record<string, string>
+  ExpressionAttributeValues: Record<string, unknown>
+} => {
+  const formatedSession = format.to(object)
+  let UpdateExpression = "set"
+  const ExpressionAttributeNames: Record<string, string> = {}
+  const ExpressionAttributeValues: Record<string, unknown> = {}
+  for (const property in formatedSession) {
+    UpdateExpression += ` #${property} = :${property},`
+    ExpressionAttributeNames["#" + property] = property
+    ExpressionAttributeValues[":" + property] = formatedSession[property]
+  }
+  UpdateExpression = UpdateExpression.slice(0, -1)
+  return {
+    UpdateExpression,
+    ExpressionAttributeNames,
+    ExpressionAttributeValues,
   }
 }

@@ -18,6 +18,8 @@ This is the AWS DynamoDB Adapter for next-auth. This package can only be used in
 
 You need a table with a partition key `pk` and a sort key `sk`. Your table also needs a global secondary index named `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
 
+If you want sessions and verification tokens to get automatically removed from your table you need to [activate TTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) on your table with the TTL attribute name set to `expires`
+
 You can find the DynamoDB schema in the docs at [next-auth.js.org/adapters/dynamodb](https://next-auth.js.org/adapters/dynamodb).
 
 ## Getting Started
@@ -34,16 +36,27 @@ You need to pass `DocumentClient` instance from `aws-sdk` to the adapter.
 The default table name is `next-auth`, but you can customise that by passing `{ tableName: 'your-table-name' }` as the second parameter in the adapter.
 
 ```js
-import AWS from "aws-sdk";
+import { DynamoDB } from "@aws-sdk/client-dynamodb"
+import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb"
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
 import { DynamoDBAdapter } from "@next-auth/dynamodb-adapter"
 
-AWS.config.update({
-  accessKeyId: process.env.NEXT_AUTH_AWS_ACCESS_KEY,
-  secretAccessKey: process.env.NEXT_AUTH_AWS_SECRET_KEY,
+const config: DynamoDBClientConfig = {
+  credentials: {
+    accessKeyId: process.env.NEXT_AUTH_AWS_ACCESS_KEY as string,
+    secretAccessKey: process.env.NEXT_AUTH_AWS_SECRET_KEY as string,
+  },
   region: process.env.NEXT_AUTH_AWS_REGION,
-});
+};
+
+const client = DynamoDBDocument.from(new DynamoDB(config), {
+  marshallOptions: {
+    convertEmptyValues: true,
+    removeUndefinedValues: true,
+    convertClassInstanceToMap: true,
+  },
+})
 
 export default NextAuth({
   // Configure one or more authentication providers
@@ -59,7 +72,7 @@ export default NextAuth({
     // ...add more providers here
   ],
   adapter: DynamoDBAdapter(
-    new AWS.DynamoDB.DocumentClient()
+    client
   ),
   ...
 });

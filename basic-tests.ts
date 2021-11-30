@@ -1,4 +1,4 @@
-import { Adapter } from "next-auth/adapters"
+import type { Adapter } from "next-auth/adapters"
 import { createHash, randomUUID } from "crypto"
 
 export interface TestOptions {
