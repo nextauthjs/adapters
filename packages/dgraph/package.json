@@ -27,7 +27,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "./tests/test.sh"
   },
   "peerDependencies": {
     "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x",

@@ -6,19 +6,19 @@ function isDate(value: any) {
   return value && isoDateRE.test(value) && !isNaN(Date.parse(value))
 }
 
-const format = <T>(object?: Record<string, any>): T | null => {
-  const newObject: Record<string, unknown> = {}
-  if (!object) return null
-  for (const key in object) {
-    const value = object[key]
-    if (isDate(value)) {
-      newObject[key] = new Date(value)
-    } else {
-      newObject[key] = value
+export const format = {
+  from<T>(object?: Record<string, any>): T | null {
+    const newObject: Record<string, unknown> = {}
+    if (!object) return null
+    for (const key in object) {
+      const value = object[key]
+      if (isDate(value)) {
+        newObject[key] = new Date(value)
+      } else {
+        newObject[key] = value
+      }
     }
-  }
 
-  return newObject as T
+    return newObject as T
+  },
 }
-
-export default format
