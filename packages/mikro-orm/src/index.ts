@@ -13,20 +13,10 @@ export * as defaultEntities from "./entities"
  * @param options entities in the options object will be passed to the MikroORM init function as entities
  * @returns
  */
-export function MikroOrmAdapter<
-  TUser extends typeof defaultEntities.User,
-  TAccount extends typeof defaultEntities.Account,
-  TSession extends typeof defaultEntities.Session,
-  TVerificationToken extends typeof defaultEntities.VerificationToken
->(
+export function MikroOrmAdapter(
   ormConnection: Promise<MikroORM> | Options,
   options?: {
-    entities?: {
-      User?: TUser
-      Account?: TAccount
-      Session?: TSession
-      VerificationToken?: TVerificationToken
-    }
+    entities?: Partial<typeof defaultEntities>
   }
 ): Adapter {
   const {
