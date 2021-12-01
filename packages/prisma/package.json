@@ -1,6 +1,6 @@
 {
   "name": "@next-auth/prisma-adapter",
-  "version": "0.5.2",
+  "version": "1.0.0",
   "description": "Prisma adapter for next-auth.",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
@@ -35,8 +35,8 @@
     "dist"
   ],
   "peerDependencies": {
-    "@prisma/client": ">=2.26.0",
-    "next-auth": ">4 || 4.0.0-beta.1 - 4.0.0-beta.x"
+    "@prisma/client": ">=2.26.0 || >=3",
+    "next-auth": "^4.0.1"
   },
   "devDependencies": {
     "@prisma/client": "^3.0.2",
