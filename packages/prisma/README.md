@@ -20,10 +20,11 @@ You can find the Prisma schema in the docs at [next-auth.js.org/adapters/prisma]
 
 ## Getting Started
 
-1. Install `next-auth@beta` and `@next-auth/prisma-adapter@next`
+1. Install `next-auth` and `@next-auth/prisma-adapter` as well as `prisma` and `@prisma/client`.
 
 ```js
-npm install next-auth@beta @next-auth/prisma-adapter@next
+npm install next-auth @next-auth/prisma-adapter @prisma/client
+npm install --save-dev prisma
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.

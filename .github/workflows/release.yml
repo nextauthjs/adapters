@@ -30,7 +30,7 @@ jobs:
       - name: Test (changed packages)
         run: lerna run test --concurrency 3 --since HEAD~
       - name: Build (changed packages)
-        run: lerna run build --concurrency 3 --since HEAD~
+        run: lerna run build --concurrency 3 --since
       - name: Authenticate with NPM
         run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - name: Configure CI Git User

@@ -21,10 +21,10 @@ You can find the Fauna schema and seed information in the docs at [next-auth.js.
 
 ## Getting Started
 
-1. Install `faunadb`, `next-auth@beta` and `@next-auth/fauna-adapter@next`
+1. Install `faunadb`, `next-auth` and `@next-auth/fauna-adapter`
 
 ```js
-npm install faunadb next-auth@beta @next-auth/fauna-adapter@next
+npm install faunadb next-auth @next-auth/fauna-adapter@next
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
