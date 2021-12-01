@@ -1,6 +1,6 @@
 {
   "name": "@next-auth/typeorm-legacy-adapter",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "TypeORM (legacy) adapter for next-auth.",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
@@ -8,10 +8,13 @@
     "url": "https://github.com/nextauthjs/adapters/issues"
   },
   "author": "Iain Collins",
+  "contributors": [
+    "Balázs Orbán <info@balazsorban.com>"
+  ],
   "main": "dist/index.js",
   "files": [
-    "dist",
-    "index.d.ts"
+    "README.md",
+    "dist"
   ],
   "license": "ISC",
   "keywords": [
@@ -25,38 +28,31 @@
     "access": "public"
   },
   "scripts": {
-    "build": "babel src --out-dir dist",
-    "test": "yarn mysql && yarn postgres",
-    "test-todo": "yarn mysql && yarn postgres && yarn mongodb && yarn mssql",
-    "mysql": "./tests/mysql/test.sh",
-    "postgres": "./tests/postgresql/test.sh",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
-  },
-  "dependencies": {
-    "@babel/runtime": "^7.14.0",
-    "require_optional": "^1.0.1",
-    "typeorm": "^0.2.30"
+    "build": "tsc",
+    "init:db": "tests/init.sh",
+    "test:containers": "tests/test.sh",
+    "test": "tests/test.sh",
+    "mysql": "yarn init:db && tests/mysql/test.sh",
+    "postgres": "yarn init:db && tests/postgresql/test.sh",
+    "sqlite": "tests/sqlite/test.sh"
   },
   "devDependencies": {
-    "assert": "^2.0.0",
-    "mongodb": "^3.6.3",
-    "mssql": "^6.3.1",
+    "mssql": "^7.2.1",
     "mysql": "^2.18.1",
-    "pg": "^8.5.1",
-    "typeorm-adapter": "^1.2.0"
+    "pg": "^8.7.1",
+    "sqlite3": "^5.0.2",
+    "typeorm": "^0.2.37",
+    "typeorm-naming-strategies": "^2.0.0"
   },
   "peerDependencies": {
-    "mongodb": "^3.5.9",
-    "mssql": "^6.2.1",
+    "mssql": "^6.2.1 || 7",
     "mysql": "^2.18.1",
-    "next-auth": "^3.1.0",
-    "pg": "^8.2.1"
+    "next-auth": "^4.0.1",
+    "pg": "^8.2.1",
+    "sqlite3": "^5.0.2",
+    "typeorm": "^0.2.31"
   },
   "peerDependenciesMeta": {
-    "mongodb": {
-      "optional": true
-    },
     "mysql": {
       "optional": true
     },
@@ -64,6 +60,9 @@
       "optional": true
     },
     "pg": {
+      "optional": true
+    },
+    "sqlite3": {
       "optional": true
     }
   }

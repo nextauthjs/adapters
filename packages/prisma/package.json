@@ -1,6 +1,6 @@
 {
   "name": "@next-auth/prisma-adapter",
-  "version": "0.5.4",
+  "version": "1.0.0",
   "description": "Prisma adapter for next-auth.",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
@@ -21,21 +21,25 @@
     "access": "public"
   },
   "scripts": {
-    "setup": "yarn reset && yarn build",
-    "reset": "prisma migrate reset --preview-feature -f && prisma migrate dev",
-    "test": "yarn setup && jest",
-    "build": "yarn reset && tsc"
+    "clean": "rm -rf ./prisma/migrations && rm ./prisma/dev.db*",
+    "init:default": "prisma migrate dev --name init --skip-seed",
+    "init:custom": "prisma migrate dev --name init-custom --schema ./prisma/custom.prisma",
+    "test:default": "yarn init:default && jest",
+    "test:custom": "yarn init:custom && CUSTOM_MODEL=1 jest",
+    "test": "yarn test:default && yarn test:custom",
+    "build": "prisma generate && tsc",
+    "studio": "prisma studio"
   },
   "files": [
     "README.md",
     "dist"
   ],
   "peerDependencies": {
-    "@prisma/client": ">=2.16.0",
-    "next-auth": ">=3.19.2"
+    "@prisma/client": ">=2.26.0 || >=3",
+    "next-auth": "^4.0.1"
   },
   "devDependencies": {
-    "@prisma/client": "^2.16.0",
-    "prisma": "^2.16.0"
+    "@prisma/client": "^3.0.2",
+    "prisma": "^3.0.2"
   }
 }

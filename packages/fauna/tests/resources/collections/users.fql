@@ -1,4 +1,0 @@
-
-CreateCollection({ 
-  name: 'users' 
-})

@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - next
 
 jobs:
   publish:
@@ -24,7 +25,7 @@ jobs:
           token: ${{ secrets.GH_PAT }}
       - uses: actions/setup-node@v2
         with:
-          node-version: "12"
+          node-version: "16"
       - uses: bahmutov/npm-install@v1
       - name: Test (changed packages)
         run: lerna run test --concurrency 3 --since HEAD~
@@ -45,7 +46,7 @@ jobs:
           --create-release github --yes \
           -m "chore(release): create release [skip ci]"
       - name: Publish to @experimental
-        if: ${{ github.base_ref == 'main' }}
+        if: ${{ github.base_ref == 'main' || github.base_ref == 'next' }}
         run: |
           lerna publish --preid pr.${{ github.event.number }}-${GITHUB_SHA::8} \
           --no-changelog --no-push --canary --dist-tag experimental --yes
