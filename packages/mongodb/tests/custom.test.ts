@@ -47,8 +47,8 @@ runBasicTests({
         .collection(collections.VerificationTokens)
         .findOne(identifier_token)
       if (!token) return null
-      delete token._id
-      return token
+      const { _id, ...rest } = token
+      return rest
     },
   },
 })

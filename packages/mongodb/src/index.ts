@@ -104,7 +104,9 @@ export function MongoDBAdapter(
     async getUserByAccount(provider_providerAccountId) {
       const account = await (await db).A.findOne(provider_providerAccountId)
       if (!account) return null
-      const user = await (await db).U.findOne({ _id: account.userId })
+      const user = await (
+        await db
+      ).U.findOne({ _id: new ObjectId(account.userId) })
       if (!user) return null
       return from<AdapterUser>(user)
     },
@@ -137,7 +139,9 @@ export function MongoDBAdapter(
     async getSessionAndUser(sessionToken) {
       const session = await (await db).S.findOne({ sessionToken })
       if (!session) return null
-      const user = await (await db).U.findOne({ _id: session.userId })
+      const user = await (
+        await db
+      ).U.findOne({ _id: new ObjectId(session.userId) })
       if (!user) return null
       return {
         user: from<AdapterUser>(user),
