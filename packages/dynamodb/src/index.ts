@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { randomBytes } from "crypto"
 
 import type {
@@ -116,6 +115,7 @@ export function DynamoDBAdapter(
         ReturnValues: "ALL_NEW",
       })
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return format.from<AdapterUser>(data.Attributes)!
     },
     async deleteUser(userId) {
@@ -174,8 +174,8 @@ export function DynamoDBAdapter(
           ":gsi1sk": `ACCOUNT#${providerAccountId}`,
         },
       })
-      if (!data.Items?.length) return
-      const account = format.from<Account>(data.Items[0])!
+      const account = format.from<Account>(data.Items?.[0])
+      if (!account) return
       await client.delete({
         TableName,
         Key: {
