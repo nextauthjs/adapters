@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { randomBytes } from "crypto"
+
 import type {
   BatchWriteCommandInput,
   DynamoDBDocument,
@@ -11,13 +13,9 @@ import type {
   VerificationToken,
 } from "next-auth/adapters"
 
-export type Dynamo<Model> = Model & {
-  pk: string
-  sk: string
-  GSI1PK?: string
-  GSI1SK?: string
-  type: "USER" | "SESSION" | "VR"
-}
+import { format, generateUpdateExpression } from "./utils"
+
+export { format, generateUpdateExpression }
 
 export function DynamoDBAdapter(
   client: DynamoDBDocument,
@@ -26,23 +24,25 @@ export function DynamoDBAdapter(
   const TableName = options?.tableName ?? "next-auth"
 
   return {
-    async createUser(user) {
-      const userId = randomBytes(16).toString("hex")
-      const item = format.to({
-        ...user,
-        pk: `USER#${userId}`,
-        sk: `USER#${userId}`,
-        id: userId,
-        type: "USER",
-      })
-
-      if (user.email && typeof user.email === "string") {
-        item.GSI1PK = `USER#${user.email}`
-        item.GSI1SK = `USER#${user.email}`
+    async createUser(data) {
+      const user: AdapterUser = {
+        ...(data as any),
+        id: randomBytes(16).toString("hex"),
       }
 
-      await client.put({ TableName, Item: format.to(item) })
-      return format.from<AdapterUser>(item)
+      await client.put({
+        TableName,
+        Item: format.to({
+          ...user,
+          pk: `USER#${user.id}`,
+          sk: `USER#${user.id}`,
+          type: "USER",
+          GSI1PK: `USER#${user.email as string}`,
+          GSI1SK: `USER#${user.email as string}`,
+        }),
+      })
+
+      return user
     },
     async getUser(userId) {
       const data = await client.get({
@@ -52,10 +52,7 @@ export function DynamoDBAdapter(
           sk: `USER#${userId}`,
         },
       })
-      const adapterUserDynamo = data.Item
-      return adapterUserDynamo
-        ? format.from<AdapterUser>(adapterUserDynamo)
-        : null
+      return format.from<AdapterUser>(data.Item)
     },
     async getUserByEmail(email) {
       const data = await client.query({
@@ -67,17 +64,12 @@ export function DynamoDBAdapter(
           "#gsi1sk": "GSI1SK",
         },
         ExpressionAttributeValues: {
-          ":gsi1pk": `USER#${email ?? ""}`,
-          ":gsi1sk": `USER#${email ?? ""}`,
+          ":gsi1pk": `USER#${email}`,
+          ":gsi1sk": `USER#${email}`,
         },
       })
-      if (!data.Items) {
-        return null
-      }
-      const adapterUserDynamo = data.Items[0]
-      return adapterUserDynamo
-        ? format.from<AdapterUser>(adapterUserDynamo)
-        : null
+
+      return format.from<AdapterUser>(data.Items?.[0])
     },
     async getUserByAccount({ provider, providerAccountId }) {
       const data = await client.query({
@@ -93,7 +85,8 @@ export function DynamoDBAdapter(
           ":gsi1sk": `ACCOUNT#${providerAccountId}`,
         },
       })
-      if (!data || !data.Items || !data.Items.length) return null
+      if (!data.Items?.length) return null
+
       const accounts = data.Items[0] as Account
       const res = await client.get({
         TableName,
@@ -102,8 +95,7 @@ export function DynamoDBAdapter(
           sk: `USER#${accounts.userId}`,
         },
       })
-      const user = res.Item
-      return user ? format.from<AdapterUser>(user) : null
+      return format.from<AdapterUser>(res.Item)
     },
     async updateUser(user) {
       const {
@@ -123,21 +115,19 @@ export function DynamoDBAdapter(
         ExpressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
-      const attributesDynamo = data.Attributes as Dynamo<AdapterUser>
-      return format.from<AdapterUser>(attributesDynamo)
+
+      return format.from<AdapterUser>(data.Attributes)!
     },
     async deleteUser(userId) {
       // query all the items related to the user to delete
-      const resQuery = await client.query({
+      const res = await client.query({
         TableName,
         KeyConditionExpression: "#pk = :pk",
         ExpressionAttributeNames: { "#pk": "pk" },
         ExpressionAttributeValues: { ":pk": `USER#${userId}` },
       })
-      if (!resQuery.Items) {
-        return null
-      }
-      const items = resQuery.Items
+      if (!res.Items) return null
+      const items = res.Items
       // find the user we want to delete to return at the end of the function call
       const user = items.find((item) => item.type === "USER")
       const itemsToDelete = items.map((item) => {
@@ -156,7 +146,7 @@ export function DynamoDBAdapter(
         RequestItems: { [TableName]: itemsToDeleteMax },
       }
       await client.batchWrite(param)
-      return user ? format.from<AdapterUser>(user) : null
+      return format.from<AdapterUser>(user)
     },
     async linkAccount(data) {
       const item = {
@@ -170,10 +160,7 @@ export function DynamoDBAdapter(
       await client.put({ TableName, Item: format.to(item) })
       return data
     },
-    async unlinkAccount({
-      provider,
-      providerAccountId,
-    }): Promise<Account | undefined> {
+    async unlinkAccount({ provider, providerAccountId }) {
       const data = await client.query({
         TableName,
         IndexName: "GSI1",
@@ -187,11 +174,9 @@ export function DynamoDBAdapter(
           ":gsi1sk": `ACCOUNT#${providerAccountId}`,
         },
       })
-      if (!data.Items) {
-        return undefined
-      }
-      const account = data.Items[0] as Account
-      const deleted = await client.delete({
+      if (!data.Items?.length) return
+      const account = format.from<Account>(data.Items[0])!
+      await client.delete({
         TableName,
         Key: {
           pk: `USER#${account.userId}`,
@@ -199,10 +184,7 @@ export function DynamoDBAdapter(
         },
         ReturnValues: "ALL_OLD",
       })
-      const deletedAccount = format.from<Account>(
-        deleted.Attributes as Dynamo<Account>
-      )
-      return deletedAccount
+      return account
     },
     async getSessionAndUser(sessionToken) {
       const data = await client.query({
@@ -218,16 +200,8 @@ export function DynamoDBAdapter(
           ":gsi1sk": `SESSION#${sessionToken}`,
         },
       })
-      if (!data.Items) {
-        return null
-      }
-      const dynamoSession = data.Items[0] || null
-      const session = dynamoSession
-        ? format.from<AdapterSession>(dynamoSession)
-        : null
-      if (!session || (session?.expires && new Date() > session.expires)) {
-        return null
-      }
+      const session = format.from<AdapterSession>(data.Items?.[0])
+      if (!session) return null
       const res = await client.get({
         TableName,
         Key: {
@@ -235,28 +209,30 @@ export function DynamoDBAdapter(
           sk: `USER#${session.userId}`,
         },
       })
-      const userDynamo = res.Item ?? null
-      if (!userDynamo) return null
-      const user = format.from<AdapterUser>(userDynamo)
+      const user = format.from<AdapterUser>(res.Item)
+      if (!user) return null
       return { user, session }
     },
-    async createSession({ sessionToken, userId, expires }) {
-      const item: Dynamo<AdapterSession> = {
-        id: `SESSION#${sessionToken}`,
-        pk: `USER#${userId}`,
-        sk: `SESSION#${sessionToken}`,
-        GSI1SK: `SESSION#${sessionToken}`,
-        GSI1PK: `SESSION#${sessionToken}`,
-        sessionToken,
-        type: "SESSION",
-        userId,
-        expires,
+    async createSession(data) {
+      const session = {
+        id: randomBytes(16).toString("hex"),
+        ...data,
       }
-      await client.put({ TableName, Item: format.to(item) })
-      return format.from<AdapterSession>(item)
+      await client.put({
+        TableName,
+        Item: format.to({
+          pk: `USER#${data.userId}`,
+          sk: `SESSION#${data.sessionToken}`,
+          GSI1SK: `SESSION#${data.sessionToken}`,
+          GSI1PK: `SESSION#${data.sessionToken}`,
+          type: "SESSION",
+          ...data,
+        }),
+      })
+      return session
     },
     async updateSession(session) {
-      const sessionToken = session.sessionToken
+      const { sessionToken } = session
       const data = await client.query({
         TableName,
         IndexName: "GSI1",
@@ -270,10 +246,8 @@ export function DynamoDBAdapter(
           ":gsi1sk": `SESSION#${sessionToken}`,
         },
       })
-      if (!data.Items) {
-        return null
-      }
-      const { pk, sk } = data.Items[0] as Dynamo<AdapterSession>
+      if (!data.Items?.length) return null
+      const { pk, sk } = data.Items[0] as any
       const {
         UpdateExpression,
         ExpressionAttributeNames,
@@ -281,18 +255,13 @@ export function DynamoDBAdapter(
       } = generateUpdateExpression(session)
       const res = await client.update({
         TableName,
-        Key: {
-          // next-auth type is incorrect it should be Partial<AdapterUser> & {id: string} instead of just Partial<AdapterUser>
-          pk,
-          sk,
-        },
+        Key: { pk, sk },
         UpdateExpression,
         ExpressionAttributeNames,
         ExpressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
-      const updatedSession = res.Attributes
-      return updatedSession ? format.from<AdapterSession>(updatedSession) : null
+      return format.from<AdapterSession>(res.Attributes)
     },
     async deleteSession(sessionToken) {
       const data = await client.query({
@@ -308,119 +277,39 @@ export function DynamoDBAdapter(
           ":gsi1sk": `SESSION#${sessionToken}`,
         },
       })
-      if (!data.Items || data?.Items?.length <= 0) return null
+      if (!data?.Items?.length) return null
 
-      const infoToDelete = data.Items[0]
+      const { pk, sk } = data.Items[0]
 
       const res = await client.delete({
         TableName,
-        Key: {
-          pk: infoToDelete.pk,
-          sk: infoToDelete.sk,
-        },
+        Key: { pk, sk },
         ReturnValues: "ALL_OLD",
       })
-      const session = res.Attributes
-      return session ? format.from<AdapterSession>(session) : null
+      return format.from<AdapterSession>(res.Attributes)
     },
-    async createVerificationToken(verificationToken) {
-      const { identifier, expires, token } = verificationToken
-      const item: Dynamo<VerificationToken> = {
-        pk: `VR#${identifier}`,
-        sk: `VR#${token}`,
-        token,
-        identifier,
-        type: "VR",
-        expires,
-      }
-      await client.put({ TableName, Item: format.to(item) })
-      return format.from<VerificationToken>(item)
+    async createVerificationToken(data) {
+      await client.put({
+        TableName,
+        Item: format.to({
+          pk: `VT#${data.identifier}`,
+          sk: `VT#${data.token}`,
+          type: "VT",
+          ...data,
+        }),
+      })
+      return data
     },
     async useVerificationToken({ identifier, token }) {
       const data = await client.delete({
         TableName,
         Key: {
-          pk: `VR#${identifier}`,
-          sk: `VR#${token}`,
+          pk: `VT#${identifier}`,
+          sk: `VT#${token}`,
         },
         ReturnValues: "ALL_OLD",
       })
-      const attributes = data.Attributes
-      return attributes ? format.from<VerificationToken>(attributes) : null
+      return format.from<VerificationToken>(data.Attributes)
     },
-  }
-}
-
-// https://github.com/honeinc/is-iso-date/blob/master/index.js
-const isoDateRE =
-  /(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))/
-function isDate(value: any) {
-  return value && isoDateRE.test(value) && !isNaN(Date.parse(value))
-}
-
-// dyanmo TTL requires the date object to be a timestamp in Unix epoch time format in seconds.
-// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-before-you-start.html#time-to-live-ttl-before-you-start-formatting
-export const format = {
-  /** Takes a plain old JavaScript object and turns it into a Dynamodb object */
-  to(object: Record<string, any>) {
-    const newObject: Record<string, unknown> = {}
-    for (const key in object) {
-      const value = object[key]
-      if (value instanceof Date) {
-        if (key === "expires") {
-          newObject[key] = value.getTime() / 1000
-        } else {
-          newObject[key] = value.toISOString()
-        }
-      } else {
-        newObject[key] = value
-      }
-    }
-    return newObject
-  },
-  /** Takes a Dynamo object and returns a plain old JavaScript object */
-  from<T = Record<string, unknown>>(dynamodbObject: Record<string, any>): T {
-    const { pk, sk, GSI1PK, GSI1SK, type, ...object } = dynamodbObject
-    // hack to keep type property in accounts
-    if (type !== "SESSION" && type !== "VR" && type !== "USER") {
-      object.type = type
-    }
-    const newObject: Record<string, unknown> = {}
-    for (const key in object) {
-      const value = object[key]
-      if (isDate(value)) {
-        newObject[key] = new Date(value)
-      } else {
-        newObject[key] = value
-      }
-      if (key === "expires") {
-        newObject[key] = new Date(value * 1000)
-      }
-    }
-    return newObject as T
-  },
-}
-
-const generateUpdateExpression = (
-  object: Record<string, any>
-): {
-  UpdateExpression: string
-  ExpressionAttributeNames: Record<string, string>
-  ExpressionAttributeValues: Record<string, unknown>
-} => {
-  const formatedSession = format.to(object)
-  let UpdateExpression = "set"
-  const ExpressionAttributeNames: Record<string, string> = {}
-  const ExpressionAttributeValues: Record<string, unknown> = {}
-  for (const property in formatedSession) {
-    UpdateExpression += ` #${property} = :${property},`
-    ExpressionAttributeNames["#" + property] = property
-    ExpressionAttributeValues[":" + property] = formatedSession[property]
-  }
-  UpdateExpression = UpdateExpression.slice(0, -1)
-  return {
-    UpdateExpression,
-    ExpressionAttributeNames,
-    ExpressionAttributeValues,
   }
 }
