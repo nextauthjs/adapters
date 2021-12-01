@@ -23,7 +23,6 @@ docker run -d --rm \
 --name "${CONTAINER_NAME}" \
 -p7474:7474 -p7687:7687 \
 neo4j:4.2.0
-# -v="$SCRIPT_DIR"/resources:/var/lib/neo4j/resources
 
 # For debug or testing it may be useful to use neo4j enterprise edition.
 # Use the lines below in the docker run statement.
@@ -31,11 +30,6 @@ neo4j:4.2.0
 # neo4j:4.2.0-enterprise
 
 echo "Waiting 5 sec for db to start..." && sleep 5
-
-# # Create constraints
-# docker exec \
-# -i "${CONTAINER_NAME}" \
-# sh -c 'exec cypher-shell -u ${TEST_NEO4J_USER} -p ${TEST_NEO4J_PASS} -f /var/lib/neo4j/resources/constraints.cypher'
 
 if $JEST_WATCH; then
     # Run jest in watch mode

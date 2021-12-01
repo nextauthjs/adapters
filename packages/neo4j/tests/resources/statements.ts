@@ -1,5 +1,5 @@
-// Constraints and indexes - relevant to Neo4j Community Edition.
-
+// Constraints and indexes - relevant to Neo4j Community Edition.
+export default `
 CREATE CONSTRAINT user_id_constraint IF NOT EXISTS
 ON (u:User) ASSERT u.id IS UNIQUE;
 
@@ -25,4 +25,4 @@ CREATE INDEX verification_token_identifier_index IF NOT EXISTS
 FOR (v:VerificationToken) ON (v.identifier);
 
 CREATE INDEX verification_token_token_index IF NOT EXISTS
-FOR (v:VerificationToken) ON (v.token);
+FOR (v:VerificationToken) ON (v.token);`
