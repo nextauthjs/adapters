@@ -19,12 +19,11 @@ export function MikroOrmAdapter(
     entities?: Partial<typeof defaultEntities>
   }
 ): Adapter {
-  const {
-    User: UserModel,
-    Account: AccountModel,
-    Session: SessionModel,
-    VerificationToken: VerificationTokenModel,
-  } = { ...defaultEntities, ...options?.entities }
+  const UserModel = options?.entities?.User ?? defaultEntities.User
+  const AccountModel = options?.entities?.Account ?? defaultEntities.Account
+  const SessionModel = options?.entities?.Session ?? defaultEntities.Session
+  const VerificationTokenModel =
+    options?.entities?.VerificationToken ?? defaultEntities.VerificationToken
 
   const getEM = async () => {
     if (!isPromise(ormConnection)) {
