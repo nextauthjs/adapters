@@ -9,7 +9,7 @@ import {
 
 const transformer: Record<"date" | "bigint", ValueTransformer> = {
   date: {
-    from: (date: string | null) => date && new Date(parseInt(date, 10)),
+    from: (date: string | null) => date && new Date(date),
     to: (date?: Date) => date?.valueOf().toString(),
   },
   bigint: {
