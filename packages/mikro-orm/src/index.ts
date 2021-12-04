@@ -1,8 +1,14 @@
-import type { Options } from "@mikro-orm/core"
+import type {
+  AnyEntity,
+  EntityClass,
+  EntitySchema,
+  Options,
+} from "@mikro-orm/core"
 import { MikroORM, wrap } from "@mikro-orm/core"
 import * as defaultEntities from "./entities"
 
 import type { Adapter } from "next-auth/adapters"
+import type { EntityClassGroup } from "@mikro-orm/core/dist/typings"
 
 export * as defaultEntities from "./entities"
 
@@ -13,7 +19,11 @@ export * as defaultEntities from "./entities"
  * @returns
  */
 export function MikroOrmAdapter(
-  ormOptions: Options,
+  ormOptions: Omit<Options, "entities"> & {
+    entities?: Array<
+      EntityClass<AnyEntity> | EntityClassGroup<AnyEntity> | EntitySchema<any>
+    >
+  },
   options?: {
     entities?: Partial<typeof defaultEntities>
   }
@@ -32,7 +42,7 @@ export function MikroOrmAdapter(
         throw new Error("You have to pass class entities to MikroORM.init")
 
       // filter out default entities from the passed entities
-      const connectionEntities = ormOptions.entities?.filter((e) => {
+      const optionsEntities = ormOptions.entities?.filter((e) => {
         if (typeof e !== "string" && "name" in e && typeof e.name === "string")
           return !["User", "Account", "Session", "VerificationToken"].includes(
             e.name
@@ -41,7 +51,7 @@ export function MikroOrmAdapter(
       })
       // add the (un-)enhanced entities to the connection
       ormOptions.entities = [
-        ...(connectionEntities ?? []),
+        ...(optionsEntities ?? []),
         UserModel,
         AccountModel,
         SessionModel,
