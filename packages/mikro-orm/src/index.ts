@@ -3,7 +3,6 @@ import { MikroORM, wrap } from "@mikro-orm/core"
 import * as defaultEntities from "./entities"
 
 import type { Adapter } from "next-auth/adapters"
-import { isPromise } from "util/types"
 
 export * as defaultEntities from "./entities"
 
@@ -14,7 +13,7 @@ export * as defaultEntities from "./entities"
  * @returns
  */
 export function MikroOrmAdapter(
-  ormConnection: Promise<MikroORM> | Options,
+  ormOptions: Options,
   options?: {
     entities?: Partial<typeof defaultEntities>
   }
@@ -25,13 +24,15 @@ export function MikroOrmAdapter(
   const VerificationTokenModel =
     options?.entities?.VerificationToken ?? defaultEntities.VerificationToken
 
+  let _orm: MikroORM
+
   const getEM = async () => {
-    if (!isPromise(ormConnection)) {
-      if (typeof ormConnection.entities === "string")
+    if (!_orm) {
+      if (typeof ormOptions.entities === "string")
         throw new Error("You have to pass class entities to MikroORM.init")
 
       // filter out default entities from the passed entities
-      const connectionEntities = ormConnection.entities?.filter((e) => {
+      const connectionEntities = ormOptions.entities?.filter((e) => {
         if (typeof e !== "string" && "name" in e && typeof e.name === "string")
           return !["User", "Account", "Session", "VerificationToken"].includes(
             e.name
@@ -39,16 +40,16 @@ export function MikroOrmAdapter(
         return true
       })
       // add the (un-)enhanced entities to the connection
-      ormConnection.entities = [
+      ormOptions.entities = [
         ...(connectionEntities ?? []),
         UserModel,
         AccountModel,
         SessionModel,
         VerificationTokenModel,
       ]
-      ormConnection = MikroORM.init(ormConnection)
+      _orm = await MikroORM.init(ormOptions)
     }
-    return await ormConnection.then((orm) => orm.em.fork())
+    return _orm.em.fork()
   }
 
   return {
