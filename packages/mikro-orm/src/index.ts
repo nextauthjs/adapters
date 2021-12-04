@@ -38,20 +38,25 @@ export function MikroOrmAdapter(
 
   const getEM = async () => {
     if (!_orm) {
-      if (typeof ormOptions.entities === "string")
-        throw new Error("You have to pass class entities to MikroORM.init")
-
       // filter out default entities from the passed entities
-      const optionsEntities = ormOptions.entities?.filter((e) => {
-        if (typeof e !== "string" && "name" in e && typeof e.name === "string")
-          return !["User", "Account", "Session", "VerificationToken"].includes(
-            e.name
+      const optionsEntities =
+        ormOptions.entities?.filter((e) => {
+          if (
+            typeof e !== "string" &&
+            "name" in e &&
+            typeof e.name === "string"
           )
-        return true
-      })
+            return ![
+              "User",
+              "Account",
+              "Session",
+              "VerificationToken",
+            ].includes(e.name)
+          return true
+        }) ?? []
       // add the (un-)enhanced entities to the connection
       ormOptions.entities = [
-        ...(optionsEntities ?? []),
+        ...optionsEntities,
         UserModel,
         AccountModel,
         SessionModel,
