@@ -1,0 +1,39 @@
+{
+  "name": "@next-auth/upstash-redis-adapter",
+  "version": "1.0.0",
+  "description": "Upstash adapter for next-auth. It uses Upstash's connectionless (HTTP based) Redis client.",
+  "homepage": "https://next-auth.js.org",
+  "repository": "https://github.com/nextauthjs/adapters",
+  "bugs": {
+    "url": "https://github.com/nextauthjs/adapters/issues"
+  },
+  "author": "github.com/kay-is",
+  "main": "dist/index.js",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "upstash",
+    "redis"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "peerDependencies": {
+    "next-auth": "^4.0.1",
+    "@upstash/redis": "^0.1.9"
+  },
+  "devDependencies": {
+    "@upstash/redis": "^0.1.9"
+  }
+}
