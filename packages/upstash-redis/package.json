@@ -35,5 +35,9 @@
   },
   "devDependencies": {
     "@upstash/redis": "^0.1.9"
+  },
+  "dependencies": {
+    "jest": "^27.4.3",
+    "uuid": "^8.3.2"
   }
 }
