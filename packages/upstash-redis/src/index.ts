@@ -180,10 +180,10 @@ export default function UpstashRedisAdapter(
       if (!dbAccount) return
       const accountKey = `${accountKeyPrefix}${id}`
       // eslint-disable-next-line no-useless-call
-      await client.del.apply(client, [
+      await client.del(
         accountKey,
-        `${accountByUserIdPrefix} + ${dbAccount.userId as string}`,
-      ])
+        `${accountByUserIdPrefix} + ${dbAccount.userId as string}`
+      )
     },
     deleteUser: async (userId: string) => {
       const user = await getUser(userId)
@@ -195,14 +195,14 @@ export default function UpstashRedisAdapter(
       const sessionRequest = await client.get(sessionByUserIdKey)
       const sessionKey = sessionRequest.data
       // eslint-disable-next-line no-useless-call
-      await client.del.apply(client, [
+      await client.del(
         userKeyPrefix + userId,
         `${emailKeyPrefix}${user.email as string}`,
         accountKey,
         accountByUserKey,
         sessionKey,
-        sessionByUserIdKey,
-      ])
+        sessionByUserIdKey
+      )
     },
   }
   return adapter
