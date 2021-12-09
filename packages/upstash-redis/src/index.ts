@@ -179,7 +179,6 @@ export default function UpstashRedisAdapter(
       const dbAccount = await getAccount(id)
       if (!dbAccount) return
       const accountKey = `${accountKeyPrefix}${id}`
-      // eslint-disable-next-line no-useless-call
       await client.del(
         accountKey,
         `${accountByUserIdPrefix} + ${dbAccount.userId as string}`
@@ -194,7 +193,6 @@ export default function UpstashRedisAdapter(
       const sessionByUserIdKey = sessionByUserIdKeyPrefix + userId
       const sessionRequest = await client.get(sessionByUserIdKey)
       const sessionKey = sessionRequest.data
-      // eslint-disable-next-line no-useless-call
       await client.del(
         userKeyPrefix + userId,
         `${emailKeyPrefix}${user.email as string}`,
