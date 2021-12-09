@@ -31,13 +31,12 @@
   ],
   "peerDependencies": {
     "next-auth": "^4.0.1",
-    "@upstash/redis": "^0.1.9"
+    "@upstash/redis": "^0.2.1"
   },
   "devDependencies": {
-    "@upstash/redis": "^0.1.9"
+    "@upstash/redis": "^0.2.1"
   },
   "dependencies": {
-    "jest": "^27.4.3",
     "uuid": "^8.3.2"
   }
 }

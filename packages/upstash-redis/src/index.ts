@@ -53,11 +53,6 @@ export default function UpstashRedisAdapter(
   const setObjectAsJson = async (key: string, obj: any) =>
     await client.set(key, JSON.stringify(obj))
 
-  // del has wrong signature in TypeScript
-  // Upstash service rejects string[] and requires string
-  // @ts-expect-error
-  const delKeys = async (keys: string[]) => await client.del.apply(client, keys)
-
   const setAccount = async (id: string, account: AdapterAccount) => {
     await setObjectAsJson(accountKeyPrefix + id, account)
     await client.set(
@@ -157,7 +152,7 @@ export default function UpstashRedisAdapter(
       return await setSession(updates.sessionToken, { ...session, ...updates })
     },
     deleteSession: async (sessionToken: string) => {
-      await delKeys([sessionKeyPrefix + sessionToken])
+      await client.del(sessionKeyPrefix + sessionToken)
     },
     createVerificationToken: async (
       verificationToken: VerificationToken
@@ -174,7 +169,7 @@ export default function UpstashRedisAdapter(
       const tokenKey = verificationTokenKeyPrefix + verificationToken.identifier
       const tokenResponse = await client.get(tokenKey)
       if (!tokenResponse.data) return null
-      await delKeys([tokenKey])
+      await client.del(tokenKey)
       return reviveFromJson(tokenResponse.data)
     },
     unlinkAccount: async (
@@ -184,7 +179,8 @@ export default function UpstashRedisAdapter(
       const dbAccount = await getAccount(id)
       if (!dbAccount) return
       const accountKey = `${accountKeyPrefix}${id}`
-      await delKeys([
+      // eslint-disable-next-line no-useless-call
+      await client.del.apply(client, [
         accountKey,
         `${accountByUserIdPrefix} + ${dbAccount.userId as string}`,
       ])
@@ -198,7 +194,8 @@ export default function UpstashRedisAdapter(
       const sessionByUserIdKey = sessionByUserIdKeyPrefix + userId
       const sessionRequest = await client.get(sessionByUserIdKey)
       const sessionKey = sessionRequest.data
-      await delKeys([
+      // eslint-disable-next-line no-useless-call
+      await client.del.apply(client, [
         userKeyPrefix + userId,
         `${emailKeyPrefix}${user.email as string}`,
         accountKey,
