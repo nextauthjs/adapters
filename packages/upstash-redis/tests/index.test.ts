@@ -13,24 +13,26 @@ const reviveFromJson = (json: string) =>
   )
 
 runBasicTests({
-  adapter: UpstashRedisAdapter(client),
+  adapter: UpstashRedisAdapter(client, { baseKeyPrefix: "testApp:" }),
   db: {
     verificationToken: async (where) => {
-      const { data } = await client.get("user:token:" + where.identifier)
+      const { data } = await client.get(
+        `testApp:user:token:${where.identifier}`
+      )
       return reviveFromJson(data)
     },
     user: async (id: string) => {
-      const { data } = await client.get("user:" + id)
+      const { data } = await client.get(`testApp:user:${id}`)
       return reviveFromJson(data)
     },
     account: async ({ provider, providerAccountId }) => {
       const { data } = await client.get(
-        `user:account:${provider}:${providerAccountId}`
+        `testApp:user:account:${provider}:${providerAccountId}`
       )
       return reviveFromJson(data)
     },
     session: async (sessionToken) => {
-      const { data } = await client.get("user:session:" + sessionToken)
+      const { data } = await client.get(`testApp:user:session:${sessionToken}`)
       return reviveFromJson(data)
     },
   },

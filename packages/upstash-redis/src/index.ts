@@ -9,6 +9,7 @@ import type { Upstash } from "@upstash/redis/src/types"
 import * as uuid from "uuid"
 
 export interface UpstashRedisAdapterOptions {
+  baseKeyPrefix?: string
   accountKeyPrefix?: string
   accountByUserIdPrefix?: string
   emailKeyPrefix?: string
@@ -19,8 +20,9 @@ export interface UpstashRedisAdapterOptions {
 }
 
 const defaultOptions = {
+  baseKeyPrefix: "",
   accountKeyPrefix: "user:account:",
-  accountByUserIdPrefix: "user:account:by-user-id",
+  accountByUserIdPrefix: "user:account:by-user-id:",
   emailKeyPrefix: "user:email:",
   sessionKeyPrefix: "user:session:",
   sessionByUserIdKeyPrefix: "user:session:by-user-id:",
@@ -32,18 +34,22 @@ export default function UpstashRedisAdapter(
   client: Upstash,
   options: UpstashRedisAdapterOptions = {}
 ): Adapter {
-  const {
-    accountKeyPrefix,
-    accountByUserIdPrefix,
-    emailKeyPrefix,
-    sessionKeyPrefix,
-    sessionByUserIdKeyPrefix,
-    userKeyPrefix,
-    verificationTokenKeyPrefix,
-  } = {
+  const mergedOptions = {
     ...defaultOptions,
     ...options,
   }
+
+  const { baseKeyPrefix } = mergedOptions
+  const accountKeyPrefix = baseKeyPrefix + mergedOptions.accountKeyPrefix
+  const accountByUserIdPrefix =
+    baseKeyPrefix + mergedOptions.accountByUserIdPrefix
+  const emailKeyPrefix = baseKeyPrefix + mergedOptions.emailKeyPrefix
+  const sessionKeyPrefix = baseKeyPrefix + mergedOptions.sessionKeyPrefix
+  const sessionByUserIdKeyPrefix =
+    baseKeyPrefix + mergedOptions.sessionByUserIdKeyPrefix
+  const userKeyPrefix = baseKeyPrefix + mergedOptions.userKeyPrefix
+  const verificationTokenKeyPrefix =
+    baseKeyPrefix + mergedOptions.verificationTokenKeyPrefix
 
   const reviveFromJson = (json: string) =>
     JSON.parse(json, (key, value) =>
@@ -54,11 +60,9 @@ export default function UpstashRedisAdapter(
     await client.set(key, JSON.stringify(obj))
 
   const setAccount = async (id: string, account: AdapterAccount) => {
-    await setObjectAsJson(accountKeyPrefix + id, account)
-    await client.set(
-      accountByUserIdPrefix + account.userId,
-      accountKeyPrefix + id
-    )
+    const accountKey = accountKeyPrefix + id
+    await setObjectAsJson(accountKey, account)
+    await client.set(accountByUserIdPrefix + account.userId, accountKey)
     return account
   }
 
@@ -69,11 +73,9 @@ export default function UpstashRedisAdapter(
   }
 
   const setSession = async (id: string, session: AdapterSession) => {
-    await setObjectAsJson(sessionKeyPrefix + id, session)
-    await client.set(
-      sessionByUserIdKeyPrefix + session.userId,
-      sessionKeyPrefix + id
-    )
+    const sessionKey = sessionKeyPrefix + id
+    await setObjectAsJson(sessionKey, session)
+    await client.set(sessionByUserIdKeyPrefix + session.userId, sessionKey)
     return session
   }
 
