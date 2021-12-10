@@ -1,6 +1,6 @@
 {
   "name": "@next-auth/mikro-orm-adapter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MikroORM adapter for next-auth.",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
@@ -32,8 +32,8 @@
     "dist"
   ],
   "peerDependencies": {
-    "next-auth": "^4.0.1",
-    "@mikro-orm/core": ">5 || 5.0.0-dev.527 - 5.0.0-dev.x"
+    "@mikro-orm/core": ">5 || 5.0.0-dev.527 - 5.0.0-dev.x",
+    "next-auth": "^4.0.1"
   },
   "devDependencies": {
     "@mikro-orm/core": "^5.0.0-dev.527",
