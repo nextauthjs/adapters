@@ -23,7 +23,7 @@ You can find the Sequelize schema in the docs at [next-auth.js.org/adapters/sequ
 1. Install `next-auth` and `@next-auth/sequelize-adapter` as well as `sequelize` and your [database driver](https://sequelize.org/master/manual/getting-started.html) of choice.
 
 ```js
-npm install next-auth @next-auth/sequeluze-adapter sequelize sqlite3
+npm install next-auth @next-auth/sequelize-adapter sequelize sqlite3
 npm install --save-dev sequelize
 ```
 
