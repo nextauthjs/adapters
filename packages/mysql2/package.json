@@ -1,0 +1,26 @@
+{
+  "name": "@next-auth/mysql2-adapter",
+  "version": "0.0.1",
+  "description": "Mysql adapter (mysql2) for next-auth.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest",
+    "test-custom-model": "CUSTOM_MODEL=1 jest"
+  },
+  "author": "Philipp Schmiedel <code@philippschmiedel.com>",
+  "license": "ISC",
+  "keywords": [
+    "next-auth",
+    "next.js",
+    "oauth",
+    "mysql",
+    "adapter"
+  ],
+  "peerDependencies": {
+    "mysql2": "^2.3.3",
+    "next-auth": "^4.0.5"
+  },
+  "dependencies": {
+    "uuid": "^8.3.2"
+  }
+}

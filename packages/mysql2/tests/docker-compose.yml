@@ -1,0 +1,17 @@
+version: '3.3'
+
+# connect to DB: mysql -hlocalhost --protocol=TCP -u root -p
+# seed DB: mysql -hlocalhost --protocol=TCP -u root -p nextauth-test < seed.sql
+
+services:
+  db:
+    image: mysql/mysql-server:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'nextauth-test'
+      MYSQL_ROOT_PASSWORD: 'test'
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
