@@ -16,16 +16,15 @@ export function Neo4jAdapter(session: Session): Adapter {
     },
 
     async getUser(id) {
-      return await read(`MATCH (u:User { id: $id }) RETURN properties(u)`, {
+      return await read(`MATCH (u:User { id: $id }) RETURN u{.*}`, {
         id,
       })
     },
 
     async getUserByEmail(email) {
-      return await read(
-        `MATCH (u:User { email: $email }) RETURN properties(u)`,
-        { email }
-      )
+      return await read(`MATCH (u:User { email: $email }) RETURN u{.*}`, {
+        email,
+      })
     },
 
     async getUserByAccount(provider_providerAccountId) {
@@ -34,24 +33,26 @@ export function Neo4jAdapter(session: Session): Adapter {
            provider: $provider,
            providerAccountId: $providerAccountId
          })
-         RETURN properties(u)`,
+         RETURN u{.*}`,
         provider_providerAccountId
       )
     },
 
     async updateUser(data) {
-      return await write(
-        `MATCH (u:User { id: $data.id })
-         SET u += $data
-         RETURN properties(u)`,
-        data
-      )
+      return (
+        await write(
+          `MATCH (u:User { id: $data.id })
+           SET u += $data
+           RETURN u{.*}`,
+          data
+        )
+      ).u
     },
 
     async deleteUser(id) {
       return await write(
         `MATCH (u:User { id: $data.id })
-         WITH u, properties(u) AS properties
+         WITH u, u{.*} AS properties
          DETACH DELETE u
          RETURN properties`,
         { id }
@@ -107,7 +108,7 @@ export function Neo4jAdapter(session: Session): Adapter {
          DETACH DELETE s
          WITH count(s) AS c
          MATCH (u:User)-[:HAS_SESSION]->(s:Session { sessionToken: $data.sessionToken })
-         RETURN s { .*, userId: u.id } AS session, properties(u) AS user`,
+         RETURN s { .*, userId: u.id } AS session, u{.*} AS user`,
         { sessionToken, now: new Date().toISOString() }
       )
 
