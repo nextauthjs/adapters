@@ -3,8 +3,8 @@ import { runBasicTests } from "../../../basic-tests"
 import UpstashRedisAdapter from "../src"
 
 const client = upstashRedisClient(
-  "<UPSTASH_REDIS_REST_API_URL>",
-  "<UPSTASH_REDIS_API_KEY>"
+  process.env.NEXTAUTH_UPSTASH_REDIS_URL,
+  process.env.NEXTAUTH_UPSTASH_REDIS_KEY
 )
 
 const reviveFromJson = (json: string) =>
