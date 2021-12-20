@@ -36,8 +36,9 @@ export const createAccount = async (
     sqlValues.push(`:${key}`)
   }
 
+  /* eslint-disable @typescript-eslint/prefer-ts-expect-error */
   // TODO: remove when https://github.com/sidorares/node-mysql2/issues/1265 is resolved
-  // @ts-expect-error
+  // @ts-ignore
   await (
     await db
   ).query(
@@ -53,6 +54,7 @@ export const createAccount = async (
       ...account,
     }
   )
+  /* eslint-enable @typescript-eslint/prefer-ts-expect-error */
 }
 
 /**

@@ -124,8 +124,10 @@ export const createUser = async (
   ].join(",")
 
   const newUserid = uuidv4()
+
+  /* eslint-disable @typescript-eslint/prefer-ts-expect-error */
   // TODO: remove when https://github.com/sidorares/node-mysql2/issues/1265 is resolved
-  // @ts-expect-error
+  // @ts-ignore
   await (
     await db
   ).query(
@@ -140,6 +142,7 @@ export const createUser = async (
       id: newUserid,
     }
   )
+  /* eslint-enable @typescript-eslint/prefer-ts-expect-error */
 
   const newUser = await getUser(newUserid, db, ext)
   if (!newUser) {
@@ -159,8 +162,10 @@ export const updateUser = async (
   }
 
   const sqlSet = generateSetQuery(user, ext)
+
+  /* eslint-disable @typescript-eslint/prefer-ts-expect-error */
   // TODO: remove when https://github.com/sidorares/node-mysql2/issues/1265 is resolved
-  // @ts-expect-error
+  // @ts-ignore
   await (
     await db
   ).query(
@@ -174,6 +179,7 @@ export const updateUser = async (
       ...user,
     }
   )
+  /* eslint-enable @typescript-eslint/prefer-ts-expect-error */
 
   const updatedUser = await getUser(user.id, db, ext)
   if (!updatedUser) {
