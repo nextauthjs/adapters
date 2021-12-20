@@ -13,7 +13,7 @@ const config = {
   },
 }
 
-export const client = DynamoDBDocument.from(new DynamoDB(config), {
+const client = DynamoDBDocument.from(new DynamoDB(config), {
   marshallOptions: {
     convertEmptyValues: true,
     removeUndefinedValues: true,
@@ -37,8 +37,6 @@ runBasicTests({
         },
       })
 
-      if (!user.Item) return null
-
       return format.from(user.Item)
     },
     async session(token) {
@@ -56,9 +54,7 @@ runBasicTests({
         },
       })
 
-      if (!session.Items || !session.Items[0]) return null
-
-      return format.from(session.Items[0])
+      return format.from(session.Items?.[0])
     },
     async account({ provider, providerAccountId }) {
       const account = await client.query({
@@ -75,20 +71,16 @@ runBasicTests({
         },
       })
 
-      if (!account.Items || !account.Items[0]) return null
-
-      return format.from(account.Items[0])
+      return format.from(account.Items?.[0])
     },
     async verificationToken({ token, identifier }) {
       const vt = await client.get({
         TableName,
         Key: {
-          pk: `VR#${identifier}`,
-          sk: `VR#${token}`,
+          pk: `VT#${identifier}`,
+          sk: `VT#${token}`,
         },
       })
-      if (!vt.Item) return null
-
       return format.from(vt.Item)
     },
   },

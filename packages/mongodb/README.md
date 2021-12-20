@@ -18,10 +18,10 @@ This is the MongoDB Adapter for [`next-auth`](https://next-auth.js.org). This pa
 
 ## Getting Started
 
-1. Install `mongodb`, `next-auth@beta` and `@next-auth/mongodb-adapter@next`
+1. Install `mongodb`, `next-auth` and `@next-auth/mongodb-adapter`
 
 ```js
-npm install mongodb next-auth@beta @next-auth/mongodb-adapter@next
+npm install mongodb next-auth @next-auth/mongodb-adapter@next
 ```
 
 2. Add `lib/mongodb.js`

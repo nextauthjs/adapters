@@ -1,6 +1,6 @@
 <p align="center">
    <br/>
-   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/packages/pouchdb/logo.svg" />
+   <a href="https://next-auth.js.org" target="_blank"><img height="64px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>&nbsp;&nbsp;&nbsp;&nbsp;<img height="64px" src="https://raw.githubusercontent.com/nextauthjs/adapters/main/packages/pouchdb/logo.svg" />
    <h3 align="center"><b>PouchDB Adapter</b> - NextAuth.js</h3>
    <p align="center">
    Open Source. Full Stack. Own Your Data.
@@ -20,12 +20,12 @@ Depending on your architecture you can use PouchDB's http adapter to reach any d
 
 ## Getting Started
 
+1. Install `next-auth` and `@next-auth/pouchdb-adapter`, as well as `pouchdb`.
+
 > **Prerequesite**: Your PouchDB instance MUST provide the `pouchdb-find` plugin since it is used internally by the adapter to build and manage indexes
 
-1. Install `next-auth` and `@next-auth/pouchdb-adapter`
-
 ```js
-npm install next-auth @next-auth/pouchdb-adapter
+npm install next-auth @next-auth/pouchdb-adapter pouchdb
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.

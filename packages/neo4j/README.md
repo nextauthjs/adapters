@@ -20,10 +20,10 @@ You can find the Neo4j schema in the docs at [next-auth.js.org/adapters/neo4j](n
 
 ## Getting Started
 
-1. Install `neo4j-driver`, `next-auth@beta` and `@next-auth/neo4j-adapter@next`
+1. Install `neo4j-driver`, `next-auth` and `@next-auth/neo4j-adapter`
 
 ```js
-npm install neo4j-driver next-auth@beta @next-auth/neo4j-adapter@next
+npm install neo4j-driver next-auth @next-auth/neo4j-adapter@next
 ```
 
 2. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.

@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.4](https://github.com/nextauthjs/adapters/compare/@next-auth/fauna-adapter@0.2.3...@next-auth/fauna-adapter@0.2.4) (2021-10-27)
+
+### Reverts
+
+- Revert "docs(fauna): update `README.md` (#244)" (#246) ([26cd24a](https://github.com/nextauthjs/adapters/commit/26cd24a6eba3d42ed7febd5eb45b13c236c57819)), closes [#244](https://github.com/nextauthjs/adapters/issues/244) [#246](https://github.com/nextauthjs/adapters/issues/246)
+
+## [0.2.3](https://github.com/nextauthjs/adapters/compare/@next-auth/fauna-adapter@0.2.2...@next-auth/fauna-adapter@0.2.3) (2021-09-19)
+
+**Note:** Version bump only for package @next-auth/fauna-adapter
+
 ## [0.2.2](https://github.com/nextauthjs/adapters/compare/@next-auth/fauna-adapter@0.2.1...@next-auth/fauna-adapter@0.2.2) (2021-07-02)
 
 **Note:** Version bump only for package @next-auth/fauna-adapter
