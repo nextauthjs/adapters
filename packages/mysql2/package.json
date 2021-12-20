@@ -4,6 +4,7 @@
   "description": "Mysql adapter (mysql2) for next-auth.",
   "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
     "test": "jest",
     "test-custom-model": "CUSTOM_MODEL=1 jest"
   },
@@ -16,9 +17,13 @@
     "mysql",
     "adapter"
   ],
+  "files": [
+    "README.md",
+    "dist"
+  ],
   "peerDependencies": {
-    "mysql2": "^2.3.3",
-    "next-auth": "^4.0.5"
+    "mysql2": "^2.3",
+    "next-auth": "^4.0"
   },
   "dependencies": {
     "uuid": "^8.3.2"
