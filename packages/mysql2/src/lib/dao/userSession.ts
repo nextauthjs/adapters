@@ -15,6 +15,13 @@ interface UserSession {
   user: AdapterUser
 }
 
+/**
+ * Retrieve user and session data by session token
+ *
+ * @param sessionToken Session token
+ * @param db Database connection
+ * @param ext User model extension (optional)
+ */
 export const getUserSession = async (
   sessionToken: string,
   db: ConnectionType,

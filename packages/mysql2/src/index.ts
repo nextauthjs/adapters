@@ -1,13 +1,36 @@
-import type { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters"
-import type { Account, Awaitable } from "next-auth"
+import type {
+  Adapter,
+  AdapterSession,
+  AdapterUser,
+  VerificationToken,
+} from "next-auth/adapters"
+import type { Account } from "next-auth"
 import type { AdapterOptions, ConnectionType } from "./types"
-import { createUser, getUser, getUserByMail } from "./lib/dao/user"
+import {
+  createUser,
+  deleteUser,
+  getUser,
+  getUserByMail,
+  updateUser,
+} from "./lib/dao/user"
 import { createSession, deleteSession, updateSession } from "./lib/dao/session"
 import { getUserSession } from "./lib/dao/userSession"
-import { createAccount } from "./lib/dao/account"
+import { createAccount, deleteAccount } from "./lib/dao/account"
 import { getUserAccount } from "./lib/dao/userAccount"
+import {
+  createVerificationToken,
+  deleteVerificationToken,
+  getVerificationToken,
+} from "./lib/dao/verificationToken"
 
-const MySqlAdapter = (
+/**
+ * NextAuth.js adapter for mysql2
+ *
+ * @param connectionPromise Mysql2 Connection or Pool promise
+ * @param opt Additional configuration for this adapter
+ * @constructor
+ */
+const MySql2Adapter = (
   connectionPromise: ConnectionType,
   opt: AdapterOptions = {}
 ): Adapter => {
@@ -59,21 +82,20 @@ const MySqlAdapter = (
     async getUser(id: string): Promise<AdapterUser | null> {
       return await getUser(id, connectionPromise, opt?.extendUserModel)
     },
-    updateUser(user: Partial<AdapterUser>): Awaitable<AdapterUser> {
-      // TODO: implement
-      const mock: AdapterUser = {
-        email: undefined,
-        emailVerified: null,
-        id: "",
-        image: undefined,
-        name: undefined,
-      }
-      return mock
+    async deleteUser(userId: string): Promise<void> {
+      return await deleteUser(userId, connectionPromise)
+    },
+    async updateUser(user: Partial<AdapterUser>): Promise<AdapterUser> {
+      return await updateUser(user, connectionPromise, opt?.extendUserModel)
     },
     async getUserByAccount(
       providerAccountId: Pick<Account, "provider" | "providerAccountId">
     ): Promise<AdapterUser | null> {
-      return await getUserAccount(providerAccountId, connectionPromise)
+      return await getUserAccount(
+        providerAccountId,
+        connectionPromise,
+        opt?.extendUserModel
+      )
     },
     async getUserByEmail(email: string): Promise<AdapterUser | null> {
       return await getUserByMail(email, connectionPromise, opt?.extendUserModel)
@@ -81,7 +103,30 @@ const MySqlAdapter = (
     async linkAccount(account: Account): Promise<void> {
       return await createAccount(account, connectionPromise)
     },
+    async unlinkAccount(
+      providerAccountId: Pick<Account, "provider" | "providerAccountId">
+    ): Promise<void> {
+      return await deleteAccount(providerAccountId, connectionPromise)
+    },
+    async createVerificationToken(
+      verificationToken: VerificationToken
+    ): Promise<VerificationToken | null | undefined> {
+      return await createVerificationToken(verificationToken, connectionPromise)
+    },
+    async useVerificationToken(params: {
+      identifier: string
+      token: string
+    }): Promise<VerificationToken | null> {
+      const { identifier, token } = params
+      const verificationToken = await getVerificationToken(
+        identifier,
+        token,
+        connectionPromise
+      )
+      await deleteVerificationToken(identifier, token, connectionPromise)
+      return verificationToken
+    },
   }
 }
 
-export default MySqlAdapter
+export default MySql2Adapter

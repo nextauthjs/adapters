@@ -4,7 +4,7 @@ import type { ModelExtension } from "../types"
  * Generated SQL statements that extends the SELECT part for the given extended
  * model.
  *
- * @param ext
+ * @param ext Model extension (optional)
  */
 export const extendSelectQuery = (ext: ModelExtension): string[] => {
   const queryParts = []
@@ -16,15 +16,17 @@ export const extendSelectQuery = (ext: ModelExtension): string[] => {
 }
 
 /**
- * Generates SQL statements that extend the SET part for the given extended
+ * Generates SQL statements for the SET part for the given data and extension
  * model. Mysql2 named parameters are used in the statement like `db_property = :dbProperty`
  *
- * @param ext
- * @param data
+ * @param data Data (the complete data including default and extension!)
+ * @param ext Model extension (optional)
+ * @param defaultMapping Mapping that applies to the default data model (optional)
  */
-export const extendSetQuery = (
+export const generateSetQuery = (
+  data: Record<string, any>,
   ext: ModelExtension,
-  data: { [key: string]: any }
+  defaultMapping: Record<string, string> = { emailVerified: "email_verified" }
 ): string[] => {
   const setParts = []
   for (const key of Object.keys(data)) {
@@ -33,6 +35,10 @@ export const extendSetQuery = (
       const extSetting = ext[key]
       const dbField =
         typeof extSetting === "string" ? extSetting : extSetting.dbField
+      setParts.push(`${dbField} = :${key}`)
+      // default user data
+    } else {
+      const dbField = defaultMapping[key] ? defaultMapping[key] : key
       setParts.push(`${dbField} = :${key}`)
     }
   }
@@ -43,12 +49,12 @@ export const extendSetQuery = (
  * Generates SQL statements that extend the INSERT and VALUES part for the given extended
  * model. Mysql2 named parameters are used in the statement like `db_property = :dbProperty`
  *
- * @param ext
  * @param data
+ * @param ext Model extension (optional)
  */
 export const extendInsertValuesQuery = (
-  ext: ModelExtension,
-  data: { [key: string]: any }
+  data: { [key: string]: any },
+  ext: ModelExtension
 ): { insert: string[]; values: string[] } => {
   const insertParts = []
   const valuesParts = []

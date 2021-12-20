@@ -10,6 +10,14 @@ export interface SessionRow extends RowDataPacket {
   userId: string
 }
 
+/**
+ * Helper to retrieve Sessions by different conditions
+ *
+ * @private
+ * @param key Database field for WHERE
+ * @param value Filter value
+ * @param db Database connection
+ */
 const getSessionBy = async (
   key: string,
   value: string,
@@ -32,6 +40,12 @@ const getSessionBy = async (
   return result[0]
 }
 
+/**
+ * Get session from database
+ *
+ * @param id Session ID
+ * @param db Database connection
+ */
 export const getSession = async (
   id: string,
   db: ConnectionType
@@ -39,6 +53,12 @@ export const getSession = async (
   return await getSessionBy("id", id, db)
 }
 
+/**
+ * Get session from database by session token
+ *
+ * @param sessionToken Session token
+ * @param db Database connection
+ */
 export const getSessionBySessionToken = async (
   sessionToken: string,
   db: ConnectionType
@@ -46,6 +66,12 @@ export const getSessionBySessionToken = async (
   return await getSessionBy("sessionToken", sessionToken, db)
 }
 
+/**
+ * Delete session from database
+ *
+ * @param sessionToken Session token
+ * @param db Database connection
+ */
 export const deleteSession = async (
   sessionToken: string,
   db: ConnectionType
@@ -60,6 +86,12 @@ export const deleteSession = async (
   )
 }
 
+/**
+ * Create session in database
+ *
+ * @param session Session data
+ * @param db Database connection
+ */
 export const createSession = async (
   session: { sessionToken: string; userId: string; expires: Date },
   db: ConnectionType
@@ -83,6 +115,12 @@ export const createSession = async (
   return newSession
 }
 
+/**
+ * Update session in database
+ *
+ * @param session Session data
+ * @param db Database connection
+ */
 export const updateSession = async (
   session: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">,
   db: ConnectionType

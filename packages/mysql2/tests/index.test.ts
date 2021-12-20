@@ -27,6 +27,7 @@ const testOptions: TestOptions = {
       await (await mysqlConnection).execute("DELETE FROM Account")
       await (await mysqlConnection).execute("DELETE FROM Session")
       await (await mysqlConnection).execute("DELETE FROM User")
+      await (await mysqlConnection).execute("DELETE FROM VerificationToken")
     },
     disconnect: async () => {
       await (await mysqlConnection).end()
@@ -74,8 +75,15 @@ const testOptions: TestOptions = {
 
       return account
     },
-    verificationToken: (params) => {
-      return {}
+    verificationToken: async (params): Promise<any> => {
+      const [[result]] = await (
+        await mysqlConnection
+      ).query<RowDataPacket[]>(
+        `SELECT * FROM VerificationToken WHERE identifier = ? AND token = ?`,
+        [params.identifier, params.token]
+      )
+
+      return result ?? null
     },
   },
 }

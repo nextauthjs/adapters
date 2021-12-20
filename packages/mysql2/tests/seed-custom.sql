@@ -76,6 +76,8 @@ CREATE TABLE `User` (
   `email` varchar(255) DEFAULT NULL,
   `email_verified` datetime(6) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
+  `role` varchar(45) DEFAULT NULL,
+  `phone` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `User_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

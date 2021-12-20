@@ -18,6 +18,12 @@ export interface AccountRow extends RowDataPacket {
   session_state: string | null
 }
 
+/**
+ * Create account in database
+ *
+ * @param account Account data
+ * @param db Database connection
+ */
 export const createAccount = async (
   account: Account,
   db: ConnectionType
@@ -47,4 +53,24 @@ export const createAccount = async (
       ...account,
     }
   )
+}
+
+/**
+ * Deletes an account from the database
+ *
+ * @param providerAccount Account identifier
+ * @param db Database connection
+ */
+export const deleteAccount = async (
+  providerAccount: Pick<Account, "provider" | "providerAccountId">,
+  db: ConnectionType
+): Promise<void> => {
+  const { provider, providerAccountId } = providerAccount
+
+  await (
+    await db
+  ).query(`DELETE FROM Account WHERE provider = ? AND providerAccountId = ?`, [
+    provider,
+    providerAccountId,
+  ])
 }

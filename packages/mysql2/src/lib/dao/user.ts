@@ -2,7 +2,11 @@ import type { AdapterUser } from "next-auth/adapters"
 import type { RowDataPacket } from "mysql2"
 import type { ConnectionType, ModelExtension } from "../../types"
 import { v4 as uuidv4 } from "uuid"
-import { extendInsertValuesQuery, extendSelectQuery } from "../utils"
+import {
+  extendInsertValuesQuery,
+  extendSelectQuery,
+  generateSetQuery,
+} from "../utils"
 
 interface UserRow extends RowDataPacket {
   id: string
@@ -16,6 +20,15 @@ export interface MappedUserRow extends Exclude<UserRow, "email_verified"> {
   emailVerified: Date
 }
 
+/**
+ * Helper to fetch user by different conditions
+ *
+ * @private
+ * @param key Database field for WHERE
+ * @param value Filter value
+ * @param db Database connection
+ * @param ext User model extension (optional)
+ */
 const getUserBy = async (
   key: string,
   value: string,
@@ -49,6 +62,13 @@ const getUserBy = async (
   return result[0]
 }
 
+/**
+ * Retrieve user by primary id
+ *
+ * @param id Id of the user
+ * @param db Database connection
+ * @param ext User model extension (optional)
+ */
 export const getUser = async (
   id: string,
   db: ConnectionType,
@@ -57,6 +77,13 @@ export const getUser = async (
   return await getUserBy("id", id, db, ext)
 }
 
+/**
+ * Retrieve user by e-mail
+ *
+ * @param mail Email address of the user
+ * @param db Database connection
+ * @param ext User model extension (optional)
+ */
 export const getUserByMail = async (
   mail: string,
   db: ConnectionType,
@@ -65,13 +92,20 @@ export const getUserByMail = async (
   return await getUserBy("email", mail, db, ext)
 }
 
+/**
+ * Create a new user in DB
+ *
+ * @param user User data
+ * @param db Database connection
+ * @param ext User model extension (optional)
+ */
 export const createUser = async (
   user: Omit<AdapterUser, "id">,
   db: ConnectionType,
   ext: ModelExtension = {}
 ): Promise<AdapterUser> => {
   const { insert: extendedInsert, values: extendedValues } =
-    extendInsertValuesQuery(ext, user)
+    extendInsertValuesQuery(user, ext)
   const sqlInsert = [
     "id",
     "name",
@@ -113,4 +147,50 @@ export const createUser = async (
   }
 
   return newUser
+}
+
+export const updateUser = async (
+  user: Partial<AdapterUser>,
+  db: ConnectionType,
+  ext: ModelExtension = {}
+): Promise<AdapterUser> => {
+  if (!user.id) {
+    throw new Error("User ID is required to update a user")
+  }
+
+  const sqlSet = generateSetQuery(user, ext)
+  // TODO: remove when https://github.com/sidorares/node-mysql2/issues/1265 is resolved
+  // @ts-expect-error
+  await (
+    await db
+  ).query(
+    {
+      sql: `
+        UPDATE User SET ${sqlSet.join(",")} WHERE id = :id
+    `,
+      namedPlaceholders: true,
+    },
+    {
+      ...user,
+    }
+  )
+
+  const updatedUser = await getUser(user.id, db, ext)
+  if (!updatedUser) {
+    throw new Error("Updated user not found in database")
+  }
+  return updatedUser
+}
+
+/**
+ * Delete user from DB
+ *
+ * @param userId Id of the user
+ * @param db Database connection
+ */
+export const deleteUser = async (
+  userId: string,
+  db: ConnectionType
+): Promise<void> => {
+  await (await db).query(`DELETE FROM User WHERE id = ?`, [userId])
 }

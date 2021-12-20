@@ -4,6 +4,13 @@ import type { ConnectionType, ModelExtension } from "../../types"
 import type { Account } from "next-auth"
 import { extendSelectQuery } from "../utils"
 
+/**
+ * Retrieve user and account data by account identifiers
+ *
+ * @param providerAccountId Account identifier
+ * @param db Database connection
+ * @param ext User model extension (optional)
+ */
 export const getUserAccount = async (
   providerAccountId: Pick<Account, "provider" | "providerAccountId">,
   db: ConnectionType,
