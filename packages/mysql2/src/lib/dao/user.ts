@@ -134,7 +134,7 @@ export const createUser = async (
     {
       sql: `
         INSERT INTO User(${sqlInsert}) VALUES(${sqlValues})
-    `,
+      `,
       namedPlaceholders: true,
     },
     {
@@ -172,7 +172,7 @@ export const updateUser = async (
     {
       sql: `
         UPDATE User SET ${sqlSet.join(",")} WHERE id = :id
-    `,
+      `,
       namedPlaceholders: true,
     },
     {

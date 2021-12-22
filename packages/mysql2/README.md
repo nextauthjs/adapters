@@ -1,7 +1,7 @@
 # Mysql2 Adapter
 
 This is a [`next-auth`](https://next-auth.js.org) adapter for projects that use
-[mysql2](https://www.npmjs.com/package/mysql2) in their projects to connect to MySQL databases.
+[mysql2](https://www.npmjs.com/package/mysql2) to connect to MySQL databases.
 
 ## Usage
 
@@ -25,7 +25,7 @@ need to configure a mapping for the adapter like in the following example:
 ```typescript
 const adapterConfig = {
   extendUserModel: {
-    phone: "phone", // additional property "phone" which also named "phone" in the User database table
+    phone: "phone", // additional property "phone" which is also named "phone" in the User database table
     postalCode: "postal_code", // additional property "postalCode" which is named "postal_code" in the User database table
   },
 }
@@ -46,6 +46,6 @@ a correct _Index_ and _Foreign Key_ structure. The file only contains the table 
 If you create the table structure manually, please pay attention to:
 
 - Use the namings as described in [https://next-auth.js.org/adapters/models](https://next-auth.js.org/adapters/models)
-- For `timestamptz` use `DATETIME(6)`
+- For `timestamptz` use the `DATETIME(6)` type
 - Create a _Foreign Key_ relations as described in the model, with a `ON DELETE CASCADE` attribute
 - Don't add additional fields to the `User` table that conflict with names from the other tables

@@ -44,9 +44,8 @@ export const createAccount = async (
   ).query(
     {
       sql: `
-        INSERT INTO Account(${sqlInsert.join(",")}) VALUES(${sqlValues.join(
-        ","
-      )})
+        INSERT INTO Account(${sqlInsert.join(",")}) 
+        VALUES(${sqlValues.join(",")})
     `,
       namedPlaceholders: true,
     },
@@ -71,8 +70,11 @@ export const deleteAccount = async (
 
   await (
     await db
-  ).query(`DELETE FROM Account WHERE provider = ? AND providerAccountId = ?`, [
-    provider,
-    providerAccountId,
-  ])
+  ).query(
+    `
+      DELETE FROM Account 
+      WHERE provider = ? AND providerAccountId = ?    
+    `,
+    [provider, providerAccountId]
+  )
 }
