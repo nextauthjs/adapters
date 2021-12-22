@@ -1,6 +1,6 @@
 {
   "name": "@next-auth/fauna-adapter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fauna Adapter for NextAuth",
   "homepage": "https://next-auth.js.org",
   "repository": "https://github.com/nextauthjs/adapters",
@@ -8,8 +8,8 @@
     "url": "https://github.com/nextauthjs/next-auth/issues"
   },
   "files": [
-    "src",
-    "dist"
+    "dist",
+    "README.md"
   ],
   "author": "Bhanu Teja P",
   "contributors": [
