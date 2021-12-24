@@ -147,7 +147,11 @@ export function runBasicTests(options: TestOptions) {
 
   test("updateUser", async () => {
     const newName = "Updated Name"
-    await adapter.updateUser({ id: user.id, name: newName })
+    const returnedUser = await adapter.updateUser({
+      id: user.id,
+      name: newName,
+    })
+    expect(returnedUser.name).toBe(newName)
 
     const dbUser = await db.user(user.id)
     expect(dbUser.name).toBe(newName)
