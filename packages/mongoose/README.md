@@ -19,6 +19,25 @@ This is the Mongoose Adapter for [`next-auth`](https://next-auth.js.org). This p
 npm install mongoose next-auth @next-auth/mongoose-adapter@next
 ```
 
+2. Add a MongoDB URI to environment variables file
+```env
+MONGODB_URI=mongodb://localhost:27017/example
+```
+
+3. Add this adapter to your `pages/api/[...nextauth].js` next-auth configuration object.
+
+```js
+import NextAuth from "next-auth"
+import { MongooseAdapter } from "@next-auth/mongoose-adapter"
+
+// For more information on each option (and a full list of options) go to
+// https://next-auth.js.org/configuration/options
+export default NextAuth({
+  adapter: MongooseAdapter(process.env.MONGODB_URI),
+  ...
+})
+```
+
 ## Contributing
 
 We're open to all community contributions! If you'd like to contribute in any way, please read our [Contributing Guide](https://github.com/nextauthjs/adapters/blob/main/CONTRIBUTING.md).
