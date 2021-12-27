@@ -4,25 +4,25 @@ import { Schema, model } from "mongoose"
 // Interface representing a document in MongoDB.
 interface User {
   _id: Types.ObjectId
-  __v: any
-  id: any
-  name: string
-  email: string
+  __v: string
+  id: string
+  name: string | null
+  email: string | null
   emailVerified: Date | null
-  image: string
+  image: string | null
 }
 
 interface Account {
   _id: Types.ObjectId
-  __v: any
-  id: any
+  __v: string
+  id: string
   type: string
   provider: string
   providerAccountId: string
   refresh_token: string
-  access_token: string
-  expires_at: number
-  token_type: string
+  access_token: string | null
+  expires_at: number | null
+  token_type: string | null
   scope: string
   id_token: string
   userId: Types.ObjectId
@@ -33,16 +33,16 @@ interface Account {
 
 interface Session {
   _id: Types.ObjectId
-  __v: any
-  id: any
+  __v: string
+  id: string
   expires: Date
   sessionToken: string
-  userId: Types.ObjectId | string
+  userId: Types.ObjectId
 }
 
 interface VerificationToken {
   _id: Types.ObjectId
-  __v: any
+  __v: string
   token: string
   expires: Date
   identifier: string
@@ -51,7 +51,7 @@ interface VerificationToken {
 // Schema corresponding to the document interface.
 const userSchema = new Schema<User>({
   name: { type: String },
-  email: { type: String },
+  email: { type: String, unique: true },
   emailVerified: { type: Date },
   image: { type: String },
 })
@@ -74,8 +74,8 @@ const accountSchema = new Schema<Account>({
 
 const sessionSchema = new Schema<Session>({
   expires: { type: Date },
-  sessionToken: { type: String },
-  userId: { type: Schema.Types.ObjectId || String, ref: "User" },
+  sessionToken: { type: String, unique: true },
+  userId: { type: Schema.Types.ObjectId, ref: "User" },
 })
 
 const verificationTokenSchema = new Schema<VerificationToken>({
