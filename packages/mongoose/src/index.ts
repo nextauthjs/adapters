@@ -42,10 +42,9 @@ export function _id(hex?: string) {
 export function MongooseAdapter(uri: string): Adapter {
   const { from } = format
 
-  connect(uri)
-    .catch((err) => console.log(err))
-    .then(() => console.log("DB connected."))
-    .catch(() => "Obligatory catch.")
+  connect(uri).catch((err) => {
+    console.log(err)
+  })
 
   return {
     async createUser(data) {
