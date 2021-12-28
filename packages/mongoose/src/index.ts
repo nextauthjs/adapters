@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { ObjectId } from "mongodb"
 import {
-  UserModel,
-  AccountModel,
-  SessionModel,
-  VerificationTokenModel,
+  userSchema,
+  accountSchema,
+  sessionSchema,
+  verificationTokenSchema,
 } from "./models"
 import type {
   Adapter,
@@ -13,7 +13,7 @@ import type {
   VerificationToken,
 } from "next-auth/adapters"
 import type { Account } from "next-auth"
-import { connect } from "mongoose"
+import type { Connection } from "mongoose"
 
 export const format = {
   /** Takes a mongoDB object and returns a plain old JavaScript object */
@@ -39,12 +39,16 @@ export function _id(hex?: string) {
   return new ObjectId(hex)
 }
 
-export function MongooseAdapter(uri: string): Adapter {
+export function MongooseAdapter(conn: Connection): Adapter {
   const { from } = format
 
-  connect(uri).catch((err) => {
-    console.log(err)
-  })
+  const UserModel = conn.model("User", userSchema)
+  const AccountModel = conn.model("Account", accountSchema)
+  const SessionModel = conn.model("Session", sessionSchema)
+  const VerificationTokenModel = conn.model(
+    "VerificationToken",
+    verificationTokenSchema
+  )
 
   return {
     async createUser(data) {
@@ -78,7 +82,7 @@ export function MongooseAdapter(uri: string): Adapter {
         { name: data.name },
         { new: true }
       ).exec()
-      return from<AdapterUser>(user!)
+      return from<AdapterUser>(user)
     },
     async deleteUser(id) {
       await Promise.all([
@@ -93,7 +97,7 @@ export function MongooseAdapter(uri: string): Adapter {
     },
     async unlinkAccount(data) {
       const account = await AccountModel.findOneAndDelete(data)
-      return from<Account>(account!)
+      return from<Account>(account)
     },
     async getSessionAndUser(sessionToken) {
       const session = await SessionModel.findOne({
@@ -116,13 +120,13 @@ export function MongooseAdapter(uri: string): Adapter {
         sessionToken: data.sessionToken,
         expires: data.expires,
       })
-      return from<AdapterSession>(session!)
+      return from<AdapterSession>(session)
     },
     async deleteSession(sessionToken) {
       const session = await SessionModel.findOneAndDelete({
         sessionToken: sessionToken,
       })
-      return from<AdapterSession>(session!)
+      return from<AdapterSession>(session)
     },
     async createVerificationToken(data) {
       const verificationToken = await VerificationTokenModel.create(data)

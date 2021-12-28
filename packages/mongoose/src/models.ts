@@ -1,5 +1,5 @@
 import type { Types } from "mongoose"
-import { Schema, model } from "mongoose"
+import { Schema } from "mongoose"
 
 // Interface representing a document in MongoDB.
 interface User {
@@ -84,11 +84,5 @@ const verificationTokenSchema = new Schema<VerificationToken>({
   identifier: { type: String },
 })
 
-// Created models.
-export const UserModel = model<User>("User", userSchema)
-export const AccountModel = model<Account>("Account", accountSchema)
-export const SessionModel = model<Session>("Session", sessionSchema)
-export const VerificationTokenModel = model<VerificationToken>(
-  "VerificationToken",
-  verificationTokenSchema
-)
+// Export schemas.
+export { userSchema, accountSchema, sessionSchema, verificationTokenSchema }
