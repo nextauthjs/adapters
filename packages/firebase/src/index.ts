@@ -46,7 +46,7 @@ export const format: FirestoreDataConverter<any> = {
     const newUser: any = { ...snapshot.data(), id: snapshot.id }
     for (const key in newUser) {
       const value = newUser[key]
-      if (value.toDate) newUser[key] = value.toDate()
+      if (value?.toDate) newUser[key] = value.toDate()
       else newUser[key] = value
     }
     return newUser
