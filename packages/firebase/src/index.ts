@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type {
+import {
   runTransaction,
   collection,
   query,
@@ -46,7 +46,7 @@ export const format: FirestoreDataConverter<any> = {
     const newUser: any = { ...snapshot.data(), id: snapshot.id }
     for (const key in newUser) {
       const value = newUser[key]
-      if (value.toDate) newUser[key] = value.toDate()
+      if (value?.toDate) newUser[key] = value.toDate()
       else newUser[key] = value
     }
     return newUser
@@ -55,34 +55,10 @@ export const format: FirestoreDataConverter<any> = {
 
 export interface FirebaseClient {
   db: Firestore
-  collection: typeof collection
-  query: typeof query
-  getDocs: typeof getDocs
-  where: typeof where
-  limit: typeof limit
-  doc: typeof doc
-  getDoc: typeof getDoc
-  addDoc: typeof addDoc
-  updateDoc: typeof updateDoc
-  deleteDoc: typeof deleteDoc
-  runTransaction: typeof runTransaction
 }
 
 export function FirebaseAdapter(client: FirebaseClient): Adapter {
-  const {
-    db,
-    collection,
-    query,
-    getDocs,
-    where,
-    limit,
-    doc,
-    getDoc,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    runTransaction,
-  } = client
+  const { db } = client
 
   const Users = collection(db, collections.Users).withConverter<AdapterUser>(
     format

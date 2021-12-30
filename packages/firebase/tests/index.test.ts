@@ -26,17 +26,6 @@ connectFirestoreEmulator(db, "localhost", 8080)
 
 const adapter = FirebaseAdapter({
   db,
-  collection,
-  query,
-  getDocs,
-  where,
-  limit,
-  doc,
-  getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  runTransaction,
 })
 
 const Users = collection(db, collections.Users).withConverter<any>(format)
