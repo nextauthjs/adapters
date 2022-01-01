@@ -46,7 +46,7 @@ If you would like to also take on the maintenance of the adapter, let us know, a
 
 ## TypeScript
 
-We have an official TypeScript [`Adapter` Interface](https://github.com/nextauthjs/next-auth/blob/main/types/adapters.d.ts), which should make complying with the existing adapter structure and the common tests, etc. much easier.
+We have an official TypeScript [`Adapter` Interface](https://github.com/nextauthjs/next-auth/blob/main/src/adapters.ts), which should make complying with the existing adapter structure and the common tests, etc. much easier.
 
 ## Testing
 
