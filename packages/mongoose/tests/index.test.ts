@@ -1,15 +1,16 @@
 import { runBasicTests } from "../../../basic-tests"
 import { format, MongooseAdapter } from "../src"
-import { createConnection } from "mongoose"
 import {
   userSchema,
   accountSchema,
   sessionSchema,
   verificationTokenSchema,
 } from "../src/models"
+import dbConnect from "../src/dbConnect"
 
 const uri: string = "mongodb://localhost:27017/test"
-const conn = createConnection(uri)
+
+const conn = dbConnect(uri)
 
 const UserModel = conn.model("User", userSchema)
 const AccountModel = conn.model("Account", accountSchema)
@@ -20,7 +21,7 @@ const VerificationTokenModel = conn.model(
 )
 
 runBasicTests({
-  adapter: MongooseAdapter(conn),
+  adapter: MongooseAdapter(uri),
   db: {
     async disconnect() {
       await conn.dropDatabase()

@@ -13,7 +13,7 @@ import type {
   VerificationToken,
 } from "next-auth/adapters"
 import type { Account } from "next-auth"
-import type { Connection } from "mongoose"
+import dbConnect from "./dbConnect"
 
 export const format = {
   /** Takes a mongoDB object and returns a plain old JavaScript object */
@@ -39,8 +39,10 @@ export function _id(hex?: string) {
   return new ObjectId(hex)
 }
 
-export function MongooseAdapter(conn: Connection): Adapter {
+export function MongooseAdapter(uri: string): Adapter {
   const { from } = format
+
+  const conn = dbConnect(uri)
 
   const UserModel = conn.model("User", userSchema)
   const AccountModel = conn.model("Account", accountSchema)
