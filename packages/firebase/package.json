@@ -29,7 +29,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "FIRESTORE_EMULATOR_HOST=localhost:8080 firebase emulators:exec --only firestore --project next-auth-test jest"
+    "test": "FIRESTORE_EMULATOR_HOST=localhost:8080 firebase emulators:exec --only firestore --project next-auth-test jest",
+    "test-debug": "FIRESTORE_EMULATOR_HOST=localhost:8080 jest"
   },
   "peerDependencies": {
     "firebase-admin": "^10.0.1",
