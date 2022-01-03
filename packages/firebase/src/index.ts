@@ -1,35 +1,6 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import {
-  runTransaction,
-  collection,
-  query,
-  getDocs,
-  where,
-  limit,
-  doc,
-  getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  Firestore,
-  FirestoreDataConverter,
-} from "firebase/firestore"
+import type { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters"
 
-import type { Account } from "next-auth"
-
-import type {
-  Adapter,
-  AdapterSession,
-  AdapterUser,
-  VerificationToken,
-} from "next-auth/adapters"
-
-export const collections = {
-  Users: "users",
-  Sessions: "sessions",
-  Accounts: "accounts",
-  VerificationTokens: "verificationTokens",
-} as const
+import { Firestore, FirestoreDataConverter } from "firebase-admin/firestore"
 
 export const format: FirestoreDataConverter<any> = {
   toFirestore(object) {
@@ -42,7 +13,7 @@ export const format: FirestoreDataConverter<any> = {
     return newObjectobject
   },
   fromFirestore(snapshot) {
-    if (!snapshot.exists()) return null
+    if (!snapshot.exists) return null
     const newUser: any = { ...snapshot.data(), id: snapshot.id }
     for (const key in newUser) {
       const value = newUser[key]
@@ -53,6 +24,13 @@ export const format: FirestoreDataConverter<any> = {
   },
 }
 
+export const collections = {
+  Users: "users",
+  Sessions: "sessions",
+  Accounts: "accounts",
+  VerificationTokens: "verificationTokens",
+} as const
+
 export interface FirebaseClient {
   db: Firestore
 }
@@ -60,158 +38,131 @@ export interface FirebaseClient {
 export function FirebaseAdapter(client: FirebaseClient): Adapter {
   const { db } = client
 
-  const Users = collection(db, collections.Users).withConverter<AdapterUser>(
-    format
-  )
-
-  const Sessions = collection(
-    db,
-    collections.Sessions
-  ).withConverter<AdapterSession>(format)
-
-  const Accounts = collection(db, collections.Accounts).withConverter<Account>(
-    format
-  )
-  const VerificationTokens = collection(
-    db,
-    collections.VerificationTokens
-  ).withConverter<VerificationToken>(format)
+  const Users = db.collection(collections.Users).withConverter(format)
+  const Sessions = db.collection(collections.Sessions).withConverter(format)
+  const Accounts = db.collection(collections.Accounts).withConverter(format)
+  const VerificationTokens = db
+    .collection(collections.VerificationTokens)
+    .withConverter(format)
 
   return {
     async createUser(user) {
-      const { id } = await addDoc(Users, user)
+      const { id } = await Users.add(user)
       return { ...(user as any), id }
     },
     async getUser(id) {
-      const userDoc = await getDoc(doc(Users, id))
-      if (!userDoc.exists()) return null
-      return Users.converter!.fromFirestore(userDoc)
+      const user = await Users.doc(id).get()
+      if (!user.exists) return null
+      return user.data() as AdapterUser
     },
     async getUserByEmail(email) {
-      const userQuery = query(Users, where("email", "==", email), limit(1))
-      const userDocs = await getDocs(userQuery)
-      if (userDocs.empty) return null
-      return Users.converter!.fromFirestore(userDocs.docs[0])
+      const user = await Users.where("email", "==", email).limit(1).get()
+      if (user.empty) return null
+      return user.docs[0].data() as AdapterUser
     },
     async getUserByAccount({ provider, providerAccountId }) {
-      const accountQuery = query(
-        Accounts,
-        where("provider", "==", provider),
-        where("providerAccountId", "==", providerAccountId),
-        limit(1)
-      )
-      const accountDocs = await getDocs(accountQuery)
-      if (accountDocs.empty) return null
-      const userDoc = await getDoc(
-        doc(Users, accountDocs.docs[0].data().userId)
-      )
-      if (!userDoc.exists()) return null
-      return Users.converter!.fromFirestore(userDoc)
+      const account = await Accounts.where("provider", "==", provider)
+        .where("providerAccountId", "==", providerAccountId)
+        .limit(1)
+        .get()
+      if (account.empty) return null
+      const user = await Users.doc(account.docs[0].data().userId).get()
+      if (!user.exists) return null
+      return user.data() as AdapterUser
     },
-
-    async updateUser(partialUser) {
-      await updateDoc(doc(Users, partialUser.id), partialUser)
-      const userDoc = await getDoc(doc(Users, partialUser.id))
-      return Users.converter!.fromFirestore(userDoc as any)!
+    async updateUser(user) {
+      const userRef = Users.doc(user.id as string)
+      await userRef.update(user)
+      const userRes = await userRef.get()
+      return userRes.data() as AdapterUser
     },
-
     async deleteUser(userId) {
-      const userDoc = doc(Users, userId)
-      const accountsQuery = query(Accounts, where("userId", "==", userId))
-      const sessionsQuery = query(Sessions, where("userId", "==", userId))
+      const accountsQuery = Accounts.where("userId", "==", userId)
+      const sessionsQuery = Sessions.where("userId", "==", userId)
 
-      await runTransaction(db, async (transaction) => {
-        transaction.delete(userDoc)
-        const accounts = await getDocs(accountsQuery)
+      await db.runTransaction(async (transaction) => {
+        transaction.delete(Users.doc(userId))
+        const accounts = await accountsQuery.get()
         accounts.forEach((account) => transaction.delete(account.ref))
 
-        const sessions = await getDocs(sessionsQuery)
+        const sessions = await sessionsQuery.get()
         sessions.forEach((session) => transaction.delete(session.ref))
       })
     },
-
     async linkAccount(account) {
-      const { id } = await addDoc(Accounts, account)
+      const { id } = await Accounts.add(account)
       return { ...account, id }
     },
-
     async unlinkAccount({ provider, providerAccountId }) {
-      const accountQuery = query(
-        Accounts,
-        where("provider", "==", provider),
-        where("providerAccountId", "==", providerAccountId),
-        limit(1)
-      )
-      const accounts = await getDocs(accountQuery)
+      const accounts = await Accounts.where("provider", "==", provider)
+        .where("providerAccountId", "==", providerAccountId)
+        .limit(1)
+        .get()
       if (accounts.empty) return
-      await deleteDoc(accounts.docs[0].ref)
+      await accounts.docs[0].ref.delete()
     },
-
     async createSession(session) {
-      const { id } = await addDoc(Sessions, session)
+      const { id } = await Sessions.add(session)
       return { ...session, id }
     },
-
     async getSessionAndUser(sessionToken) {
-      const sessionQuery = query(
-        Sessions,
-        where("sessionToken", "==", sessionToken),
-        limit(1)
+      const sessionDocs = await Sessions.where(
+        "sessionToken",
+        "==",
+        sessionToken
       )
-      const sessionDocs = await getDocs(sessionQuery)
+        .limit(1)
+        .get()
       if (sessionDocs.empty) return null
-      const session = Sessions.converter!.fromFirestore(sessionDocs.docs[0])
-      if (!session) return null
+      const session = sessionDocs.docs[0].data()
 
-      const userDoc = await getDoc(doc(Users, session.userId))
-      if (!userDoc.exists()) return null
-      const user = Users.converter!.fromFirestore(userDoc)!
-      return { session, user }
+      const user = await Users.doc(session.userId).get()
+      if (!user.exists) return null
+      return {
+        session: session as AdapterSession,
+        user: user.data() as AdapterUser,
+      }
     },
-
     async updateSession(partialSession) {
-      const sessionQuery = query(
-        Sessions,
-        where("sessionToken", "==", partialSession.sessionToken),
-        limit(1)
+      const sessionDocs = await Sessions.where(
+        "sessionToken",
+        "==",
+        partialSession.sessionToken
       )
-      const sessionDocs = await getDocs(sessionQuery)
+        .limit(1)
+        .get()
       if (sessionDocs.empty) return null
-      await updateDoc(sessionDocs.docs[0].ref, partialSession)
+      await sessionDocs.docs[0].ref.update(partialSession)
     },
-
     async deleteSession(sessionToken) {
-      const sessionQuery = query(
-        Sessions,
-        where("sessionToken", "==", sessionToken),
-        limit(1)
+      const sessionDocs = await Sessions.where(
+        "sessionToken",
+        "==",
+        sessionToken
       )
-      const sessionDocs = await getDocs(sessionQuery)
-      if (sessionDocs.empty) return
-      await deleteDoc(sessionDocs.docs[0].ref)
+        .limit(1)
+        .get()
+      if (sessionDocs.empty) return null
+      await sessionDocs.docs[0].ref.delete()
     },
-
     async createVerificationToken(verificationToken) {
-      await addDoc(VerificationTokens, verificationToken)
+      await VerificationTokens.add(verificationToken)
       return verificationToken
     },
-
     async useVerificationToken({ identifier, token }) {
-      const verificationTokensQuery = query(
-        VerificationTokens,
-        where("identifier", "==", identifier),
-        where("token", "==", token),
-        limit(1)
+      const verificationTokenDocs = await VerificationTokens.where(
+        "identifier",
+        "==",
+        identifier
       )
-      const verificationTokenDocs = await getDocs(verificationTokensQuery)
+        .where("token", "==", token)
+        .limit(1)
+        .get()
+
       if (verificationTokenDocs.empty) return null
 
-      await deleteDoc(verificationTokenDocs.docs[0].ref)
-
-      const verificationToken = VerificationTokens.converter!.fromFirestore(
-        verificationTokenDocs.docs[0]
-      )
-      // @ts-expect-error
+      await verificationTokenDocs.docs[0].ref.delete()
+      const verificationToken = verificationTokenDocs.docs[0].data()
       delete verificationToken.id
       return verificationToken
     },

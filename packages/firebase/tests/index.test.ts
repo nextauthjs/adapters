@@ -1,85 +1,60 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { initializeApp } from "firebase-admin"
+import { getFirestore } from "firebase-admin/firestore"
 import { runBasicTests } from "../../../basic-tests"
 import { collections, FirebaseAdapter, format } from "../src"
 
-import { initializeApp } from "firebase/app"
-
-import {
-  getFirestore,
-  terminate,
-  connectFirestoreEmulator,
-  collection,
-  query,
-  getDocs,
-  where,
-  limit,
-  doc,
-  getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  runTransaction,
-} from "firebase/firestore"
-
 const db = getFirestore(initializeApp({ projectId: "next-auth-test" }))
-connectFirestoreEmulator(db, "localhost", 8080)
 
 const adapter = FirebaseAdapter({
   db,
 })
 
-const Users = collection(db, collections.Users).withConverter<any>(format)
-
-const Sessions = collection(db, collections.Sessions).withConverter<any>(format)
-
-const Accounts = collection(db, collections.Accounts).withConverter<any>(format)
-const VerificationTokens = collection(
-  db,
-  collections.VerificationTokens
-).withConverter<any>(format)
+const Users = db.collection(collections.Users).withConverter(format)
+const Sessions = db.collection(collections.Sessions).withConverter(format)
+const Accounts = db.collection(collections.Accounts).withConverter(format)
+const VerificationTokens = db
+  .collection(collections.VerificationTokens)
+  .withConverter(format)
 
 runBasicTests({
   adapter,
   db: {
     async disconnect() {
-      await terminate(db)
+      await db.terminate()
     },
     async session(sessionToken) {
-      const sessionQuery = query(
-        Sessions,
-        where("sessionToken", "==", sessionToken)
-      )
-      const sessionDocs = await getDocs(sessionQuery)
+      const sessionDocs = await Sessions.where(
+        "sessionToken",
+        "==",
+        sessionToken
+      ).get()
       if (sessionDocs.empty) return null
-      return Sessions.converter!.fromFirestore(sessionDocs.docs[0])
+      return sessionDocs.docs[0].data()
     },
     async user(id) {
-      const userDoc = await getDoc(doc(Users, id))
-      return Users.converter!.fromFirestore(userDoc)
+      const userDoc = await Users.doc(id).get()
+      if (!userDoc.exists) return null
+      return userDoc.data()
     },
     async account({ provider, providerAccountId }) {
-      const accountQuery = query(
-        Accounts,
-        where("provider", "==", provider),
-        where("providerAccountId", "==", providerAccountId),
-        limit(1)
-      )
-      const accountDocs = await getDocs(accountQuery)
+      const accountDocs = await Accounts.where("provider", "==", provider)
+        .where("providerAccountId", "==", providerAccountId)
+        .limit(1)
+        .get()
       if (accountDocs.empty) return null
-      const account = await getDoc(doc(Accounts, accountDocs.docs[0].id))
-      return Accounts.converter!.fromFirestore(account)
+      return accountDocs.docs[0].data()
     },
     async verificationToken({ identifier, token }) {
-      const verificationTokenQuery = query(
-        VerificationTokens,
-        where("identifier", "==", identifier),
-        where("token", "==", token)
+      const verificationTokenDocs = await VerificationTokens.where(
+        "identifier",
+        "==",
+        identifier
       )
-      const verificationTokenDocs = await getDocs(verificationTokenQuery)
+        .where("token", "==", token)
+        .get()
       if (verificationTokenDocs.empty) return null
-      const verificationToken = VerificationTokens.converter!.fromFirestore(
-        verificationTokenDocs.docs[0]
-      )
+      const verificationToken = verificationTokenDocs.docs[0].data()
       delete verificationToken.id
       return verificationToken
     },
