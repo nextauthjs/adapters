@@ -1,21 +1,25 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { initializeApp } from "firebase-admin"
 import { getFirestore } from "firebase-admin/firestore"
+import { getAuth } from "firebase-admin/auth"
 import { runBasicTests } from "../../../basic-tests"
-import { collections, FirebaseAdapter, format } from "../src"
+import { collections, FirebaseAdapter, formatFirestore } from "../src"
 
-const db = getFirestore(initializeApp({ projectId: "next-auth-test" }))
+initializeApp({ projectId: "next-auth-test" })
+const db = getFirestore()
+const auth = getAuth()
 
 const adapter = FirebaseAdapter({
   db,
+  auth,
 })
 
-const Users = db.collection(collections.Users).withConverter(format)
-const Sessions = db.collection(collections.Sessions).withConverter(format)
-const Accounts = db.collection(collections.Accounts).withConverter(format)
+const Users = db.collection(collections.Users).withConverter(formatFirestore)
+const Sessions = db.collection(collections.Sessions).withConverter(formatFirestore)
+const Accounts = db.collection(collections.Accounts).withConverter(formatFirestore)
 const VerificationTokens = db
   .collection(collections.VerificationTokens)
-  .withConverter(format)
+  .withConverter(formatFirestore)
 
 runBasicTests({
   adapter,
