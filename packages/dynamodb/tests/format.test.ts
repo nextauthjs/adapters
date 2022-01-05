@@ -92,4 +92,30 @@ describe("dynamodb utils.format", () => {
       expires: date,
     })
   })
+
+  it("format.from() converts expires attribute from ISO string to Date instance", () => {
+    // Due to a bug in an old version, some expires attributes were stored as
+    // ISO strings, so we need to handle those properly too.
+    const date = new Date()
+    expect(
+      format.from({
+        expires: date.toISOString(),
+      })
+    ).toEqual({
+      expires: date,
+    })
+  })
+
+  it("format.from(format.to()) preserves expires attribute", () => {
+    const date = new Date()
+    expect(
+      format.from(
+        format.to({
+          expires: date,
+        })
+      )
+    ).toEqual({
+      expires: date,
+    })
+  })
 })
