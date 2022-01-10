@@ -14,7 +14,7 @@ Anyone can be a contributor. Either you found a typo, or you have an awesome fea
 
 ### Pull Requests
 
-- The latest changes are always in `next`, so please make your Pull Request against that branch.
+- The latest changes are always in `main`, so please make your Pull Request against that branch.
 - Pull Requests should be raised for any change
 
 ### Setting up local environment
