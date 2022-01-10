@@ -1,38 +1,34 @@
 import upstashRedisClient from "@upstash/redis"
 import { runBasicTests } from "../../../basic-tests"
-import UpstashRedisAdapter from "../src"
+import { reviveFromJson, UpstashRedisAdapter } from "../src"
+import "dotenv/config"
 
 const client = upstashRedisClient(
   process.env.UPSTASH_REDIS_URL,
   process.env.UPSTASH_REDIS_KEY
 )
 
-const reviveFromJson = (json: string) =>
-  JSON.parse(json, (key, value) =>
-    key === "emailVerified" || key === "expires" ? new Date(value) : value
-  )
-
 runBasicTests({
   adapter: UpstashRedisAdapter(client, { baseKeyPrefix: "testApp:" }),
   db: {
-    verificationToken: async (where) => {
-      const { data } = await client.get(
-        `testApp:user:token:${where.identifier}`
-      )
-      return reviveFromJson(data)
-    },
-    user: async (id: string) => {
+    async user(id: string) {
       const { data } = await client.get(`testApp:user:${id}`)
       return reviveFromJson(data)
     },
-    account: async ({ provider, providerAccountId }) => {
+    async account({ provider, providerAccountId }) {
       const { data } = await client.get(
         `testApp:user:account:${provider}:${providerAccountId}`
       )
       return reviveFromJson(data)
     },
-    session: async (sessionToken) => {
+    async session(sessionToken) {
       const { data } = await client.get(`testApp:user:session:${sessionToken}`)
+      return reviveFromJson(data)
+    },
+    async verificationToken(where) {
+      const { data } = await client.get(
+        `testApp:user:token:${where.identifier}`
+      )
       return reviveFromJson(data)
     },
   },
