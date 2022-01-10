@@ -11,10 +11,11 @@ export const format = {
     const newObject: Record<string, unknown> = {}
     for (const key in object) {
       const value = object[key]
-      if (value instanceof Date) newObject[key] = value.toISOString()
-      // Converted to a string by `format.from
-      else if (key === "expires") newObject[key] = parseInt(value, 10)
-      else newObject[key] = value
+      if (value instanceof Date) {
+        // DynamoDB requires the TTL attribute be a UNIX timestamp (in secs).
+        if (key === "expires") newObject[key] = value.getTime() / 1000
+        else newObject[key] = value.toISOString()
+      } else newObject[key] = value
     }
     return newObject
   },
@@ -33,8 +34,10 @@ export const format = {
       // hack to keep type property in account
       else if (key === "type" && ["SESSION", "VT", "USER"].includes(value))
         continue
-      // DynamoDB cannot deal with large numbers, so we convert it to a string
-      else if (key === "expires") newObject[key] = value.toString()
+      // The expires property is stored as a UNIX timestamp in seconds, but
+      // JavaScript needs it in milliseconds, so multiply by 1000.
+      else if (key === "expires" && typeof value === "number")
+        newObject[key] = new Date(value * 1000)
       else newObject[key] = value
     }
     return newObject as T
