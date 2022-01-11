@@ -34,10 +34,10 @@
     "@upstash/redis": "^0.2.1"
   },
   "devDependencies": {
-    "@upstash/redis": "^0.2.1"
+    "@upstash/redis": "^0.2.1",
+    "dotenv": "^10.0.0"
   },
   "dependencies": {
-    "dotenv": "^10.0.0",
     "uuid": "^8.3.2"
   }
 }

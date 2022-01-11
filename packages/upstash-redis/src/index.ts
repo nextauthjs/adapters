@@ -1,10 +1,5 @@
 import type { Account as AdapterAccount } from "next-auth"
-import type {
-  Adapter,
-  AdapterUser,
-  AdapterSession,
-  VerificationToken,
-} from "next-auth/adapters"
+import type { Adapter, AdapterUser, AdapterSession } from "next-auth/adapters"
 import type { Upstash } from "@upstash/redis/src/types"
 import { v4 as uuid } from "uuid"
 
@@ -102,7 +97,7 @@ export function UpstashRedisAdapter(
   }
 
   return {
-    async createUser(user: Omit<AdapterUser, "id">): Promise<AdapterUser> {
+    async createUser(user) {
       const id = uuid()
       // TypeScript thinks the emailVerified field is missing
       // but all fields are copied directly from user, so it's there
@@ -110,77 +105,61 @@ export function UpstashRedisAdapter(
       return await setUser(id, { ...user, id })
     },
     getUser,
-    async getUserByEmail(email: string): Promise<AdapterUser | null> {
+    async getUserByEmail(email) {
       const emailResponse = await client.get(emailKeyPrefix + email)
       if (!emailResponse.data) return null
       return await getUser(emailResponse.data)
     },
-    async getUserByAccount(
-      account: Pick<AdapterAccount, "provider" | "providerAccountId">
-    ): Promise<AdapterUser | null> {
+    async getUserByAccount(account) {
       const dbAccount = await getAccount(
         `${account.provider}:${account.providerAccountId}`
       )
       if (!dbAccount) return null
       return await getUser(dbAccount.userId)
     },
-    async updateUser(updates: Partial<AdapterUser>): Promise<AdapterUser> {
+    async updateUser(updates) {
       const userId = updates.id as string
       const user = await getUser(userId)
       return await setUser(userId, { ...user, ...updates })
     },
-    async linkAccount(account: AdapterAccount): Promise<AdapterAccount> {
+    async linkAccount(account) {
       const id = `${account.provider}:${account.providerAccountId}`
       return await setAccount(id, { ...account, id })
     },
-    async createSession(session: {
-      sessionToken: string
-      userId: string
-      expires: Date
-    }): Promise<AdapterSession> {
+    async createSession(session) {
       const id = session.sessionToken
       return await setSession(id, { ...session, id })
     },
-    async getSessionAndUser(
-      sessionToken: string
-    ): Promise<{ session: AdapterSession; user: AdapterUser } | null> {
+    async getSessionAndUser(sessionToken) {
       const session = await getSession(sessionToken)
       if (!session) return null
       const user = await getUser(session.userId)
       if (!user) return null
       return { session, user }
     },
-    async updateSession(
-      updates: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">
-    ): Promise<AdapterSession | null> {
+    async updateSession(updates) {
       const session = await getSession(updates.sessionToken)
       if (!session) return null
       return await setSession(updates.sessionToken, { ...session, ...updates })
     },
-    async deleteSession(sessionToken: string) {
+    async deleteSession(sessionToken) {
       await client.del(sessionKeyPrefix + sessionToken)
     },
-    async createVerificationToken(
-      verificationToken: VerificationToken
-    ): Promise<VerificationToken> {
+    async createVerificationToken(verificationToken) {
       await setObjectAsJson(
         verificationTokenKeyPrefix + verificationToken.identifier,
         verificationToken
       )
       return verificationToken
     },
-    async useVerificationToken(verificationToken: {
-      identifier: string
-    }): Promise<VerificationToken | null> {
+    async useVerificationToken(verificationToken) {
       const tokenKey = verificationTokenKeyPrefix + verificationToken.identifier
       const tokenResponse = await client.get(tokenKey)
       if (!tokenResponse.data) return null
       await client.del(tokenKey)
       return reviveFromJson(tokenResponse.data)
     },
-    async unlinkAccount(
-      account: Pick<AdapterAccount, "provider" | "providerAccountId">
-    ) {
+    async unlinkAccount(account) {
       const id = `${account.provider}:${account.providerAccountId}`
       const dbAccount = await getAccount(id)
       if (!dbAccount) return
@@ -190,7 +169,7 @@ export function UpstashRedisAdapter(
         `${accountByUserIdPrefix} + ${dbAccount.userId as string}`
       )
     },
-    async deleteUser(userId: string) {
+    async deleteUser(userId) {
       const user = await getUser(userId)
       if (!user) return
       const accountByUserKey = accountByUserIdPrefix + userId
