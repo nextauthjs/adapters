@@ -1,6 +1,7 @@
 import type {
   AnyEntity,
   EntityClass,
+  EntityClassGroup,
   EntitySchema,
   Options,
 } from "@mikro-orm/core"
@@ -8,7 +9,6 @@ import { MikroORM, wrap } from "@mikro-orm/core"
 import * as defaultEntities from "./entities"
 
 import type { Adapter } from "next-auth/adapters"
-import type { EntityClassGroup } from "@mikro-orm/core/dist/typings"
 
 export * as defaultEntities from "./entities"
 
