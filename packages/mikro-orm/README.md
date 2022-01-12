@@ -41,7 +41,7 @@ This is the MikroORM Adapter for [`next-auth`](https://next-auth.js.org). This p
          debug: process.env.DEBUG === "true" || process.env.DEBUG?.includes("db"),
          ...
       }, {
-         // optionally pass extended models as { entities: { } }
+         // pass extended models as { entities: { } } if needed
       }),
       ...
    });
