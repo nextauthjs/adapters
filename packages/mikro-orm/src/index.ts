@@ -13,9 +13,9 @@ import type { Adapter } from "next-auth/adapters"
 export * as defaultEntities from "./entities"
 
 /**
- * The MikroORM adapter accepts a MikroORM instance or configuration and returns a NextAuth adapter.
- * @param ormConnection can either be an instance promise or a MikroORM connection configuration (https://mikro-orm.io/docs/next/configuration#driver)
- * @param options entities in the options object will be passed to the MikroORM init function as entities
+ * The MikroORM adapter accepts a MikroORM configuration and returns a NextAuth adapter.
+ * @param ormConnection a MikroORM connection configuration (https://mikro-orm.io/docs/next/configuration#driver)
+ * @param options entities in the options object will be passed to the MikroORM init function as entities. Has to be provided if overridden!
  * @returns
  */
 export function MikroOrmAdapter(
