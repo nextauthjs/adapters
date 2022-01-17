@@ -1,6 +1,7 @@
 import type { Account as AdapterAccount } from "next-auth"
 import type { Adapter, AdapterUser, AdapterSession } from "next-auth/adapters"
 import type { Upstash } from "@upstash/redis/src/types"
+
 import { v4 as uuid } from "uuid"
 
 export interface UpstashRedisAdapterOptions {
