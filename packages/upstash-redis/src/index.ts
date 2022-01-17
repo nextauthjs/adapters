@@ -32,8 +32,11 @@ function isDate(value: any) {
   return value && isoDateRE.test(value) && !isNaN(Date.parse(value))
 }
 
-export const reviveFromJson = (json: string) =>
-  JSON.parse(json, (key, value) => (isDate(value) ? new Date(value) : value))
+export function reviveFromJson(json: string) {
+  return JSON.parse(json, (_, value) =>
+    isDate(value) ? new Date(value) : value
+  )
+}
 
 export function UpstashRedisAdapter(
   client: Upstash,

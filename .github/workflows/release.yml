@@ -17,6 +17,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      UPSTASH_REDIS_KEY: ${{ secrets.UPSTASH_REDIS_KEY }}
+      UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL }}
     steps:
       - uses: actions/checkout@v2
         with:
