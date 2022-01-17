@@ -28,6 +28,9 @@ sequelize:
 dgraph:
   - packages/dgraph/**/*
 
+upstash-redis:
+  - packages/upstash-redis/**/*
+
 documentation:
   - ./**/*.md
 
