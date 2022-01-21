@@ -1,11 +1,7 @@
-import { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters"
-import {
-  Connection,
-  ConnectionOptions,
-  EntityManager,
-  getConnectionManager,
-} from "typeorm"
-import { Account } from "next-auth"
+import type { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters"
+import type { Connection, ConnectionOptions, EntityManager } from "typeorm"
+import { getConnectionManager } from "typeorm"
+import type { Account } from "next-auth"
 import * as defaultEntities from "./entities"
 import { parseConnectionConfig, updateConnectionEntities } from "./utils"
 

@@ -1,5 +1,6 @@
-import { ConnectionManager, ConnectionOptions } from "typeorm"
-import { TestOptions } from "../../../basic-tests"
+import type { ConnectionOptions } from "typeorm"
+import { ConnectionManager } from "typeorm"
+import type { TestOptions } from "../../../basic-tests"
 import * as defaultEntities from "../src/entities"
 import { parseConnectionConfig } from "../src/utils"
 

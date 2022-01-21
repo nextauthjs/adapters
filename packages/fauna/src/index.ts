@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import type { Client as FaunaClient, ExprArg, errors } from "faunadb"
 import {
-  Client as FaunaClient,
-  ExprArg,
   Collection,
   Create,
   Delete,
@@ -20,10 +19,9 @@ import {
   Lambda,
   Do,
   Foreach,
-  errors,
 } from "faunadb"
 
-import {
+import type {
   Adapter,
   AdapterSession,
   AdapterUser,
@@ -69,7 +67,7 @@ export const format = {
     const newObject: Record<string, unknown> = {}
     for (const key in object) {
       const value = object[key]
-      if (value?.value && typeof value.value === 'string') {
+      if (value?.value && typeof value.value === "string") {
         newObject[key] = new Date(value.value)
       } else {
         newObject[key] = value

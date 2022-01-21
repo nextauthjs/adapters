@@ -1,10 +1,10 @@
+import type { ValueTransformer } from "typeorm"
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   OneToMany,
-  ValueTransformer,
 } from "typeorm"
 
 const transformer: Record<"date" | "bigint", ValueTransformer> = {

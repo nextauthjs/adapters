@@ -5,7 +5,7 @@ import type {
   AdapterSession,
   VerificationToken,
 } from "next-auth/adapters"
-import { Sequelize, Model, ModelCtor } from "sequelize"
+import type { Sequelize, Model, ModelCtor } from "sequelize"
 import * as defaultModels from "./models"
 
 export { defaultModels as models }

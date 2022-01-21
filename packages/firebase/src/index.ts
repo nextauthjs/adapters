@@ -1,12 +1,12 @@
 import type firebase from "firebase"
 import { createHash, randomBytes } from "crypto"
-import { Adapter } from "next-auth/adapters"
+import type { Adapter } from "next-auth/adapters"
 import {
   querySnapshotToObject,
   docSnapshotToObject,
   stripUndefined,
 } from "./utils"
-import { Profile, Session, User } from "next-auth"
+import type { Profile, Session, User } from "next-auth"
 
 interface FirebaseVerificationRequest {
   id: string
@@ -37,7 +37,9 @@ export const FirebaseAdapter: Adapter<
        * @todo Use bcrypt or a more secure method
        */
       const hashToken = (token: string) =>
-        createHash("sha256").update(`${token}${secret}`).digest("hex")
+        createHash("sha256")
+          .update(`${token}${secret as string}`)
+          .digest("hex")
 
       return {
         displayName: "FIREBASE",
