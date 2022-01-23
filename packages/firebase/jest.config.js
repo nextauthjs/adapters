@@ -1,6 +1,6 @@
+const jestConfig = require("../../jest.config")
+
 module.exports = {
-  preset: "ts-jest",
-  testEnvironment: "node",
-  modulePathIgnorePatterns: ["dist/", "node_modules/"],
+  ...jestConfig,
   resolver: "jest-node-exports-resolver",
 }
