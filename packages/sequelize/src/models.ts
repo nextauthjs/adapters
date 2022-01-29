@@ -26,7 +26,7 @@ export const User = {
     primaryKey: true,
   },
   name: { type: DataTypes.STRING },
-  email: { type: DataTypes.STRING, unique: true },
+  email: { type: DataTypes.STRING, unique: 'email' },
   emailVerified: { type: DataTypes.DATE },
   image: { type: DataTypes.STRING },
 }
@@ -38,7 +38,7 @@ export const Session = {
     primaryKey: true,
   },
   expires: { type: DataTypes.DATE, allowNull: false },
-  sessionToken: { type: DataTypes.STRING, unique: true, allowNull: false },
+  sessionToken: { type: DataTypes.STRING, unique: 'sessionToken', allowNull: false },
   userId: { type: DataTypes.UUID },
 }
 
