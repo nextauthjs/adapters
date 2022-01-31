@@ -20,13 +20,16 @@ export const format = {
     return newObject
   },
   /** Takes a Dynamo object and returns a plain old JavaScript object */
-  from<T = Record<string, unknown>>(object?: Record<string, any>): T | null {
+  from<T = Record<string, unknown>>(
+    object: Record<string, any> | undefined,
+    keys: string[] = ["pk", "sk", "GSI1PK", "GSI1SK"]
+  ): T | null {
     if (!object) return null
     const newObject: Record<string, unknown> = {}
     for (const key in object) {
-      // Filter DynamoDB specific attributes so it doesn't get passed to core,
+      // Filter DynamoDB table and GSI keys so it doesn't get passed to core,
       // to avoid revealing the type of database
-      if (["pk", "sk", "GSI1PK", "GSI1SK"].includes(key)) continue
+      if (keys.includes(key)) continue
 
       const value = object[key]
 
