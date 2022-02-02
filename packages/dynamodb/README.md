@@ -16,7 +16,7 @@
 
 This is the AWS DynamoDB Adapter for next-auth. This package can only be used in conjunction with the primary next-auth package. It is not a standalone package.
 
-You need a table with a partition key `pk` and a sort key `sk`. Your table also needs a global secondary index named `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
+By default, the adapter expects a table with a partition key `pk` and a sort key `sk`, as well as a global secondary index named `GSI1` with `GSI1PK` as partition key and `GSI1SK` as sorting key. You can set whatever you want as the table name and the billing method.
 
 If you want sessions and verification tokens to get automatically removed from your table you need to [activate TTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) on your table with the TTL attribute name set to `expires`
 
@@ -88,11 +88,26 @@ The table respects the single table design pattern. This has many advantages:
 - Querying relations is faster than with multi-table schemas (for eg. retreiving all sessions for a user).
 - Only one table needs to be replicated, if you want to go multi-region.
 
-Here is a schema of the table :
+Here is the default schema of the table:
 
 <p align="center">
     <img src="https://i.imgur.com/hGZtWDq.png" alt="">
 </p>
+
+## Customize table structure
+
+You can configure your custom table structure by passing the `options` key to the adapter constructor:
+
+```
+const adapter = DynamoDBAdapter(client, {
+  tableName: "custom-table-name",
+  partitionKey: "custom-pk",
+  sortKey: "custom-sk",
+  indexName: "custom-index-name",
+  indexPartitionKey: "custom-index-pk",
+  indexSortKey: "custom-index-sk",
+})
+```
 
 ## Contributing
 

@@ -16,11 +16,62 @@ import { format, generateUpdateExpression } from "./utils"
 
 export { format, generateUpdateExpression }
 
+export interface DynamoDBAdapterOptions {
+  /**
+   * The name of the DynamoDB table.
+   *
+   * @default next-auth
+   */
+  tableName?: string
+
+  /**
+   * The name of the global secondary index (GSI).
+   *
+   * @default GSI1
+   */
+  indexName?: string
+
+  /**
+   * The partition key of the DynamoDB table.
+   *
+   * @default pk
+   */
+  partitionKey?: string
+
+  /**
+   * The sort key of the DynamoDB table.
+   *
+   * @default sk
+   */
+  sortKey?: string
+
+  /**
+   * The partition key of the global secondary index (GSI).
+   *
+   * @default GSI1PK
+   */
+  indexPartitionKey?: string
+
+  /**
+   * The sort key of the global secondary index (GSI).
+   *
+   * @default GSI1SK
+   */
+  indexSortKey?: string
+}
+
 export function DynamoDBAdapter(
   client: DynamoDBDocument,
-  options?: { tableName: string }
+  options?: DynamoDBAdapterOptions
 ): Adapter {
   const TableName = options?.tableName ?? "next-auth"
+  const IndexName = options?.indexName ?? "GSI1"
+
+  const partitionKey = options?.partitionKey ?? "pk"
+  const sortKey = options?.sortKey ?? "sk"
+  const indexPartitionKey = options?.indexPartitionKey ?? "GSI1PK"
+  const indexSortKey = options?.indexSortKey ?? "GSI1SK"
+  const keys = [partitionKey, sortKey, indexPartitionKey, indexSortKey]
 
   return {
     async createUser(data) {
@@ -33,11 +84,11 @@ export function DynamoDBAdapter(
         TableName,
         Item: format.to({
           ...user,
-          pk: `USER#${user.id}`,
-          sk: `USER#${user.id}`,
+          [partitionKey]: `USER#${user.id}`,
+          [sortKey]: `USER#${user.id}`,
           type: "USER",
-          GSI1PK: `USER#${user.email as string}`,
-          GSI1SK: `USER#${user.email as string}`,
+          [indexPartitionKey]: `USER#${user.email as string}`,
+          [indexSortKey]: `USER#${user.email as string}`,
         }),
       })
 
@@ -47,20 +98,20 @@ export function DynamoDBAdapter(
       const data = await client.get({
         TableName,
         Key: {
-          pk: `USER#${userId}`,
-          sk: `USER#${userId}`,
+          [partitionKey]: `USER#${userId}`,
+          [sortKey]: `USER#${userId}`,
         },
       })
-      return format.from<AdapterUser>(data.Item)
+      return format.from<AdapterUser>(data.Item, keys)
     },
     async getUserByEmail(email) {
       const data = await client.query({
         TableName,
-        IndexName: "GSI1",
+        IndexName,
         KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
         ExpressionAttributeNames: {
-          "#gsi1pk": "GSI1PK",
-          "#gsi1sk": "GSI1SK",
+          "#gsi1pk": indexPartitionKey,
+          "#gsi1sk": indexSortKey,
         },
         ExpressionAttributeValues: {
           ":gsi1pk": `USER#${email}`,
@@ -68,16 +119,16 @@ export function DynamoDBAdapter(
         },
       })
 
-      return format.from<AdapterUser>(data.Items?.[0])
+      return format.from<AdapterUser>(data.Items?.[0], keys)
     },
     async getUserByAccount({ provider, providerAccountId }) {
       const data = await client.query({
         TableName,
-        IndexName: "GSI1",
+        IndexName,
         KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
         ExpressionAttributeNames: {
-          "#gsi1pk": "GSI1PK",
-          "#gsi1sk": "GSI1SK",
+          "#gsi1pk": indexPartitionKey,
+          "#gsi1sk": indexSortKey,
         },
         ExpressionAttributeValues: {
           ":gsi1pk": `ACCOUNT#${provider}`,
@@ -90,11 +141,11 @@ export function DynamoDBAdapter(
       const res = await client.get({
         TableName,
         Key: {
-          pk: `USER#${accounts.userId}`,
-          sk: `USER#${accounts.userId}`,
+          [partitionKey]: `USER#${accounts.userId}`,
+          [sortKey]: `USER#${accounts.userId}`,
         },
       })
-      return format.from<AdapterUser>(res.Item)
+      return format.from<AdapterUser>(res.Item, keys)
     },
     async updateUser(user) {
       const {
@@ -106,8 +157,8 @@ export function DynamoDBAdapter(
         TableName,
         Key: {
           // next-auth type is incorrect it should be Partial<AdapterUser> & {id: string} instead of just Partial<AdapterUser>
-          pk: `USER#${user.id as string}`,
-          sk: `USER#${user.id as string}`,
+          [partitionKey]: `USER#${user.id as string}`,
+          [sortKey]: `USER#${user.id as string}`,
         },
         UpdateExpression,
         ExpressionAttributeNames,
@@ -116,14 +167,14 @@ export function DynamoDBAdapter(
       })
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return format.from<AdapterUser>(data.Attributes)!
+      return format.from<AdapterUser>(data.Attributes, keys)!
     },
     async deleteUser(userId) {
       // query all the items related to the user to delete
       const res = await client.query({
         TableName,
         KeyConditionExpression: "#pk = :pk",
-        ExpressionAttributeNames: { "#pk": "pk" },
+        ExpressionAttributeNames: { "#pk": partitionKey },
         ExpressionAttributeValues: { ":pk": `USER#${userId}` },
       })
       if (!res.Items) return null
@@ -134,8 +185,8 @@ export function DynamoDBAdapter(
         return {
           DeleteRequest: {
             Key: {
-              sk: item.sk,
-              pk: item.pk,
+              [sortKey]: item[sortKey],
+              [partitionKey]: item[partitionKey],
             },
           },
         }
@@ -146,16 +197,16 @@ export function DynamoDBAdapter(
         RequestItems: { [TableName]: itemsToDeleteMax },
       }
       await client.batchWrite(param)
-      return format.from<AdapterUser>(user)
+      return format.from<AdapterUser>(user, keys)
     },
     async linkAccount(data) {
       const item = {
         ...data,
         id: randomBytes(16).toString("hex"),
-        pk: `USER#${data.userId}`,
-        sk: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
-        GSI1PK: `ACCOUNT#${data.provider}`,
-        GSI1SK: `ACCOUNT#${data.providerAccountId}`,
+        [partitionKey]: `USER#${data.userId}`,
+        [sortKey]: `ACCOUNT#${data.provider}#${data.providerAccountId}`,
+        [indexPartitionKey]: `ACCOUNT#${data.provider}`,
+        [indexSortKey]: `ACCOUNT#${data.providerAccountId}`,
       }
       await client.put({ TableName, Item: format.to(item) })
       return data
@@ -163,24 +214,24 @@ export function DynamoDBAdapter(
     async unlinkAccount({ provider, providerAccountId }) {
       const data = await client.query({
         TableName,
-        IndexName: "GSI1",
+        IndexName,
         KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
         ExpressionAttributeNames: {
-          "#gsi1pk": "GSI1PK",
-          "#gsi1sk": "GSI1SK",
+          "#gsi1pk": indexPartitionKey,
+          "#gsi1sk": indexSortKey,
         },
         ExpressionAttributeValues: {
           ":gsi1pk": `ACCOUNT#${provider}`,
           ":gsi1sk": `ACCOUNT#${providerAccountId}`,
         },
       })
-      const account = format.from<Account>(data.Items?.[0])
+      const account = format.from<Account>(data.Items?.[0], keys)
       if (!account) return
       await client.delete({
         TableName,
         Key: {
-          pk: `USER#${account.userId}`,
-          sk: `ACCOUNT#${provider}#${providerAccountId}`,
+          [partitionKey]: `USER#${account.userId}`,
+          [sortKey]: `ACCOUNT#${provider}#${providerAccountId}`,
         },
         ReturnValues: "ALL_OLD",
       })
@@ -189,27 +240,27 @@ export function DynamoDBAdapter(
     async getSessionAndUser(sessionToken) {
       const data = await client.query({
         TableName,
-        IndexName: "GSI1",
+        IndexName,
         KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
         ExpressionAttributeNames: {
-          "#gsi1pk": "GSI1PK",
-          "#gsi1sk": "GSI1SK",
+          "#gsi1pk": indexPartitionKey,
+          "#gsi1sk": indexSortKey,
         },
         ExpressionAttributeValues: {
           ":gsi1pk": `SESSION#${sessionToken}`,
           ":gsi1sk": `SESSION#${sessionToken}`,
         },
       })
-      const session = format.from<AdapterSession>(data.Items?.[0])
+      const session = format.from<AdapterSession>(data.Items?.[0], keys)
       if (!session) return null
       const res = await client.get({
         TableName,
         Key: {
-          pk: `USER#${session.userId}`,
-          sk: `USER#${session.userId}`,
+          [partitionKey]: `USER#${session.userId}`,
+          [sortKey]: `USER#${session.userId}`,
         },
       })
-      const user = format.from<AdapterUser>(res.Item)
+      const user = format.from<AdapterUser>(res.Item, keys)
       if (!user) return null
       return { user, session }
     },
@@ -221,10 +272,10 @@ export function DynamoDBAdapter(
       await client.put({
         TableName,
         Item: format.to({
-          pk: `USER#${data.userId}`,
-          sk: `SESSION#${data.sessionToken}`,
-          GSI1SK: `SESSION#${data.sessionToken}`,
-          GSI1PK: `SESSION#${data.sessionToken}`,
+          [partitionKey]: `USER#${data.userId}`,
+          [sortKey]: `SESSION#${data.sessionToken}`,
+          [indexSortKey]: `SESSION#${data.sessionToken}`,
+          [indexPartitionKey]: `SESSION#${data.sessionToken}`,
           type: "SESSION",
           ...data,
         }),
@@ -235,11 +286,11 @@ export function DynamoDBAdapter(
       const { sessionToken } = session
       const data = await client.query({
         TableName,
-        IndexName: "GSI1",
+        IndexName,
         KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
         ExpressionAttributeNames: {
-          "#gsi1pk": "GSI1PK",
-          "#gsi1sk": "GSI1SK",
+          "#gsi1pk": indexPartitionKey,
+          "#gsi1sk": indexSortKey,
         },
         ExpressionAttributeValues: {
           ":gsi1pk": `SESSION#${sessionToken}`,
@@ -247,7 +298,8 @@ export function DynamoDBAdapter(
         },
       })
       if (!data.Items?.length) return null
-      const { pk, sk } = data.Items[0] as any
+      const item = data.Items[0] as any
+
       const {
         UpdateExpression,
         ExpressionAttributeNames,
@@ -255,22 +307,22 @@ export function DynamoDBAdapter(
       } = generateUpdateExpression(session)
       const res = await client.update({
         TableName,
-        Key: { pk, sk },
+        Key: { [partitionKey]: item[partitionKey], [sortKey]: item[sortKey] },
         UpdateExpression,
         ExpressionAttributeNames,
         ExpressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
-      return format.from<AdapterSession>(res.Attributes)
+      return format.from<AdapterSession>(res.Attributes, keys)
     },
     async deleteSession(sessionToken) {
       const data = await client.query({
         TableName,
-        IndexName: "GSI1",
+        IndexName,
         KeyConditionExpression: "#gsi1pk = :gsi1pk AND #gsi1sk = :gsi1sk",
         ExpressionAttributeNames: {
-          "#gsi1pk": "GSI1PK",
-          "#gsi1sk": "GSI1SK",
+          "#gsi1pk": indexPartitionKey,
+          "#gsi1sk": indexSortKey,
         },
         ExpressionAttributeValues: {
           ":gsi1pk": `SESSION#${sessionToken}`,
@@ -279,21 +331,21 @@ export function DynamoDBAdapter(
       })
       if (!data?.Items?.length) return null
 
-      const { pk, sk } = data.Items[0]
+      const item = data.Items[0] as any
 
       const res = await client.delete({
         TableName,
-        Key: { pk, sk },
+        Key: { [partitionKey]: item[partitionKey], [sortKey]: item[sortKey] },
         ReturnValues: "ALL_OLD",
       })
-      return format.from<AdapterSession>(res.Attributes)
+      return format.from<AdapterSession>(res.Attributes, keys)
     },
     async createVerificationToken(data) {
       await client.put({
         TableName,
         Item: format.to({
-          pk: `VT#${data.identifier}`,
-          sk: `VT#${data.token}`,
+          [partitionKey]: `VT#${data.identifier}`,
+          [sortKey]: `VT#${data.token}`,
           type: "VT",
           ...data,
         }),
@@ -304,12 +356,12 @@ export function DynamoDBAdapter(
       const data = await client.delete({
         TableName,
         Key: {
-          pk: `VT#${identifier}`,
-          sk: `VT#${token}`,
+          [partitionKey]: `VT#${identifier}`,
+          [sortKey]: `VT#${token}`,
         },
         ReturnValues: "ALL_OLD",
       })
-      return format.from<VerificationToken>(data.Attributes)
+      return format.from<VerificationToken>(data.Attributes, keys)
     },
   }
 }
