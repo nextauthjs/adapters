@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.1.0](https://github.com/nextauthjs/adapters/compare/@next-auth/dynamodb-adapter@1.0.2...@next-auth/dynamodb-adapter@1.1.0) (2022-02-02)
+
+### Features
+
+- **dynamodb:** configurable dynamodb keys ([#380](https://github.com/nextauthjs/adapters/issues/380)) ([c9555aa](https://github.com/nextauthjs/adapters/commit/c9555aa33447a365640d6253a0e73d3cb1f64c14))
+
 ## [1.0.2](https://github.com/nextauthjs/adapters/compare/@next-auth/dynamodb-adapter@1.0.1...@next-auth/dynamodb-adapter@1.0.2) (2022-01-10)
 
 ### Bug Fixes
