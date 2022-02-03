@@ -1,4 +1,4 @@
-import { Connection, ConnectionOptions } from "typeorm"
+import type { Connection, ConnectionOptions } from "typeorm"
 import * as defaultEntities from "./entities"
 
 /** Ensure configOrString is normalized to an object. */

@@ -1,6 +1,6 @@
 import type { Adapter } from "next-auth/adapters"
 import { createHash, randomBytes } from "crypto"
-import { Profile } from "next-auth"
+import type { Profile } from "next-auth"
 import { ulid } from "ulid"
 
 type PouchdbDocument<T> = PouchDB.Core.ExistingDocument<{ data: T }>
@@ -85,7 +85,9 @@ export const PouchDBAdapter: Adapter<
       const sessionUpdateAge = session.updateAge * 1000 // default is 1 day
 
       const hashToken = (token: string) =>
-        createHash("sha256").update(`${token}${secret}`).digest("hex")
+        createHash("sha256")
+          .update(`${token}${secret as string}`)
+          .digest("hex")
 
       return {
         displayName: "POUCHDB",
