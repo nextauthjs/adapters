@@ -5,6 +5,8 @@
    <p align="center">Adapter Repository for NextAuth.js</p>
 </p>
 
+### Note: We have migrated the primary [`nextauthjs/adapters`](https://github.com/nextauthjs/adapters) repository to the new [`nextauthjs/next-auth`](https://github.com/nextauthjs/next-auth) monorepo. All adapter code can be found there under `packages/adapter-*` going forward. This repository will be deprecated and most likely archived in the future.
+
 ## Overview
 
 NextAuth.js is a complete open source authentication solution for [Next.js](http://nextjs.org/) applications.
