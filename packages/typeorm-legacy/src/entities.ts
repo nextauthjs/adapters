@@ -78,7 +78,7 @@ export class AccountEntity {
   @Column({ type: "varchar", nullable: true })
   scope!: string | null
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: "text", nullable: true })
   id_token!: string | null
 
   @Column({ type: "varchar", nullable: true })
