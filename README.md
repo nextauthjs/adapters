@@ -58,7 +58,7 @@ All adapter tests should also run against a local instance of the particular dat
 
 ## Publishing
 
-- [Lerna Independent Mode with Semver](https://samhogy.co.uk/2018/08/lerna-independent-mode-with-semver.html)
+- [Lerna Independent Mode with Semver](https://samhogy.co.uk/2018/08/lerna-independent-mode-with-semver)
 
 ## License
 
