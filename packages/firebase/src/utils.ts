@@ -11,8 +11,8 @@ export function docSnapshotToObject<T>(
     return null
   }
   const data: any = snapshot.data()
-  if (data.expires) {
-    data.expires = data.expires.toDate()
+  if (data?.expires) {
+    data.expires = data?.expires?.toDate()
   }
   return { id: snapshot.id, ...data }
 }
@@ -26,8 +26,8 @@ export function querySnapshotToObject<T>(
   const doc = snapshot.docs[0]
 
   const data: any = doc.data()
-  if (data.expires) {
-    data.expires = data.expires.toDate()
+  if (data?.expires) {
+    data.expires = data?.expires?.toDate()
   }
   return { id: doc.id, ...data }
 }
